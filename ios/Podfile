@@ -1,0 +1,140 @@
+platform :ios, '13.0'
+
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+
+      # Silicon Mac Architecture Optimization
+      config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+
+      # Hardening for gRPC, BoringSSL, and Abseil
+      if target.name.include?('BoringSSL-GRPC') || target.name.include?('gRPC') || target.name.include?('abseil')
+        config.build_settings['USE_HEADERMAP'] = 'NO'
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++17'
+        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+
+        if target.name.include?('BoringSSL-GRPC')
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'OPENSSL_NO_ASM=1']
+        end
+      end
+
+      # Surgical flag removal
+      ['OTHER_CFLAGS', 'OTHER_LDFLAGS', 'OTHER_SWIFT_FLAGS'].each do |key|
+        flags = config.build_settings[key]
+        if flags.is_a?(String)
+          config.build_settings[key] = flags.split(' ').reject { |f| f == '-G' || f.start_with?('-GCC') }.join(' ')
+        elsif flags.is_a?(Array)
+          config.build_settings[key].reject! { |f| f == '-G' || f.start_with?('-GCC') }
+        end
+      end
+    end
+
+    if target.respond_to?(:source_build_phase) && target.source_build_phase
+      target.source_build_phase.files.each do |file|
+        if file.settings && file.settings['COMPILER_FLAGS']
+          flags = file.settings['COMPILER_FLAGS']
+          cleaned = flags.gsub(/-GCC_WARN_INHIBIT_ALL_WARNINGS/, '-w').split(' ').reject { |f| f == '-G' || f.start_with?('-GCC') }.join(' ')
+          file.settings['COMPILER_FLAGS'] = cleaned
+        end
+      end
+    end
+  end
+
+# Surgical Header Patching
+  puts "Surgically patching all gRPC headers..."
+  Dir.glob(File.join(installer.sandbox.root, "gRPC*/**/promise/detail/{basic_seq.h,promise_like.h}")).each do |path|
+    if File.exist?(path)
+      FileUtils.chmod("+w", path)
+      content = File.read(path)
+      patched = false
+      if content.gsub!(/Traits::template CallSeqFactory/, 'Traits::CallSeqFactory')
+        patched = true
+      end
+      if content.gsub!(/std::result_of/, 'absl::type_traits_internal::result_of')
+        patched = true
+      end
+      if patched
+        File.write(path, content)
+      end
+    end
+  end
+  
+  # Fix gRPC-C++ template syntax errors for newer Xcode
+  Dir.glob(File.join(installer.sandbox.root, "gRPC-C++/**/*promise*.h")).each do |path|
+    if File.exist?(path)
+      FileUtils.chmod("+w", path)
+      content = File.read(path)
+      # Fix missing template argument list
+      if content.gsub!(/(\w+)::template CallSeqFactory\(/m, '\1::CallSeqFactory<>::(')
+         content.gsub!(/Traits::template CallSeqFactory\(/, 'Traits::template CallSeqFactory<void>::(')
+        File.write(path, content)
+      end
+    end
+  end
+  
+  # Fix abseil deprecated builtins
+  Dir.glob(File.join(installer.sandbox.root, "abseil/**/type_traits.h")).each do |path|
+    if File.exist?(path)
+      FileUtils.chmod("+w", path)
+      content = File.read(path)
+      if content.include?("__is_trivially_relocatable")
+        content.gsub!("__is_trivially_relocatable", "__builtin_is_cpp_trivially_relocatable")
+        File.write(path, content)
+      end
+    end
+  end
+
+  # Final hardening of the project file
+  puts "Finalizing project file hardening..."
+  project_path = "#{installer.pods_project.path}/project.pbxproj"
+  if File.exist?(project_path)
+    content = File.read(project_path)
+    content.gsub!(/-GCC_WARN_INHIBIT_ALL_WARNINGS/, '-w')
+    content.gsub!(/COMPILER_FLAGS = "([^"]*)"/) do |match|
+      flags = $1
+      fixed = flags.split(' ').reject { |f| f == '-G' || f.start_with?('-GCC') }.join(' ')
+      'COMPILER_FLAGS = "' + fixed + '"'
+    end
+    File.write(project_path, content)
+  end
+end

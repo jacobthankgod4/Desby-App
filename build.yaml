@@ -1,0 +1,17 @@
+targets:
+  $default:
+    builders:
+      # Riverpod code generation
+      riverpod_generator:
+        generate_for:
+          - lib/**/*.dart
+      
+      # Freezed code generation for immutable models
+      freezed:
+        generate_for:
+          - lib/**/*.dart
+      
+      # JSON serialization
+      json_serializable:
+        generate_for:
+          - lib/**/*.dart

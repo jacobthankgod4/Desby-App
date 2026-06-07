@@ -1,0 +1,41 @@
+# AI Body Scan SaaS - Dependencies
+# ================================
+
+# Core ML/Image Processing
+# MediaPipe for pose detection (±3-5cm accuracy)
+mediapipe==0.10.9
+mediapipe-core==0.10.9
+opencv-python-headless==4.8.1
+numpy==1.26.3
+pillow==10.2.0
+scikit-image==0.22.0
+scipy==1.11.4
+matplotlib==3.8.2
+
+# Chumpy - Required for HMR 3D extraction (±1-2cm accuracy)
+# Note: HMR 3D needs custom installation
+chumpy>=0.70
+PyOpenGL==3.1.7
+
+# DeepLab + HMR 3D Models (GitHub repo integration)
+tensorflow==1.13.1
+absl-py==2.0.0
+
+# Web Framework (FastAPI)
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+httpx==0.26.0
+
+# Data Handling
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Payment Processing (Paystack)
+paystack-python==0.2.3
+
+# Deployment
+vercel==0.13.0
+
+# Utilities
+python-dotenv==1.0.0

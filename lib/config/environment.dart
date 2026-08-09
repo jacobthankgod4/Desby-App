@@ -11,14 +11,14 @@ class Environment {
 
   /// Initialize environment from .env file
   static Future<void> initialize() async {
-    // On web, flutter_dotenv cannot load files from disk.
-    // Use dart-define environment variables instead: flutter run --dart-define=KEY=value
-    if (!kIsWeb) {
-      try {
-        await dotenv.load(fileName: '.env');
-      } catch (e) {
-        // .env file not found on mobile/desktop, use defaults
-        debugPrint('[ENV] Note: .env file not found, using default configuration');
+    try {
+      // Load .env from assets (works on Web and Mobile/Desktop)
+      await dotenv.load(fileName: '.env');
+      debugPrint('[ENV] Configuration loaded successfully');
+    } catch (e) {
+      debugPrint('[ENV] Error loading .env file: $e');
+      if (kIsWeb) {
+        debugPrint('[ENV] Note: Ensure .env is added to pubspec.yaml assets');
       }
     }
     // Initialize the singleton
@@ -28,6 +28,22 @@ class Environment {
   /// API Base URL
   String get apiBaseUrl =>
       _getEnv('API_BASE_URL') ?? 'http://localhost:3000/api';
+
+  /// Korra AI API Base URL (primary measurement/try-on service)
+  String get korraApiBaseUrl =>
+      _getEnv('KORRA_API_BASE_URL') ?? 'https://korra.work/api/v2';
+
+  /// Korra API Key (for authenticated requests)
+  String get korraApiKey => _getEnv('KORRA_API_KEY') ?? '';
+
+  /// Korra Webhook Secret (for verifying incoming webhooks)
+  String get korraWebhookSecret => _getEnv('KORRA_WEBHOOK_SECRET') ?? '';
+
+  /// AI Scan API Base URL (legacy alias, points to Korra)
+  String get aiScanApiBaseUrl =>
+      _getEnv('AI_SCAN_API_BASE_URL') ??
+      _getEnv('KORRA_API_BASE_URL') ??
+      'https://korra.work/api/v2';
 
   /// API Timeout (seconds)
   int get apiTimeoutSeconds =>
@@ -43,11 +59,18 @@ class Environment {
   /// Debug Mode
   bool get debugMode => _getEnv('APP_DEBUG') == 'true';
 
-  /// Firebase Project ID
-  String? get firebaseProjectId => _getEnv('FIREBASE_PROJECT_ID');
+  /// Supabase URL
+  String get supabaseUrl => _getEnv('SUPABASE_URL') ?? '';
 
-  /// Firebase API Key
-  String? get firebaseApiKey => _getEnv('FIREBASE_API_KEY');
+  /// Supabase Anon Key
+  String get supabaseAnonKey => _getEnv('SUPABASE_ANON_KEY') ?? '';
+
+  /// Supabase Service Role Key
+  String get supabaseServiceRoleKey =>
+      _getEnv('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+  /// Database URL
+  String get databaseUrl => _getEnv('DATABASE_URL') ?? '';
 
   /// Feature Flags
   bool get enableAnalytics =>
@@ -59,8 +82,7 @@ class Environment {
 
   /// Auth Token Refresh Threshold (minutes)
   int get authTokenRefreshThresholdMinutes =>
-      int.tryParse(_getEnv('AUTH_TOKEN_REFRESH_THRESHOLD_MINUTES') ?? '5') ??
-      5;
+      int.tryParse(_getEnv('AUTH_TOKEN_REFRESH_THRESHOLD_MINUTES') ?? '5') ?? 5;
 
   /// Logging
   String get logLevel => _getEnv('LOG_LEVEL') ?? 'debug';
@@ -84,7 +106,6 @@ class Environment {
   /// Internal: expose env lookup for other config helpers.
   /// Not public API; used by build-time config providers.
   static String? envValue(String key) => _getEnv(key);
-
 
   /// Check if staging environment
   bool get isStaging => appEnv == 'staging';

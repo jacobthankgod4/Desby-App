@@ -47,8 +47,62 @@ class KorraClient {
     _apiKey = apiKey;
   }
 
+  /// Check if an API key is already set
+  bool get hasApiKey => _apiKey != null && _apiKey!.isNotEmpty;
+
   Options get _authOptions =>
       Options(headers: {if (_apiKey != null) 'X-API-Key': _apiKey});
+
+  // ---------------------------------------------------------------------------
+  // PARTNER PROVISIONING
+  // ---------------------------------------------------------------------------
+
+  /// Auto-provision a Korra API key for a partner's user
+  ///
+  /// Calls POST /api/v2/keys/partner-provision with the partner key.
+  /// Returns the Korra API key, or null on failure.
+  Future<String?> provisionApiKey({
+    required String partnerUserId,
+    String? tier,
+  }) async {
+    final partnerKey = Environment.current.korraPartnerKey;
+    if (partnerKey.isEmpty) {
+      debugPrint('[KORRA] No partner key configured');
+      return null;
+    }
+
+    try {
+      final response = await _dio.post(
+        '/api/v2/keys/partner-provision',
+        data: {
+          'partner_user_id': partnerUserId,
+          if (tier != null) 'tier': tier,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'x-partner-key': partnerKey,
+          },
+        ),
+      );
+
+      if (response.data['status'] == true) {
+        final apiKey = response.data['data']['api_key'] as String?;
+        if (apiKey != null) {
+          setApiKey(apiKey);
+          debugPrint('[KORRA] API key provisioned: ${apiKey.substring(0, 12)}...');
+          return apiKey;
+        }
+      }
+      return null;
+    } on DioException catch (e) {
+      debugPrint('[KORRA] Provisioning failed: ${_dioError(e)}');
+      return null;
+    } catch (e) {
+      debugPrint('[KORRA] Provisioning error: $e');
+      return null;
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // HEALTH

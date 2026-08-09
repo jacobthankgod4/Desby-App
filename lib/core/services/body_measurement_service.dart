@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/environment.dart';
 import '../network/korra_client.dart';
 
@@ -12,6 +14,8 @@ import '../network/korra_client.dart';
 /// - Dual photo mode (front + side) — ±1-3cm accuracy
 /// - Single photo mode (front only) — ±3-5cm accuracy
 /// - Height-only estimation — ±5-8cm accuracy (no photos needed)
+///
+/// Auto-provisions Korra API keys for Desby users on first scan.
 class BodyMeasurementService {
   final KorraClient _korra;
 
@@ -21,6 +25,66 @@ class BodyMeasurementService {
     if (apiKey.isNotEmpty) {
       _korra.setApiKey(apiKey);
     }
+  }
+
+  /// Ensure we have a Korra API key — auto-provision if needed
+  ///
+  /// Checks (in order):
+  /// 1. Already set via constructor (global key)
+  /// 2. Stored in user's Supabase profile (korra_api_key field)
+  /// 3. Auto-provision via partner endpoint
+  Future<String?> _ensureApiKey() async {
+    // Already have a key
+    if (_korra.hasApiKey) return null; // null means "already set"
+
+    final partnerKey = Environment.current.korraPartnerKey;
+    if (partnerKey.isEmpty) {
+      debugPrint('[KORRA] No partner key — using fallback');
+      return null;
+    }
+
+    // Try to load from Supabase profile
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final profile = await Supabase.instance.client
+            .from('users')
+            .select('korra_api_key')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (profile != null && profile['korra_api_key'] != null) {
+          final storedKey = profile['korra_api_key'] as String;
+          if (storedKey.isNotEmpty) {
+            _korra.setApiKey(storedKey);
+            debugPrint('[KORRA] Loaded API key from profile');
+            return storedKey;
+          }
+        }
+
+        // Auto-provision via partner endpoint
+        final newKey = await _korra.provisionApiKey(
+          partnerUserId: user.id,
+        );
+
+        if (newKey != null) {
+          // Store in profile for future use
+          try {
+            await Supabase.instance.client
+                .from('users')
+                .update({'korra_api_key': newKey}).eq('id', user.id);
+            debugPrint('[KORRA] API key stored in profile');
+          } catch (e) {
+            debugPrint('[KORRA] Failed to store key in profile: $e');
+          }
+          return newKey;
+        }
+      }
+    } catch (e) {
+      debugPrint('[KORRA] Auto-provision failed: $e');
+    }
+
+    return null;
   }
 
   /// Check if the Korra service is available
@@ -42,6 +106,7 @@ class BodyMeasurementService {
     required double heightCm,
     String gender = 'male',
   }) async {
+    await _ensureApiKey();
     final korraResult = await _korra.extractMeasurements(
       frontImage: frontImage,
       sideImage: sideImage,
@@ -71,6 +136,7 @@ class BodyMeasurementService {
     required double heightCm,
     String gender = 'male',
   }) async {
+    await _ensureApiKey();
     final korraResult = await _korra.extractSinglePhoto(
       frontImage: frontImage,
       heightCm: heightCm,
@@ -98,6 +164,7 @@ class BodyMeasurementService {
     required double heightCm,
     String gender = 'male',
   }) async {
+    await _ensureApiKey();
     final korraResult = await _korra.estimateFromHeight(
       heightCm: heightCm,
       gender: gender,
@@ -117,7 +184,8 @@ class BodyMeasurementService {
   }
 
   /// List all past measurements for the current user
-  Future<List<KorraMeasurementSummary>> listMeasurements() {
+  Future<List<KorraMeasurementSummary>> listMeasurements() async {
+    await _ensureApiKey();
     return _korra.listMeasurements();
   }
 

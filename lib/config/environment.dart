@@ -39,6 +39,9 @@ class Environment {
   /// Korra Webhook Secret (for verifying incoming webhooks)
   String get korraWebhookSecret => _getEnv('KORRA_WEBHOOK_SECRET') ?? '';
 
+  /// Korra Partner Key (for auto-provisioning API keys for Desby users)
+  String get korraPartnerKey => _getEnv('KORRA_PARTNER_KEY') ?? '';
+
   /// AI Scan API Base URL (legacy alias, points to Korra)
   String get aiScanApiBaseUrl =>
       _getEnv('AI_SCAN_API_BASE_URL') ??

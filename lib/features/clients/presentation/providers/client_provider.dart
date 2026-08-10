@@ -1,15 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/client_repository.dart';
 import '../../domain/usecases/client_usecases.dart';
-
-
 import '../../domain/entities/client.dart';
+import '../../data/repositories/supabase_client_repository.dart';
 
-import '../../data/repositories/firebase_client_repository.dart';
+import '../../../../features/orders/presentation/providers/order_provider.dart';
+import '../../../../features/orders/domain/entities/order.dart';
 
 final clientRepositoryProvider = Provider<ClientRepository>((ref) {
-  return FirebaseClientRepository();
+  return SupabaseClientRepository();
 });
 
 final getClientsUsecaseProvider = Provider((ref) {
@@ -39,6 +40,16 @@ final clientsProvider = FutureProvider.family<List<Client>, String?>((ref, query
     (failure) => throw Exception(failure.toString()),
     (clients) => clients,
   );
+});
+
+final clientOrdersProvider = FutureProvider.family<List<OrderEntity>, String>((ref, clientId) async {
+  try {
+    final orders = await ref.watch(ordersProvider(null).future);
+    return orders.where((o) => o.clientId == clientId).toList();
+  } catch (e) {
+    debugPrint('[CLIENT] History Sync Error: $e');
+    return [];
+  }
 });
 
 final clientDetailProvider = FutureProvider.family<Client, String>((ref, id) async {

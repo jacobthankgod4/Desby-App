@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import '../../theme/colors.dart';
 
 class OnboardingScaffold extends StatelessWidget {
@@ -100,7 +102,7 @@ class OnboardingScaffold extends StatelessWidget {
             ),
             
             // 3. Footer Navigation
-            _buildFooter(),
+            _buildFooter(context),
             
             // 4. Floating Support
             _buildFloatingSupport(),
@@ -196,6 +198,8 @@ class OnboardingScaffold extends StatelessWidget {
   }
 
   Widget _buildMainCard() {
+    final bool useBlur = !kIsWeb; // BackdropFilter is unstable/expensive on web engine
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(40, 48, 40, 56),
@@ -213,41 +217,47 @@ class OnboardingScaffold extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(36),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Column(
-            children: [
-              Text(
-                stepLabel.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white38,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                prompt,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1,
-                  height: 1.1,
-                ),
-              ),
-              const SizedBox(height: 48),
-              content,
-            ],
-          ),
-        ),
+        child: useBlur 
+          ? BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: _buildCardContent(),
+            )
+          : _buildCardContent(),
       ),
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildCardContent() {
+    return Column(
+      children: [
+        Text(
+          stepLabel.toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white38,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          prompt,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 38,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
+            height: 1.1,
+          ),
+        ),
+        const SizedBox(height: 48),
+        content,
+      ],
+    );
+  }
+
+  Widget _buildFooter(BuildContext context) {
     return Positioned(
       bottom: 0,
       left: 0,
@@ -272,8 +282,9 @@ class OnboardingScaffold extends StatelessWidget {
                 IconButton(
                   onPressed: () {
                     // WEB STABILITY: Aggressive focus purge
+                    FocusScope.of(context).unfocus();
                     FocusManager.instance.primaryFocus?.unfocus();
-                    Future.delayed(const Duration(milliseconds: 150), onBack);
+                    Future.delayed(const Duration(milliseconds: 300), onBack!);
                   },
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white54, size: 20),
                   style: IconButton.styleFrom(
@@ -288,9 +299,10 @@ class OnboardingScaffold extends StatelessWidget {
                   height: 64,
                   child: ElevatedButton(
                     onPressed: isLoading || onNext == null ? null : () {
-                      // WEB STABILITY: Aggressive focus purge
+                      // WEB STABILITY: Aggressive focus purge with enough buffer for DOM settling
+                      FocusScope.of(context).unfocus();
                       FocusManager.instance.primaryFocus?.unfocus();
-                      Future.delayed(const Duration(milliseconds: 150), onNext);
+                      Future.delayed(const Duration(milliseconds: 300), onNext!);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.amber,

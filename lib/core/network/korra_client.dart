@@ -127,6 +127,9 @@ class KorraClient {
   // ---------------------------------------------------------------------------
 
   /// Extract body measurements from dual photos (front + side)
+  ///
+  /// The extract endpoint is async — it returns a task_id.
+  /// This method polls for completion (up to 5 minutes).
   Future<KorraMeasurementResult> extractMeasurements({
     required File frontImage,
     required File sideImage,
@@ -153,7 +156,20 @@ class KorraClient {
         options: _authOptions,
       );
 
-      return KorraMeasurementResult.fromJson(response.data);
+      final data = response.data;
+
+      // If response already has measurements (sync response), return directly
+      if (data['measurements'] != null) {
+        return KorraMeasurementResult.fromJson(data);
+      }
+
+      // Otherwise it's async — poll for results
+      final taskId = data['task_id'];
+      if (taskId != null) {
+        return await _pollTaskResult(taskId);
+      }
+
+      return KorraMeasurementResult.fromJson(data);
     } on DioException catch (e) {
       return KorraMeasurementResult.error(_dioError(e));
     } catch (e) {
@@ -162,6 +178,8 @@ class KorraClient {
   }
 
   /// Extract measurements from a single front photo (lower accuracy)
+  ///
+  /// Same async polling as dual photo mode.
   Future<KorraMeasurementResult> extractSinglePhoto({
     required File frontImage,
     required double heightCm,
@@ -183,12 +201,55 @@ class KorraClient {
         options: _authOptions,
       );
 
-      return KorraMeasurementResult.fromJson(response.data);
+      final data = response.data;
+
+      if (data['measurements'] != null) {
+        return KorraMeasurementResult.fromJson(data);
+      }
+
+      final taskId = data['task_id'];
+      if (taskId != null) {
+        return await _pollTaskResult(taskId);
+      }
+
+      return KorraMeasurementResult.fromJson(data);
     } on DioException catch (e) {
       return KorraMeasurementResult.error(_dioError(e));
     } catch (e) {
       return KorraMeasurementResult.error('Unexpected error: $e');
     }
+  }
+
+  /// Poll task status until completed/failed (max 5 minutes)
+  Future<KorraMeasurementResult> _pollTaskResult(String taskId) async {
+    const maxAttempts = 60; // 60 * 5s = 5 minutes
+    const pollInterval = Duration(seconds: 5);
+
+    for (int i = 0; i < maxAttempts; i++) {
+      await Future.delayed(pollInterval);
+
+      try {
+        final response = await _dio.get(
+          '/api/v2/measurements/status/$taskId',
+          options: _authOptions,
+        );
+
+        final status = response.data['status'];
+        if (status == 'completed') {
+          return KorraMeasurementResult.fromJson(response.data);
+        } else if (status == 'failed') {
+          return KorraMeasurementResult.error(
+            response.data['error'] ?? 'Extraction failed',
+          );
+        }
+        // Still processing — continue polling
+      } catch (e) {
+        debugPrint('[KORRA] Poll error: $e');
+        // Continue polling on transient errors
+      }
+    }
+
+    return KorraMeasurementResult.error('Extraction timed out after 5 minutes');
   }
 
   // ---------------------------------------------------------------------------
@@ -863,17 +924,17 @@ class KorraMeasurementResult {
 
   factory KorraMeasurementResult.fromJson(Map<String, dynamic> json) {
     return KorraMeasurementResult(
-      success: json['success'] ?? false,
+      success: json['success'] == true || json['status'] == 'success' || json['status'] == 'accepted',
       measurements: (json['measurements'] as Map<String, dynamic>?)?.map(
         (key, value) => MapEntry(key, (value as num).toDouble()),
       ),
-      error: json['error'],
+      error: json['error'] ?? json['detail'],
       processingTime: json['processing_time_seconds']?.toDouble(),
-      measurementId: json['measurement_id'] ?? json['image_id'],
+      measurementId: json['measurement_id'] ?? json['image_id'] ?? json['task_id'],
       gender: json['gender'],
       heightCm:
           json['user_height_cm']?.toDouble() ?? json['height']?.toDouble(),
-      accuracyMode: json['accuracy_mode'] ?? 'dual',
+      accuracyMode: json['accuracy_mode'] ?? json['estimation_mode'] ?? 'dual',
       accuracy: json['accuracy'] ?? '±1-3cm',
     );
   }

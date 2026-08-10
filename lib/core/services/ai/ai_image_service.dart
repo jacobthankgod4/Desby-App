@@ -27,7 +27,6 @@ class AiImageService {
 
       // 2. Execute JS Interop Call
       // puter.ai.txt2img returns a Promise<HTMLImageElement>
-      final Puter puter = web.window.getProperty('puter'.toJS) as Puter;
       final jsPromise = puter.ai.txt2img(enrichedPrompt, options);
       
       // 3. Resolve Promise to Dart Future

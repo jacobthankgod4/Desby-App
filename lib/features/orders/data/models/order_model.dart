@@ -6,6 +6,7 @@ part 'order_model.g.dart';
 
 @freezed
 class OrderItemModel with _$OrderItemModel {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory OrderItemModel({
     required String id,
     required String garmentType,
@@ -28,9 +29,11 @@ class OrderItemModel with _$OrderItemModel {
 
 @freezed
 class OrderModel with _$OrderModel {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory OrderModel({
     required String id,
     required String clientId,
+    String? tailorId, // NEW: Associate with tailor
     required String clientName,
     required List<OrderItemModel> items,
     @Default(OrderStatus.pending) OrderStatus status,
@@ -53,6 +56,7 @@ class OrderModel with _$OrderModel {
   factory OrderModel.fromEntity(OrderEntity order) => OrderModel(
         id: order.id,
         clientId: order.clientId,
+        tailorId: order.tailorId,
         clientName: order.clientName,
         items: order.items.map((i) => OrderItemModel.fromEntity(i)).toList(),
         status: order.status,
@@ -84,6 +88,7 @@ extension OrderModelX on OrderModel {
   OrderEntity toEntity() => OrderEntity(
     id: id,
     clientId: clientId,
+    tailorId: tailorId,
     clientName: clientName,
     items: items.map((i) => i.toEntity()).toList(),
     status: status,

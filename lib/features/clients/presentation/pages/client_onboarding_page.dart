@@ -4,6 +4,7 @@ import '../../../../core/storage/local_storage.dart';
 import '../../../../core/storage/storage_keys.dart';
 import '../../../../core/constants/nigeria_lga_data.dart';
 import '../../../../core/widgets/onboarding_scaffold.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/domain/entities/user_profile.dart';
@@ -26,17 +27,24 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
+  
+  // WEB STABILITY: Explicit Focus Nodes
+  final _nameFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _addressFocus = FocusNode();
+  final _stateFocus = FocusNode();
+  final _lgaFocus = FocusNode();
+  final _unitFocus = FocusNode();
+
   String _selectedGender = 'MALE';
-  String? _selectedCountry = 'Nigeria';
+  final String _selectedCountry = 'Nigeria';
   String? _selectedState;
   String? _selectedLga;
   List<String> _availableLgas = [];
 
   String _selectedOccasion = 'Casual';
-  String _selectedColor = 'Black';
   String _selectedFabric = 'Cotton';
-  double _budgetMin = 50000;
-  double _budgetMax = 150000;
 
   String _selectedBodyType = 'Average';
   String _selectedUnit = 'Inches';
@@ -54,6 +62,15 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+    
+    // Dispose focus nodes
+    _nameFocus.dispose();
+    _phoneFocus.dispose();
+    _emailFocus.dispose();
+    _addressFocus.dispose();
+    _stateFocus.dispose();
+    _lgaFocus.dispose();
+    _unitFocus.dispose();
     super.dispose();
   }
 
@@ -85,28 +102,65 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
   }
 
   Future<void> _finishOnboarding() async {
+    // WEB STABILITY: Force terminal unfocus and clear DOM overlays
+    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+    
     setState(() => _isLoading = true);
     try {
       final user = ref.read(currentUserProvider);
-      if (user == null) return;
+      if (user == null) {
+        throw Exception('Session expired. Please log in again.');
+      }
 
       final updatedProfile = UserProfile(
-        id: user.id, email: _emailController.text, name: _nameController.text, userType: user.userType,
-        phone: _phoneController.text, address: _addressController.text,
-        state: _selectedState ?? '', country: _selectedCountry ?? 'Nigeria', lga: _selectedLga ?? '',
-        createdAt: user.createdAt, updatedAt: DateTime.now(),
-        // EXPERT SYNC: Persist Lifestyle & Style Preferences
+        id: user.id, 
+        email: user.email, // Use email from auth session
+        name: _nameController.text, 
+        userType: user.userType,
+        phone: _phoneController.text, 
+        address: _addressController.text,
+        state: _selectedState ?? '', 
+        country: _selectedCountry ?? 'Nigeria', 
+        lga: _selectedLga ?? '',
+        createdAt: user.createdAt, 
+        updatedAt: DateTime.now(),
         preferredOccasions: [_selectedOccasion],
         preferredFabrics: [_selectedFabric],
         bodyType: _selectedBodyType,
         measurementUnit: _selectedUnit,
       );
 
-      await ref.read(updateProfileUsecaseProvider)(updatedProfile);
+      // 1. Persist to Database
+      final result = await ref.read(updateProfileUsecaseProvider)(updatedProfile);
+      
+      if (result.isFailure) {
+        throw Exception(result.getFailureOrNull()?.failure.message ?? 'Profile update failed');
+      }
+
+      // 2. Mark onboarding as complete in Local Storage
       await localStorage.save(StorageKeys.clientOnboardingComplete, true);
-      if (mounted) Navigator.of(context).pushReplacementNamed('/main');
+      
+      // 3. Reset Navigation Provider to Dashboard
+      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+      
+      // 4. Delay navigation slightly to let DOM state settle after unfocus
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.redAccent));
+      debugPrint('[ONBOARDING] Critical Failure: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Setup failed: $e'), 
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          )
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -124,11 +178,14 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
       nextLabel: _currentStep == _totalSteps - 1 ? 'DISCOVER TAILORS' : 'CONTINUE',
       onBack: _currentStep > 0 ? _previousStep : null,
       onNext: _nextStep,
-      content: SizedBox(
-        height: 500,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 400, maxHeight: 600),
         child: PageView(
           controller: _pageController,
-          onPageChanged: (i) => setState(() => _currentStep = i),
+          onPageChanged: (i) {
+            FocusScope.of(context).unfocus();
+            setState(() => _currentStep = i);
+          },
           physics: const NeverScrollableScrollPhysics(),
           children: [
             _buildPersonalDetailsStep(),
@@ -153,77 +210,87 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
 
   Widget _buildPersonalDetailsStep() {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
-          _buildField('FULL NAME', Icons.person_rounded, _nameController),
+          _buildField('FULL NAME', Icons.person_rounded, _nameController, focusNode: _nameFocus),
           const SizedBox(height: 16),
-          _buildField('PHONE NUMBER', Icons.phone_rounded, _phoneController, type: TextInputType.phone),
+          _buildField('PHONE NUMBER', Icons.phone_rounded, _phoneController, type: TextInputType.phone, focusNode: _phoneFocus),
           const SizedBox(height: 16),
           _buildDropdown('GENDER', Icons.face_rounded, _selectedGender, genderOptions, (v) => setState(() => _selectedGender = v!)),
           const SizedBox(height: 16),
           _buildDropdown('STATE', Icons.map_rounded, _selectedState, NigeriaLgaData.states, (v) {
             setState(() { _selectedState = v; _selectedLga = null; _availableLgas = v != null ? NigeriaLgaData.getLgasForState(v) : []; });
-          }),
+          }, focusNode: _stateFocus),
           const SizedBox(height: 16),
-          _buildDropdown('LGA', Icons.location_city_rounded, _selectedLga, _availableLgas, (v) => setState(() => _selectedLga = v), enabled: _selectedState != null),
+          _buildDropdown('LGA', Icons.location_city_rounded, _selectedLga, _availableLgas, (v) => setState(() => _selectedLga = v), enabled: _selectedState != null, focusNode: _lgaFocus),
         ],
       ),
     );
   }
 
   Widget _buildStylePreferencesStep() {
-    return Column(
-      children: [
-        const Text('PREFERRED OCCASION', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
-          children: occasionOptions.map((o) => OptionPill(
-            label: o, isSelected: _selectedOccasion == o,
-            onTap: () => setState(() => _selectedOccasion = o),
-          )).toList(),
-        ),
-        const SizedBox(height: 32),
-        const Text('PREFERRED FABRIC', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
-          children: ['Cotton', 'Silk', 'Linen', 'Wool', 'Lace'].map((f) => OptionPill(
-            label: f, isSelected: _selectedFabric == f,
-            onTap: () => setState(() => _selectedFabric = f),
-          )).toList(),
-        ),
-      ],
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          const Text('PREFERRED OCCASION', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
+            children: occasionOptions.map((o) => OptionPill(
+              label: o, isSelected: _selectedOccasion == o,
+              onTap: () => setState(() => _selectedOccasion = o),
+            )).toList(),
+          ),
+          const SizedBox(height: 32),
+          const Text('PREFERRED FABRIC', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
+            children: ['Cotton', 'Silk', 'Linen', 'Wool', 'Lace'].map((f) => OptionPill(
+              label: f, isSelected: _selectedFabric == f,
+              onTap: () => setState(() => _selectedFabric = f),
+            )).toList(),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildBodyTypeStep() {
-    return Column(
-      children: [
-        const Text('BODY TYPE', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
-          children: bodyTypeOptions.map((b) => OptionPill(
-            label: b, isSelected: _selectedBodyType == b,
-            onTap: () => setState(() => _selectedBodyType = b),
-          )).toList(),
-        ),
-        const SizedBox(height: 32),
-        _buildDropdown('MEASUREMENT UNIT', Icons.straighten_rounded, _selectedUnit, ['Inches', 'Centimeters'], (v) => setState(() => _selectedUnit = v!)),
-      ],
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          const Text('BODY TYPE', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
+            children: bodyTypeOptions.map((b) => OptionPill(
+              label: b, isSelected: _selectedBodyType == b,
+              onTap: () => setState(() => _selectedBodyType = b),
+            )).toList(),
+          ),
+          const SizedBox(height: 32),
+          _buildDropdown('MEASUREMENT UNIT', Icons.straighten_rounded, _selectedUnit, ['Inches', 'Centimeters'], (v) => setState(() => _selectedUnit = v!), focusNode: _unitFocus),
+        ],
+      ),
     );
   }
 
   Widget _buildReviewStep() {
-    return Column(
-      children: [
-        _buildReviewCard('IDENTITY', '${_nameController.text}\n${_phoneController.text}'),
-        const SizedBox(height: 16),
-        _buildReviewCard('LOCATION', '$_selectedLga, $_selectedState'),
-        const SizedBox(height: 16),
-        _buildReviewCard('STYLE', '$_selectedOccasion • $_selectedFabric'),
-      ],
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          _buildReviewCard('IDENTITY', '${_nameController.text}\n${_phoneController.text}'),
+          const SizedBox(height: 16),
+          _buildReviewCard('LOCATION', '$_selectedLga, $_selectedState'),
+          const SizedBox(height: 16),
+          _buildReviewCard('STYLE', '$_selectedOccasion • $_selectedFabric'),
+        ],
+      ),
     );
   }
 
@@ -242,9 +309,11 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
     );
   }
 
-  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text}) {
+  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text, FocusNode? focusNode}) {
     return TextField(
-      controller: controller, keyboardType: type,
+      controller: controller, 
+      keyboardType: type,
+      focusNode: focusNode,
       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900),
@@ -256,13 +325,15 @@ focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borde
     );
   }
 
-  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged, {bool enabled = true}) {
+  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged, {bool enabled = true, FocusNode? focusNode}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(18)),
       child: DropdownButtonHideUnderline(
         child: DropdownButtonFormField<String>(
-          initialValue: value, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
+          initialValue: value, 
+          focusNode: focusNode,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
           onChanged: enabled ? onChanged : null,
           decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900), prefixIcon: Icon(icon, color: AppColors.amber, size: 20), border: InputBorder.none),
           dropdownColor: AppColors.darkNavy, icon: const Icon(Icons.expand_more_rounded, color: Colors.white24),

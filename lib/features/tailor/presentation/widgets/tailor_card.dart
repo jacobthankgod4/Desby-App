@@ -26,22 +26,21 @@ class TailorCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
-        // Premium card styling with shadow and border
+        // Premium glass card styling
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isSelected ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.amber : Colors.transparent,
-            width: 2,
+            color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.05),
+            width: isSelected ? 2 : 1,
           ),
-boxShadow: [
+          boxShadow: isSelected ? [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isSelected ? 0.12 : 0.06),
-              blurRadius: isSelected ? 16 : 12,
-              offset: Offset(0, isSelected ? 6 : 4),
-              spreadRadius: isSelected ? 1 : 0,
+              color: AppColors.amber.withValues(alpha: 0.15),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
-          ],
+          ] : null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(18),
@@ -149,11 +148,11 @@ boxShadow: [
                       // Name with premium typography
                       Text(
                         tailor.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.2,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -171,12 +170,10 @@ boxShadow: [
                               children: [
                                 Text(
                                   '₦${_formatPrice(tailor.startingPrice)}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: isSelected 
-                                        ? AppColors.darkNavy 
-                                        : AppColors.amber,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.amber,
                                     letterSpacing: -0.3,
                                   ),
                                 ),

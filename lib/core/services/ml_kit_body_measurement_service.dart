@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
-import 'package:firebase_ml_model_downloader/firebase_model_downloader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
@@ -33,7 +31,6 @@ class MLKitBodyMeasurementService {
       // Create pose detector with options for accurate detection
       final options = PoseDetectorOptions(
         mode: PoseDetectionMode.single, // Single person mode
-        model: PoseModel.accuratePose,  // More accurate model
       );
       
       _poseDetector = PoseDetector(options: options);
@@ -53,16 +50,7 @@ class MLKitBodyMeasurementService {
   /// Download the ML Kit model if not cached
   /// Call this early to pre-cache the model
   Future<void> downloadModel() async {
-    try {
-      final modelManager = FirebaseModelDownloader.instance;
-      await modelManager.getModel(
-        fileName: 'pose-detection',
-        downloadType: DownloadType.latest,
-      );
-      debugPrint('✅ ML Kit model downloaded');
-    } catch (e) {
-      debugPrint('Model download skipped (may already be cached): $e');
-    }
+    debugPrint('ML Kit model download is handled internally by Google ML Kit.');
   }
 
   /// Extract body measurements from an image
@@ -211,14 +199,14 @@ class MLKitBodyMeasurementService {
     final leftHip = landmarks[PoseLandmarkType.leftHip];
     final rightHip = landmarks[PoseLandmarkType.rightHip];
     final leftAnkle = landmarks[PoseLandmarkType.leftAnkle];
-    final rightAnkle = landmarks[PoseLandmarkType.rightAnkle];
-    final leftKnee = landmarks[PoseLandmarkType.leftKnee];
-    final rightKnee = landmarks[PoseLandmarkType.rightKnee];
+    // final rightAnkle = landmarks[PoseLandmarkType.rightAnkle];
+    // final leftKnee = landmarks[PoseLandmarkType.leftKnee];
+    // final rightKnee = landmarks[PoseLandmarkType.rightKnee];
     final nose = landmarks[PoseLandmarkType.nose];
-    final leftElbow = landmarks[PoseLandmarkType.leftElbow];
-    final rightElbow = landmarks[PoseLandmarkType.rightElbow];
-    final leftWrist = landmarks[PoseLandmarkType.leftWrist];
-    final rightWrist = landmarks[PoseLandmarkType.rightWrist];
+    // final leftElbow = landmarks[PoseLandmarkType.leftElbow];
+    // final rightElbow = landmarks[PoseLandmarkType.rightElbow];
+    // final leftWrist = landmarks[PoseLandmarkType.leftWrist];
+    // final rightWrist = landmarks[PoseLandmarkType.rightWrist];
     
     // Calculate scale factor from image (assuming full body in frame)
     // In production, you'd use actual pixel-to-cm ratio

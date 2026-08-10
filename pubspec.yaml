@@ -19,9 +19,7 @@ dependencies:
   riverpod: ^2.4.0
   flutter_riverpod: ^2.4.0
   url_launcher: ^6.2.5
-  firebase_core: ^2.24.2
-  cloud_firestore: ^4.14.0
-  firebase_auth: ^4.16.0
+  supabase_flutter: ^2.6.0
   riverpod_annotation: ^2.3.0
 
   # Networking
@@ -47,13 +45,26 @@ dependencies:
   connectivity_plus: ^5.0.0
   device_info_plus: ^9.1.1
   package_info_plus: ^5.0.1
+  dartz: ^0.10.1
+  web: ^0.4.2
+  webview_flutter: ^4.7.0
+  path_provider: ^2.1.1
+  google_mlkit_pose_detection: ^0.9.0
 
 # Environment & Configuration
   flutter_dotenv: ^5.1.0
   o3d: ^3.1.0
-  flutter_paystack_plus: ^2.0.2
+  flutterwave_standard: ^1.0.8
   image_picker: ^1.0.0
-  firebase_storage: ^11.6.0
+  geolocator: ^10.1.0
+  latlong2: ^0.9.0
+  flutter_map: ^6.1.0
+  uuid: ^4.6.0
+  screen_protector: ^1.5.3
+  pod_player: ^0.2.2
+  confetti: ^0.8.0
+  flutter_tts: ^4.2.2
+  camera: ^0.11.0+2
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +83,11 @@ dev_dependencies:
   mockito: ^5.4.4
   mocktail: ^1.0.0
 
+dependency_overrides:
+  web: ^1.0.0
+  http: ^1.2.0
+  package_info_plus: ^8.0.0
+
 flutter_launcher_icons:
   android: true
   ios: true
@@ -89,6 +105,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/images/
     - assets/images/guidance/
     - assets/models/

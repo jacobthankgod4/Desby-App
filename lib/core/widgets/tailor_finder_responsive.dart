@@ -7,11 +7,11 @@ import 'package:flutter/material.dart';
 class TailorFinderBreakpoints {
   TailorFinderBreakpoints._();
 
-  // Mobile-first breakpoints
-  static const double mobile = 600.0;
-  static const double tablet = 800.0;  
-  static const double desktop = 1200.0;
-  static const double wide = 1536.0;
+  // ATOMIC FIX: Low thresholds to account for sidebar + padding
+  static const double mobile = 300.0;
+  static const double tablet = 500.0;  
+  static const double desktop = 700.0;
+  static const double wide = 1000.0;
 }
 
 /// Responsive responsive wrapper
@@ -20,6 +20,7 @@ class TailorFinderResponsive extends StatelessWidget {
   final Widget? tablet;
   final Widget desktop;
   final Widget? wide;
+  final bool forceDesktop; // NEW: Override for large screens
 
   const TailorFinderResponsive({
     super.key,
@@ -27,10 +28,13 @@ class TailorFinderResponsive extends StatelessWidget {
     this.tablet,
     required this.desktop,
     this.wide,
+    this.forceDesktop = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (forceDesktop) return desktop;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;

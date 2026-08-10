@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/ai_tryon_widget.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../../../core/services/image_upload_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/error_state_widget.dart';
 
@@ -49,13 +51,20 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
     final peerProfile = widget.peerId != null ? ref.watch(userProfileProvider(widget.peerId!)) : null;
 
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            final navState = ref.read(navigationProvider);
+            if (navState.route == '/chat-detail') {
+              ref.read(navigationProvider.notifier).state = const NavigationState('/chats');
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
         title: peerProfile?.when(
           data: (profile) => Row(
@@ -71,7 +80,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(profile?.name.toUpperCase() ?? 'PROFESSIONAL', 
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: Theme.of(context).colorScheme.onSurface)),
                   const Text('ENCRYPTED CHANNEL', 
                     style: TextStyle(fontSize: 8, color: Color(0xFF00FF7F), fontWeight: FontWeight.w900, letterSpacing: 1)),
                 ],
@@ -93,7 +102,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
       ),
       body: Column(
         children: [
-          const Divider(color: Colors.white10, height: 1),
+          const Divider(height: 1),
           Expanded(
             child: messagesAsync.when(
               data: (messages) {
@@ -130,9 +139,9 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A1921),
-        border: Border(top: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: SafeArea(
         child: Row(
@@ -141,17 +150,23 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
               icon: const Icon(Icons.add_a_photo_rounded, color: Colors.white38, size: 22),
               onPressed: _sendImage,
             ),
+            IconButton(
+              icon: const Icon(Icons.auto_fix_high_rounded, color: AppColors.amber, size: 22),
+              onPressed: _openAiTryOn,
+            ),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.03),
+                  color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white.withValues(alpha: 0.03) 
+                    : Colors.black.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  border: Border.all(color: Theme.of(context).dividerColor),
                 ),
                 child: TextField(
                   controller: _messageController,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
                   decoration: const InputDecoration(
                     hintText: 'COMMAND...',
                     hintStyle: TextStyle(color: Colors.white12, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1),
@@ -173,6 +188,36 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
         ),
       ),
     );
+  }
+
+  void _openAiTryOn() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AiTryOnWidget(
+        onGenerated: (url) {
+          _sendAiImage(url);
+        },
+      ),
+    );
+  }
+
+  void _sendAiImage(String url) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    final message = ChatMessage(
+      id: '',
+      conversationId: widget.conversationId,
+      senderId: user.id,
+      content: url,
+      timestamp: DateTime.now(),
+      type: ChatMessageType.image,
+      orderId: widget.orderId,
+    );
+    await ref.read(chatRepositoryProvider).sendMessage(message);
+    ref.invalidate(chatMessagesProvider(widget.conversationId));
   }
 
   void _sendMessage() async {

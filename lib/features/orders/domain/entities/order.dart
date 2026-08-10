@@ -44,6 +44,7 @@ class OrderItem extends Equatable {
 class OrderEntity extends Equatable {
   final String id;
   final String clientId;
+  final String? tailorId; // NEW: Associate order with a tailor
   final String clientName;
   final List<OrderItem> items;
   final OrderStatus status;
@@ -57,15 +58,18 @@ class OrderEntity extends Equatable {
   final bool requiresDispatch;
   final String? fabricType;
   final String? fabricColor;
+  final String? deliveryAddress;
   
   // FEZ LOGISTICS INTEGRATION
   final String? fezOrderNo;
+  final String? trackingUrl;
   final String? deliveryEta;
   final List<Map<String, dynamic>>? trackingHistory;
 
   const OrderEntity({
     required this.id,
     required this.clientId,
+    this.tailorId,
     required this.clientName,
     required this.items,
     required this.status,
@@ -77,21 +81,24 @@ class OrderEntity extends Equatable {
     this.requiresDispatch = false,
     this.fabricType,
     this.fabricColor,
+    this.deliveryAddress,
     this.fezOrderNo,
+    this.trackingUrl,
     this.deliveryEta,
     this.trackingHistory,
   });
 
   @override
   List<Object?> get props => [
-    id, clientId, clientName, items, status, totalAmount, dispatchFee, 
+    id, clientId, tailorId, clientName, items, status, totalAmount, dispatchFee, 
     dueDate, createdAt, materialAssetUrl, requiresDispatch, fabricType, 
-    fabricColor, fezOrderNo, deliveryEta, trackingHistory
+    fabricColor, deliveryAddress, fezOrderNo, trackingUrl, deliveryEta, trackingHistory
   ];
 
   OrderEntity copyWith({
     String? id,
     String? clientId,
+    String? tailorId,
     String? clientName,
     List<OrderItem>? items,
     OrderStatus? status,
@@ -103,13 +110,16 @@ class OrderEntity extends Equatable {
     bool? requiresDispatch,
     String? fabricType,
     String? fabricColor,
+    String? deliveryAddress,
     String? fezOrderNo,
+    String? trackingUrl,
     String? deliveryEta,
     List<Map<String, dynamic>>? trackingHistory,
   }) {
     return OrderEntity(
       id: id ?? this.id,
       clientId: clientId ?? this.clientId,
+      tailorId: tailorId ?? this.tailorId,
       clientName: clientName ?? this.clientName,
       items: items ?? this.items,
       status: status ?? this.status,
@@ -121,7 +131,9 @@ class OrderEntity extends Equatable {
       requiresDispatch: requiresDispatch ?? this.requiresDispatch,
       fabricType: fabricType ?? this.fabricType,
       fabricColor: fabricColor ?? this.fabricColor,
+      deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       fezOrderNo: fezOrderNo ?? this.fezOrderNo,
+      trackingUrl: trackingUrl ?? this.trackingUrl,
       deliveryEta: deliveryEta ?? this.deliveryEta,
       trackingHistory: trackingHistory ?? this.trackingHistory,
     );

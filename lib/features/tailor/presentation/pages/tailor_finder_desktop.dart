@@ -4,10 +4,13 @@ import '../../domain/entities/service_tier.dart';
 import '../providers/tailor_finder_provider.dart';
 import '../widgets/tailor_map_view.dart';
 import '../widgets/tailor_card.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/tailor_finder_responsive.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'package:desby_app/features/profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/navigation_provider.dart';
 
 /// TailorFinderDesktop - Uber-style Tailor Discovery Page
 /// Responsive: adapts to 600px+ screens (mobile, tablet, desktop)
@@ -70,142 +73,133 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
   Widget build(BuildContext context) {
     final state = ref.watch(tailorFinderProvider);
     final selectedTailor = state.selectedTailor;
-    final selectedTier = state.selectedServiceTier;
-    final currentQuote = state.currentQuote;
 
-    // Loading state with shimmer
-    if (state.isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.uberBg,
-        body: Row(
-          children: [
-            const Expanded(child: MapShimmer()),
-            Expanded(
-              child: Container(
-                padding: _padding,
-                child: const TailorListShimmer(itemCount: 4),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Error state
-    if (state.error != null) {
-      return Scaffold(
-        backgroundColor: AppColors.uberBg,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: AppColors.uberError),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load tailors',
-                style: TextStyle(color: AppColors.uberTextPrimary, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                state.error!,
-                style: TextStyle(color: AppColors.uberTextMuted, fontSize: 12),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => ref.read(tailorFinderProvider.notifier).loadNearbyTailors(),
-                child: const Text('Retry'),
-              ),
-            ],
+    return Container(
+      color: AppColors.darkNavy,
+      child: Row(
+        children: [
+          // LEFT: MAP - ALWAYS VISIBLE IN UBER MODE
+          Expanded(
+            flex: 1,
+            child: _buildMap(state, selectedTailor),
           ),
-        ),
+          
+          // RIGHT: DATA PANEL
+          Expanded(
+            flex: 1,
+            child: _buildRightPanel(state),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRightPanel(TailorFinderState state) {
+    if (state.isLoading) {
+      return Container(
+        padding: _padding,
+        child: const TailorListShimmer(itemCount: 4),
       );
     }
 
-return Scaffold(
-      backgroundColor: AppColors.uberBg,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= TailorFinderBreakpoints.tablet;
-          
-          // Calculate bottom safe area padding for mobile (navigation bar + floating elements)
-          final bottomPadding = MediaQuery.of(context).padding.bottom;
-          final bottomNavHeight = isWide ? 0.0 : 80.0 + bottomPadding;
-          
-// Adaptive: switch between side-by-side and stacked on narrow screens
-          if (isWide) {
-            // EQUAL 50/50 SPLIT - Map and Tailor Grid side by side
-            return Row(
-              children: [
-                // LEFT: Map - 50% width (conditionally shown based on toggle)
-                if (_showMap)
-                  Expanded(
-                    flex: 1,
-                    child: _buildMap(state, selectedTailor),
-                  ),
-                // RIGHT: Tailor Grid Panel - 50% width (or 100% when map hidden)
-                Expanded(
-                  flex: _showMap ? 1 : 2,
-                  child: _buildPanel(state, selectedTailor, selectedTier, currentQuote, constraints),
-                ),
-              ],
-            );
+    if (state.error != null) {
+      return _buildErrorState(state.error!);
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return _buildPanel(
+          state, 
+          state.selectedTailor, 
+          state.selectedServiceTier, 
+          state.currentQuote, 
+          constraints
+        );
+      },
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    final bool isClockError = error.contains('issued at future');
+
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isClockError ? Icons.access_time_rounded : Icons.error_outline, 
+            size: 64, 
+            color: AppColors.uberError
+          ),
+          const SizedBox(height: 24),
+          Text(
+            isClockError ? 'SYSTEM CLOCK DESYNC' : 'SYNC FAILED',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            isClockError 
+              ? 'Your Mac system clock is slightly in the past. Please Sync your Clock in System Settings to restore secure access.' 
+              : error,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white38, fontSize: 12, height: 1.5),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () => ref.read(tailorFinderProvider.notifier).loadNearbyTailors(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.amber,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('RETRY SYNC', style: TextStyle(color: AppColors.darkNavy, fontWeight: FontWeight.w900)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMap(TailorFinderState state, UserProfile? selectedTailor) {
+    return Semantics(
+      label: TailorFinderSemantics.mapLabel,
+      child: TailorMapView(
+        tailors: state.markers,
+        selectedTailor: selectedTailor != null ? TailorMarker.fromProfile(selectedTailor) : null,
+        userLocation: state.userLocation,
+        onTailorSelected: (marker) {
+          ref.read(tailorFinderProvider.notifier).selectTailor(marker);
+        },
+        onMapTap: (location) {
+          ref.read(tailorFinderProvider.notifier).setUserLocation(location);
+        },
+        onBack: () {
+          if (ref.read(navigationProvider).route != '/main') {
+            ref.read(navigationProvider.notifier).state = const NavigationState('/main');
           } else {
-// Mobile/tablet stacked: map on top, panel below
-// FIX: Adjust flex to account for bottom nav bar (80px) + CTA (56px) to prevent overflow
-            return Column(
-              children: [
-                Expanded(
-                  flex: 55, // Reduced from 65 to give more room to panel
-                  child: _buildMap(state, selectedTailor),
-                ),
-                Expanded(
-                  flex: 45, // Increased from 35 to accommodate content
-                  child: Padding(
-                    // Add bottom padding to prevent overflow into nav bar area
-                    padding: EdgeInsets.only(bottom: bottomNavHeight.clamp(0, 80)),
-                    child: _buildPanel(state, selectedTailor, selectedTier, currentQuote, constraints),
-                  ),
-                ),
-              ],
-            );
+            Navigator.of(context).maybePop();
           }
         },
       ),
     );
   }
 
-  Widget _buildMap(TailorFinderState state, dynamic selectedTailor) {
-    return Semantics(
-      label: TailorFinderSemantics.mapLabel,
-      child: TailorMapView(
-        tailors: state.tailors,
-        selectedTailor: selectedTailor,
-        userLocation: state.userLocation,
-        onTailorSelected: (tailor) {
-          ref.read(tailorFinderProvider.notifier).selectTailor(tailor);
-        },
-        onMapTap: (location) {
-          ref.read(tailorFinderProvider.notifier).setUserLocation(location);
-        },
-      ),
-    );
-  }
-
-Widget _buildPanel(TailorFinderState state, dynamic selectedTailor, ServiceTier? selectedTier, dynamic currentQuote, BoxConstraints constraints) {
+  Widget _buildPanel(TailorFinderState state, UserProfile? selectedTailor, ServiceTier? selectedTier, dynamic currentQuote, BoxConstraints constraints) {
     final padding = _padding;
     final screenWidth = MediaQuery.of(context).size.width;
     final isWide = screenWidth >= TailorFinderBreakpoints.tablet;
     
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.figmaCardFill,
+        color: const Color(0xFF0D1E26), // DARK NAVY PANEL
         borderRadius: BorderRadius.horizontal(
           left: const Radius.circular(28),
           right: Radius.circular(isWide ? 28 : 0),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 60,
             offset: const Offset(-20, 0),
           ),
@@ -225,7 +219,7 @@ Widget _buildPanel(TailorFinderState state, dynamic selectedTailor, ServiceTier?
           
           // Action Buttons row - switch between grid CTA and details back CTA
           _showTailorDetails
-              ? _buildBackToListCTA()
+              ? _buildBackToListCTA(ref)
               : _buildUberActionButtons(context, selectedTailor),
         ],
       ),
@@ -309,7 +303,7 @@ Widget _buildPanel(TailorFinderState state, dynamic selectedTailor, ServiceTier?
                   : 'Price',
               icon: Icons.attach_money,
               isActive: state.filters.maxPrice != null,
-              items: ['₦10,000', '₦15,000', '₦20,000', '₦25,000', '₦30,000', '₦40,000', '₦50,000'],
+              items: const ['₦10,000', '₦15,000', '₦20,000', '₦25,000', '₦30,000', '₦40,000', '₦50,000'],
               onSelected: (value) {
                 final price = double.tryParse(value.replaceAll('₦', '').replaceAll(',', ''));
                 if (price != null) {
@@ -333,7 +327,7 @@ Widget _buildPanel(TailorFinderState state, dynamic selectedTailor, ServiceTier?
                   : 'Rating',
               icon: Icons.star,
               isActive: state.filters.minRating != null,
-              items: ['3.0+ ★', '3.5+ ★', '4.0+ ★', '4.5+ ★', '4.8+ ★'],
+              items: const ['3.0+ ★', '3.5+ ★', '4.0+ ★', '4.5+ ★', '4.8+ ★'],
               onSelected: (value) {
                 final rating = double.tryParse(value.replaceAll('+ ★', ''));
                 if (rating != null) {
@@ -451,7 +445,7 @@ AmberFilterChip(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               item,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -495,291 +489,8 @@ AmberFilterChip(
     );
   }
 
-  /// Uber-style Book CTA button widget
-  Widget _buildUberBookButton({
-    required dynamic selectedTailor,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: selectedTailor != null ? AppColors.amber : Colors.grey.shade400,
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: Center(
-          child: Text(
-            selectedTailor != null ? 'SELECT TAILOR' : 'SELECT A TAILOR',
-            style: TextStyle(
-              color: selectedTailor != null ? AppColors.darkNavy : Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Info block showing service tier prompt
-  Widget _buildInfoBlock() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.amber.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: AppColors.amber, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Select a service type above to see price quotes',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Price block display with large font (Uber-style)
-  Widget _buildPriceBlock(dynamic quote) {
-    if (quote == null) return const SizedBox.shrink();
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          // Price
-          Text(
-            quote.formattedPrice,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 48,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Turnaround time
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                quote.formattedTurnaround,
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Portfolio preview image area
-  Widget _buildPortfolioPreview() {
-    return Container(
-      height: 188,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.photo_library_rounded,
-            size: 32,
-            color: AppColors.textMuted,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Portfolio Preview',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Tap to view tailor\'s work',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-/// Bottom action buttons row - ONLY Book Now CTA (no Money/Clock)
-  Widget _buildBottomActionRow(BuildContext context, dynamic selectedTailor) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: SizedBox(
-        width: double.infinity,
-child: GestureDetector(
-          onTap: selectedTailor != null
-              ? () {
-                  // Navigate to tailor profile page with all Firebase details
-                  Navigator.pushNamed(
-                    context,
-                    '/tailor-profile',
-                    arguments: {
-                      'id': selectedTailor.id,
-                      'name': selectedTailor.name,
-                      'profileImage': selectedTailor.profileImage,
-                      'rating': selectedTailor.rating,
-                      'reviewCount': selectedTailor.reviewCount,
-                      'startingPrice': selectedTailor.startingPrice,
-                      'shopAddress': selectedTailor.shopAddress,
-                      'phoneNumber': selectedTailor.phoneNumber,
-                      'email': selectedTailor.email,
-                      'bio': selectedTailor.bio,
-                      'isAvailable': selectedTailor.isAvailable,
-                      'availableServices': selectedTailor.availableServices.map((s) => s.displayName).toList(),
-                      'latitude': selectedTailor.location.latitude,
-                      'longitude': selectedTailor.location.longitude,
-                    },
-                  );
-                }
-              : null,
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: selectedTailor != null ? AppColors.darkNavy : Colors.grey.shade400,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Center(
-              child: Text(
-                selectedTailor != null ? 'BOOK NOW' : 'SELECT A TAILOR',
-                style: TextStyle(
-                  color: selectedTailor != null ? AppColors.amber : Colors.white70,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Action button widget (Money/Clock buttons)
-  Widget _ActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 92,
-        height: 92,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceDark,
-          borderRadius: BorderRadius.circular(46),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.textPrimary, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-/// Tailor list for initial selection (before service tier picked)
-  Widget _buildTailorListForSelection(TailorFinderState state, EdgeInsets padding) {
-    return Column(
-      children: [
-        // Info prompt
-        Padding(
-          padding: EdgeInsets.all(padding.left),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.amber.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: AppColors.amber, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Select a service type above to see price quotes',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        // Tailor grid - scrollable
-        Expanded(
-          child: GridView.builder(
-            padding: EdgeInsets.all(padding.left),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: state.tailors.length,
-            itemBuilder: (context, index) {
-              final tailor = state.tailors[index];
-              return TailorCard(
-                tailor: tailor,
-                isSelected: state.selectedTailor?.id == tailor.id,
-                distanceMinutes: tailor.distanceMinutes,
-                onTap: () {
-                  ref.read(tailorFinderProvider.notifier).selectTailor(tailor);
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-/// CTA Button Row - Now shows full Uber-style action buttons
-Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
-    return _buildBottomActionRow(context, selectedTailor);
-  }
-
   /// Back to list CTA button - appears when viewing tailor details
-  Widget _buildBackToListCTA() {
+  Widget _buildBackToListCTA(WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.only(left: 36, right: 36, bottom: 24, top: 16),
       child: Row(
@@ -824,7 +535,7 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
   }
 
   /// Inline tailor details view - shows full details in right panel
-  Widget _buildTailorDetailsView(dynamic tailor) {
+  Widget _buildTailorDetailsView(UserProfile tailor) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(_padding.left),
       child: Column(
@@ -842,7 +553,7 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
     );
   }
 
-  Widget _buildDetailsHeader(dynamic tailor) {
+  Widget _buildDetailsHeader(UserProfile tailor) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -899,13 +610,13 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    const Row(
                       children: [
                         Icon(Icons.star_rounded, color: AppColors.amber, size: 16),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(
-                          '${tailor.rating.toStringAsFixed(1)} (${tailor.reviewCount} reviews)',
-                          style: const TextStyle(
+                          '4.5 (12 reviews)',
+                          style: TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
                           ),
@@ -913,14 +624,14 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    if (tailor.shopAddress != null)
+                    if (tailor.address != null)
                       Row(
                         children: [
-                          Icon(Icons.location_on, color: Colors.white54, size: 14),
+                          const Icon(Icons.location_on, color: Colors.white54, size: 14),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              tailor.shopAddress!,
+                              tailor.address!,
                               style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 11,
@@ -939,24 +650,22 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: tailor.isAvailable 
-                  ? AppColors.amber.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.2),
+              color: AppColors.amber.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  tailor.isAvailable ? Icons.check_circle : Icons.cancel,
-                  color: tailor.isAvailable ? AppColors.amber : Colors.red,
+                  Icons.check_circle,
+                  color: AppColors.amber,
                   size: 14,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
-                  tailor.isAvailable ? 'Available now' : 'Busy',
+                  'Available now',
                   style: TextStyle(
-                    color: tailor.isAvailable ? AppColors.amber : Colors.red,
+                    color: AppColors.amber,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -969,7 +678,7 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
     );
   }
 
-  Widget _buildActionShortcuts(dynamic tailor) {
+  Widget _buildActionShortcuts(UserProfile tailor) {
     return Row(
       children: [
         _buildShortcutButton(Icons.phone_rounded, 'Call', () {}),
@@ -1013,8 +722,12 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
     );
   }
 
-  Widget _buildServicesSection(dynamic tailor) {
-    final services = tailor.availableServices as List<ServiceTier>? ?? [];
+  Widget _buildServicesSection(UserProfile tailor) {
+    final services = (tailor.services ?? []).map((s) => ServiceTier.values.firstWhere(
+      (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+      orElse: () => ServiceTier.custom,
+    )).toList();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1051,7 +764,7 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
                       color: AppColors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.checkroom_rounded,
                       color: AppColors.amber,
                       size: 18,
@@ -1088,7 +801,7 @@ Widget _buildUberActionButtons(BuildContext context, dynamic selectedTailor) {
     );
   }
 
-Widget _buildDetailsBookingCTA(dynamic tailor) {
+Widget _buildDetailsBookingCTA(UserProfile tailor) {
     return GestureDetector(
       onTap: () {
         // Navigate to booking with tailor details
@@ -1114,54 +827,110 @@ Widget _buildDetailsBookingCTA(dynamic tailor) {
       ),
     );
   }
-}
 
-/// Uber-style Book CTA button widget (defined at file level)
-class UberBookButton extends StatelessWidget {
-  final dynamic selectedTailor;
-  final VoidCallback onTap;
-
-  const UberBookButton({
-    super.key,
-    required this.selectedTailor,
-    required this.onTap,
-  });
-
-@override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: selectedTailor != null ? AppColors.darkNavy : Colors.grey.shade400,
-          borderRadius: BorderRadius.circular(28),
+  /// Tailor list for initial selection (before service tier picked)
+  Widget _buildTailorListForSelection(TailorFinderState state, EdgeInsets padding) {
+    return Column(
+      children: [
+        // Info prompt
+        Padding(
+          padding: EdgeInsets.all(padding.left),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.amber.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: AppColors.amber, size: 20),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Select a service type above to see price quotes',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        child: Center(
-          child: Text(
-            selectedTailor != null ? 'SELECT TAILOR' : 'SELECT A TAILOR',
-            style: TextStyle(
-              color: selectedTailor != null ? AppColors.amber : Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+        
+        // Tailor grid - scrollable
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.all(padding.left),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: state.markers.length,
+            itemBuilder: (context, index) {
+              final marker = state.markers[index];
+              return TailorCard(
+                tailor: marker,
+                isSelected: state.selectedTailor?.id == marker.id,
+                distanceMinutes: marker.distanceMinutes,
+                onTap: () {
+                  ref.read(tailorFinderProvider.notifier).selectTailor(marker);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// CTA Button Row - Now shows full Uber-style action buttons
+  Widget _buildUberActionButtons(BuildContext context, UserProfile? selectedTailor) {
+    return _buildBottomActionRow(context, selectedTailor);
+  }
+
+  /// Bottom action buttons row - ONLY Book Now CTA (no Money/Clock)
+  Widget _buildBottomActionRow(BuildContext context, UserProfile? selectedTailor) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: SizedBox(
+        width: double.infinity,
+        child: GestureDetector(
+          onTap: selectedTailor != null
+              ? () {
+                  // Navigate to tailor profile page with ID
+                  Navigator.pushNamed(
+                    context,
+                    '/tailor-profile',
+                    arguments: selectedTailor.id,
+                  );
+                }
+              : null,
+          child: Container(
+            height: 56,
+            decoration: BoxDecoration(
+              color: selectedTailor != null ? AppColors.darkNavy : Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Center(
+              child: Text(
+                selectedTailor != null ? 'BOOK NOW' : 'SELECT A TAILOR',
+                style: TextStyle(
+                  color: selectedTailor != null ? AppColors.amber : Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
   }
-}
-
-/// Internal method wrapper for UberBookButton
-Widget _buildUberBookButton({
-  required dynamic selectedTailor,
-  required VoidCallback onTap,
-}) {
-  return UberBookButton(
-    selectedTailor: selectedTailor,
-    onTap: onTap,
-  );
 }
 
 /// AMBER filter chip widget - all filter buttons use amber styling (defined at file level)
@@ -1215,5 +984,3 @@ class AmberFilterChip extends StatelessWidget {
     );
   }
 }
-
-

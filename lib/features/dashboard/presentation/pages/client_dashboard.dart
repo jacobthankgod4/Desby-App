@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../orders/presentation/providers/order_provider.dart';
-import '../../../profile/presentation/providers/profile_provider.dart';
-import '../../../../core/widgets/error_state_widget.dart';
-import '../../../../theme/colors.dart';
-import '../../../tailor/presentation/pages/tailor_discovery_page.dart';
+import 'package:desby_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:desby_app/features/orders/presentation/providers/order_provider.dart';
+import 'package:desby_app/features/profile/presentation/providers/profile_provider.dart';
+import 'package:desby_app/core/widgets/error_state_widget.dart';
+import 'package:desby_app/core/widgets/luxury_glass_card.dart';
+import 'package:desby_app/theme/colors.dart';
+import 'package:desby_app/features/dashboard/presentation/widgets/luxury_stat_card.dart';
+import 'package:desby_app/core/providers/navigation_provider.dart';
 
 class ClientDashboard extends ConsumerStatefulWidget {
   const ClientDashboard({super.key});
@@ -19,37 +21,57 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
     final userId = currentUser?.id ?? '';
-
-    // Guard: Use null status to fetch all orders (provider expects OrderStatus?, not userId)
     final ordersAsync = ref.watch(ordersProvider(null));
+    final profileAsync = userId.isNotEmpty ? ref.watch(userProfileProvider(userId)) : null;
 
-    // Note: Desktop shell is handled by MainPage on desktop
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.darkNavy,
       body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(currentUser?.name),
-              const SizedBox(height: 24),
-              _buildStatsGrid(),
               const SizedBox(height: 32),
-              _buildSectionHeader(context, 'Track My Garments', () {}),
-              const SizedBox(height: 16),
-              ordersAsync.when(
-                data: (orders) => _buildOrdersList(orders),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => const ErrorStateWidget(message: 'Failed to sync orders.'),
+              
+              // 1. STYLE & LOYALTY HUD
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.5,
+                children: [
+                  LuxuryStatCard(title: 'Active Suits', value: '03', icon: Icons.checkroom_rounded),
+                  profileAsync?.when(
+                    data: (p) => LuxuryStatCard(title: 'Style Points', value: '${p?.loyaltyPoints ?? 0}', icon: Icons.auto_awesome_rounded, color: Colors.purpleAccent),
+                    loading: () => const LuxuryStatCard(title: '...', value: '...', icon: Icons.auto_awesome_rounded),
+                    error: (_, __) => const LuxuryStatCard(title: 'Points', value: '0', icon: Icons.auto_awesome_rounded),
+                  ) ?? const LuxuryStatCard(title: 'Points', value: '0', icon: Icons.auto_awesome_rounded),
+                ],
               ),
               const SizedBox(height: 32),
-              _buildSectionHeader(context, 'Design Portfolio', () {}),
-              const SizedBox(height: 16),
-              _buildDesignPortfolio(),
+
+              // 2. FITTING STATION HUB (Upgraded from Neural Scan)
+              _buildFittingStationCard(),
               const SizedBox(height: 32),
-              _buildSectionHeader(context, 'Saved Measurements', () {}),
+
+              // 3. ACTIVE GARMENT TRACKER
+              _buildSectionHeader('In Production', '/orders'),
               const SizedBox(height: 16),
-              _buildMeasurementSummary(),
+              ordersAsync.when(
+                data: (orders) => _buildOrdersManifest(orders),
+                loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                error: (error, _) => const ErrorStateWidget(message: 'Failed to sync manifests.'),
+              ),
+              
+              const SizedBox(height: 32),
+
+              // 4. STYLE INSPO / CATALOG
+              _buildSectionHeader('Trending Silhouettes', '/marketplace'),
+              const SizedBox(height: 16),
+              _buildStyleCatalog(),
               const SizedBox(height: 40),
             ],
           ),
@@ -61,182 +83,174 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text('ATELIER ACCESS', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        const SizedBox(height: 4),
         Text(
-          'Bespoke Style, ${name ?? 'Client'}!',
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
+          'Elegance, ${name ?? 'Client'}',
+          style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
         ),
-        Text('Elegance is an attitude.', style: TextStyle(color: Colors.grey[600])),
-        const SizedBox(height: 20),
-        // UBER-STYLE: Find Tailor Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _findTailor(context),
-            icon: const Icon(Icons.search),
-            label: const Text('Find a Tailor'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.amber,
-              foregroundColor: AppColors.darkNavy,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
+        const SizedBox(height: 24),
+        ElevatedButton.icon(
+          onPressed: () => ref.read(navigationProvider.notifier).state = const NavigationState('/tailor-discovery'),
+          icon: const Icon(Icons.architecture_rounded, size: 18),
+          label: const Text('COMMISSION A DESIGNER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.amber,
+            foregroundColor: AppColors.darkNavy,
+            minimumSize: const Size(double.infinity, 54),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
           ),
         ),
       ],
     );
   }
 
-  // UBER-STYLE: Find Tailor navigation
-  void _findTailor(BuildContext context) {
-    Navigator.pushNamed(context, '/tailor-discovery');
-  }
-
-  Widget _buildStatsGrid() {
-    final currentUser = ref.watch(currentUserProvider);
-    final profileAsync = currentUser != null ? ref.watch(userProfileProvider(currentUser.id)) : null;
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.3,
-      children: [
-        _buildMTNStatCard(
-          title: 'My Orders',
-          value: '2',
-          icon: Icons.shopping_bag_outlined,
-          color: Colors.blue,
+  Widget _buildFittingStationCard() {
+    return InkWell(
+      onTap: () => ref.read(navigationProvider.notifier).state = const NavigationState('/measurements-hub'),
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
-        profileAsync?.when(
-          data: (p) => _buildMTNStatCard(
-            title: 'Loyalty Points',
-            value: '${p?.loyaltyPoints ?? 0}',
-            icon: Icons.star_outline,
-            color: AppColors.amber,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Stack(
+            children: [
+              // Background Image
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/african-tailor-taking-measurements-client-255059921.webp', 
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(color: Colors.black),
+                ),
+              ),
+              // Gradient Overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.2)],
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.accessibility_new_rounded, color: AppColors.amber, size: 20),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('FITTING HUB', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, height: 1.0, letterSpacing: -0.5)),
+                    const SizedBox(height: 4),
+                    const Text('Capture your body measurements remotely', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              
+              // Action Arrow
+              const Positioned(
+                top: 20, right: 20,
+                child: Icon(Icons.north_east_rounded, color: Colors.white, size: 24),
+              ),
+            ],
           ),
-          loading: () => _buildMTNStatCard(title: 'Points', value: '...', icon: Icons.star_outline, color: AppColors.amber),
-          error: (_, __) => _buildMTNStatCard(title: 'Points', value: '0', icon: Icons.star_outline, color: AppColors.amber),
-        ) ?? _buildMTNStatCard(title: 'Points', value: '0', icon: Icons.star_outline, color: AppColors.amber),
-      ],
-    );
-  }
-
-  Widget _buildMTNStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-Widget _buildOrdersList(List<dynamic> orders) {
-    if (orders.isEmpty) return const Center(child: Text('No orders in progress'));
+  Widget _buildOrdersManifest(List<dynamic> orders) {
+    if (orders.isEmpty) {
+      return const LuxuryGlassCard(
+        padding: EdgeInsets.all(32),
+        child: Center(child: Text('NO ORDERS IN QUEUE', style: TextStyle(color: Colors.white10, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5))),
+      );
+    }
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: orders.length,
+      itemCount: orders.length > 2 ? 2 : orders.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        // Handle both Map and dynamic object access for safety
         final order = orders[index];
-        final Map<String, dynamic>? orderMap = order is Map ? Map<String, dynamic>.from(order) : null;
-        final String? fezNo = orderMap?['fezOrderNo'] as String?;
-        final String status = orderMap?['status']?.toString() ?? 'pending';
-        final String garmentType = orderMap?['garmentType']?.toString() ?? 'Garment Order';
+        final String status = order is Map ? (order['status']?.toString() ?? 'pending') : 'in-progress';
+        final String type = order is Map ? (order['garmentType']?.toString() ?? 'Bespoke Item') : 'Bespoke Item';
 
-        return GestureDetector(
-          onTap: () {
-            if (fezNo != null) {
-              Navigator.pushNamed(context, '/delivery-tracking', arguments: fezNo);
-            }
-          },
-          child: Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ListTile(
-              leading: const CircleAvatar(backgroundColor: AppColors.darkNavy, child: Icon(Icons.checkroom, color: Colors.white, size: 20)),
-              title: Text(garmentType, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Status: ${status.toUpperCase()}'),
-              trailing: Icon(fezNo != null ? Icons.location_on_rounded : Icons.chevron_right, color: fezNo != null ? AppColors.amber : Colors.grey, size: 16),
-            ),
+        return LuxuryGlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Icon(Icons.inventory_2_outlined, color: AppColors.amber, size: 20),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(type.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                    Text('PIPELINE: ${status.toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white10, size: 12),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildDesignPortfolio() {
+  Widget _buildStyleCatalog() {
     return SizedBox(
-      height: 140,
+      height: 160,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: 4,
         separatorBuilder: (context, index) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
           return Container(
-            width: 120,
+            width: 130,
             decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
-              image: const DecorationImage(
-                image: AssetImage('assets/images/logo.png'),
-                fit: BoxFit.cover,
-              ),
+              color: Colors.white.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.5)],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.amber.withValues(alpha: 0.05),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: const Center(child: Icon(Icons.style_rounded, color: AppColors.amber, size: 24)),
+                  ),
                 ),
-              ),
-              alignment: Alignment.bottomCenter,
-              padding: const EdgeInsets.all(8),
-              child: const Text('Silk Gown', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('LUXURY KAFTAN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9)),
+                      Text('By Master Tailor', style: TextStyle(color: Colors.white38, fontSize: 8)),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -244,40 +258,15 @@ Widget _buildOrdersList(List<dynamic> orders) {
     );
   }
 
-  Widget _buildMeasurementSummary() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.darkNavy,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.straighten, color: AppColors.amber),
-          const SizedBox(width: 16),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Body Measurements', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              Text('8 metrics updated 2 days ago', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            ],
-          ),
-          const Spacer(),
-          TextButton(
-            onPressed: () {},
-            child: const Text('View', style: TextStyle(color: AppColors.amber)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
+  Widget _buildSectionHeader(String title, String route) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-        TextButton(onPressed: onSeeAll, child: const Text('See All')),
+        Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
+        GestureDetector(
+          onTap: () => ref.read(navigationProvider.notifier).state = NavigationState(route),
+          child: const Text('EXPLORE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+        ),
       ],
     );
   }

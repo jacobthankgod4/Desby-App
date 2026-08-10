@@ -2,11 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/failures.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/shop_product.dart';
-import '../../data/repositories/firebase_shop_repository.dart';
+import '../../domain/repositories/shop_repository.dart';
+import '../../data/repositories/supabase_shop_repository.dart';
 
 /// Shop repository provider
-final shopRepositoryProvider = Provider<FirebaseShopRepository>((ref) {
-  return FirebaseShopRepository();
+final shopRepositoryProvider = Provider<ShopRepository>((ref) {
+  return SupabaseShopRepository();
 });
 
 /// Shop products provider for current tailor
@@ -32,7 +33,7 @@ final currentShopProductsProvider = FutureProvider<List<ShopProduct>>((ref) asyn
 
 /// Add product usecase
 class AddProductUseCase {
-  final FirebaseShopRepository _repository;
+  final ShopRepository _repository;
   
   AddProductUseCase(this._repository);
   
@@ -48,7 +49,7 @@ final addProductUseCaseProvider = Provider<AddProductUseCase>((ref) {
 
 /// Update product usecase
 class UpdateProductUseCase {
-  final FirebaseShopRepository _repository;
+  final ShopRepository _repository;
   
   UpdateProductUseCase(this._repository);
   
@@ -64,7 +65,7 @@ final updateProductUseCaseProvider = Provider<UpdateProductUseCase>((ref) {
 
 /// Delete product usecase
 class DeleteProductUseCase {
-  final FirebaseShopRepository _repository;
+  final ShopRepository _repository;
   
   DeleteProductUseCase(this._repository);
   
@@ -80,7 +81,7 @@ final deleteProductUseCaseProvider = Provider<DeleteProductUseCase>((ref) {
 
 /// Toggle product visibility usecase
 class ToggleProductVisibilityUseCase {
-  final FirebaseShopRepository _repository;
+  final ShopRepository _repository;
   
   ToggleProductVisibilityUseCase(this._repository);
   
@@ -96,7 +97,7 @@ final toggleProductVisibilityUseCaseProvider = Provider<ToggleProductVisibilityU
 
 /// Shop notifier for managing shop state
 class ShopNotifier extends StateNotifier<AsyncValue<List<ShopProduct>>> {
-  final FirebaseShopRepository _repository;
+  final ShopRepository _repository;
   final String _tailorId;
   
   ShopNotifier(this._repository, this._tailorId) : super(const AsyncValue.loading()) {

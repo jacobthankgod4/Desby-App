@@ -30,7 +30,7 @@ abstract class RealtimeService {
 class RealtimeServiceImpl implements RealtimeService {
   final StreamController<RealtimeEvent> _eventController = StreamController<RealtimeEvent>.broadcast();
   bool _isConnected = false;
-  Timer? _firebaseTimer;
+  Timer? _realtimeTimer;
 
   @override
   Stream<RealtimeEvent> get eventStream => _eventController.stream;
@@ -46,18 +46,18 @@ class RealtimeServiceImpl implements RealtimeService {
     await Future.delayed(const Duration(seconds: 1));
     _isConnected = true;
     
-    // Start firebase event generation for demonstration
-    _startFirebaseEvents();
+    // Start realtime event generation for demonstration
+    _startRealtimeEvents();
   }
 
   @override
   Future<void> disconnect() async {
-    _firebaseTimer?.cancel();
+    _realtimeTimer?.cancel();
     _isConnected = false;
   }
 
-  void _startFirebaseEvents() {
-    _firebaseTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+  void _startRealtimeEvents() {
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (!_isConnected) return;
 
       // Randomly emit a firebase event

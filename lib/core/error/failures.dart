@@ -165,3 +165,25 @@ class UnknownFailure extends FailureType {
   @override
   List<Object?> get props => [message, code];
 }
+
+/// Storage failure
+class StorageFailure extends FailureType {
+  const StorageFailure({
+    required super.message,
+    super.code = 'STORAGE_ERROR',
+  });
+
+  @override
+  List<Object?> get props => [message, code];
+}
+
+/// Verification required failure
+class VerificationRequiredFailure extends FailureType {
+  const VerificationRequiredFailure({
+    required super.message,
+    super.code = 'VERIFICATION_REQUIRED',
+  });
+
+  @override
+  List<Object?> get props => [message, code];
+}

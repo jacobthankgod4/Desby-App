@@ -46,40 +46,40 @@ class BusinessHours extends Equatable {
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
-      'mondayOpen': mondayOpen,
-      'mondayClose': mondayClose,
-      'tuesdayOpen': tuesdayOpen,
-      'tuesdayClose': tuesdayClose,
-      'wednesdayOpen': wednesdayOpen,
-      'wednesdayClose': wednesdayClose,
-      'thursdayOpen': thursdayOpen,
-      'thursdayClose': thursdayClose,
-      'fridayOpen': fridayOpen,
-      'fridayClose': fridayClose,
-      'saturdayOpen': saturdayOpen,
-      'saturdayClose': saturdayClose,
-      'sundayOpen': sundayOpen,
-      'sundayClose': sundayClose,
+      'monday_open': mondayOpen,
+      'monday_close': mondayClose,
+      'tuesday_open': tuesdayOpen,
+      'tuesday_close': tuesdayClose,
+      'wednesday_open': wednesdayOpen,
+      'wednesday_close': wednesdayClose,
+      'thursday_open': thursdayOpen,
+      'thursday_close': thursdayClose,
+      'friday_open': fridayOpen,
+      'friday_close': fridayClose,
+      'saturday_open': saturdayOpen,
+      'saturday_close': saturdayClose,
+      'sunday_open': sundayOpen,
+      'sunday_close': sundayClose,
     };
   }
 
   /// Create from JSON map
   factory BusinessHours.fromJson(Map<String, dynamic> json) {
     return BusinessHours(
-      mondayOpen: json['mondayOpen'] as String?,
-      mondayClose: json['mondayClose'] as String?,
-      tuesdayOpen: json['tuesdayOpen'] as String?,
-      tuesdayClose: json['tuesdayClose'] as String?,
-      wednesdayOpen: json['wednesdayOpen'] as String?,
-      wednesdayClose: json['wednesdayClose'] as String?,
-      thursdayOpen: json['thursdayOpen'] as String?,
-      thursdayClose: json['thursdayClose'] as String?,
-      fridayOpen: json['fridayOpen'] as String?,
-      fridayClose: json['fridayClose'] as String?,
-      saturdayOpen: json['saturdayOpen'] as String?,
-      saturdayClose: json['saturdayClose'] as String?,
-      sundayOpen: json['sundayOpen'] as String?,
-      sundayClose: json['sundayClose'] as String?,
+      mondayOpen: (json['monday_open'] ?? json['mondayOpen']) as String?,
+      mondayClose: (json['monday_close'] ?? json['mondayClose']) as String?,
+      tuesdayOpen: (json['tuesday_open'] ?? json['tuesdayOpen']) as String?,
+      tuesdayClose: (json['tuesday_close'] ?? json['tuesdayClose']) as String?,
+      wednesdayOpen: (json['wednesday_open'] ?? json['wednesdayOpen']) as String?,
+      wednesdayClose: (json['wednesday_close'] ?? json['wednesdayClose']) as String?,
+      thursdayOpen: (json['thursday_open'] ?? json['thursdayOpen']) as String?,
+      thursdayClose: (json['thursday_close'] ?? json['thursdayClose']) as String?,
+      fridayOpen: (json['friday_open'] ?? json['fridayOpen']) as String?,
+      fridayClose: (json['friday_close'] ?? json['fridayClose']) as String?,
+      saturdayOpen: (json['saturday_open'] ?? json['saturdayOpen']) as String?,
+      saturdayClose: (json['saturday_close'] ?? json['saturdayClose']) as String?,
+      sundayOpen: (json['sunday_open'] ?? json['sundayOpen']) as String?,
+      sundayClose: (json['sunday_close'] ?? json['sundayClose']) as String?,
     );
   }
 
@@ -155,6 +155,15 @@ class UserProfile extends Equatable {
   final String? subscriptionPlanId;
   final DateTime? subscriptionExpiry;
 
+  // discovery UI fields
+  final String? preferredFinderStyle; // 'uber' or 'classic'
+  final int? distanceMinutes;
+
+  // Measurement status fields
+  final bool isMeasurementsVerified;
+  final String? verifiedByTailorId;
+  final String? fitPreference; // e.g. 'slim', 'standard', 'traditional'
+
   const UserProfile({
     required this.id,
     required this.email,
@@ -194,9 +203,14 @@ class UserProfile extends Equatable {
     this.hasPricing = false,
     this.subscriptionPlanId,
     this.subscriptionExpiry,
+    this.preferredFinderStyle,
+    this.distanceMinutes,
+    this.isMeasurementsVerified = false,
+    this.verifiedByTailorId,
+    this.fitPreference,
   });
 
-/// Create a copy with updated fields
+  /// Create a copy with updated fields
   UserProfile copyWith({
     String? id,
     String? email,
@@ -236,6 +250,11 @@ class UserProfile extends Equatable {
     bool? hasPricing,
     String? subscriptionPlanId,
     DateTime? subscriptionExpiry,
+    String? preferredFinderStyle,
+    int? distanceMinutes,
+    bool? isMeasurementsVerified,
+    String? verifiedByTailorId,
+    String? fitPreference,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -276,162 +295,134 @@ class UserProfile extends Equatable {
       hasPricing: hasPricing ?? this.hasPricing,
       subscriptionPlanId: subscriptionPlanId ?? this.subscriptionPlanId,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
+      preferredFinderStyle: preferredFinderStyle ?? this.preferredFinderStyle,
+      distanceMinutes: distanceMinutes ?? this.distanceMinutes,
+      isMeasurementsVerified: isMeasurementsVerified ?? this.isMeasurementsVerified,
+      verifiedByTailorId: verifiedByTailorId ?? this.verifiedByTailorId,
+      fitPreference: fitPreference ?? this.fitPreference,
     );
   }
 
-/// Convert to JSON map
+  /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'email': email,
       'name': name,
       'phone': phone,
-      'profileImage': profileImage,
-      'userType': userType,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
-      'isActive': isActive,
+      'profile_image': profileImage,
+      'user_type': userType,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'is_active': isActive,
       'metadata': metadata,
       'bio': bio,
       'address': address,
       'state': state,
       'country': country,
       'lga': lga,
-      'businessName': businessName,
-      'businessAddress': businessAddress,
-      'businessPhone': businessPhone,
-      'businessState': businessState,
+      'business_name': businessName,
+      'business_address': businessAddress,
+      'business_phone': businessPhone,
+      'business_state': businessState,
       'latitude': latitude,
       'longitude': longitude,
-      'isVerified': isVerified,
+      'is_verified': isVerified,
       'services': services,
-      'availableFabrics': availableFabrics,
-      'workingHours': workingHours,
-      'workingHoursByDay': workingHoursByDay?.toJson(),
-      'bodyType': bodyType,
-      'measurementUnit': measurementUnit,
-      'personalMeasurements': personalMeasurements,
-      'preferredOccasions': preferredOccasions,
-      'preferredFabrics': preferredFabrics,
-      'loyaltyPoints': loyaltyPoints,
-      'baseStitchingPrice': baseStitchingPrice,
-      'materialCost': materialCost,
-      'startingPrice': startingPrice,
-      'hasPricing': hasPricing,
-      'subscriptionPlanId': subscriptionPlanId,
-      'subscriptionExpiry': subscriptionExpiry?.toIso8601String(),
+      'available_fabrics': availableFabrics,
+      'working_hours': workingHours,
+      'working_hours_by_day': workingHoursByDay?.toJson(),
+      'body_type': bodyType,
+      'measurement_unit': measurementUnit,
+      'personal_measurements': personalMeasurements,
+      'preferred_occasions': preferredOccasions,
+      'preferred_fabrics': preferredFabrics,
+      'loyalty_points': loyaltyPoints,
+      'base_stitching_price': baseStitchingPrice,
+      'material_cost': materialCost,
+      'starting_price': startingPrice,
+      'has_pricing': hasPricing,
+      'subscription_plan_id': subscriptionPlanId,
+      'subscription_expiry': subscriptionExpiry?.toIso8601String(),
+      'preferred_finder_style': preferredFinderStyle,
+      'distance_minutes': distanceMinutes,
+      'is_measurements_verified': isMeasurementsVerified,
+      'verified_by_tailor_id': verifiedByTailorId,
+      'fit_preference': fitPreference,
     };
   }
 
-/// Create from JSON map
+  /// Create from JSON map
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      name: json['name'] as String? ?? '',
       phone: json['phone'] as String?,
-      profileImage: json['profileImage'] as String?,
-      userType: json['userType'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt'] as String) 
+      profileImage: (json['profile_image'] ?? json['profileImage']) as String?,
+      userType: (json['user_type'] ?? json['userType'] ?? 'tailor') as String,
+      createdAt: DateTime.parse((json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()) as String),
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null 
+          ? DateTime.parse((json['updated_at'] ?? json['updatedAt']) as String) 
           : null,
-      isActive: json['isActive'] as bool? ?? true,
+      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
       metadata: json['metadata'] as Map<String, dynamic>?,
       bio: json['bio'] as String?,
       address: json['address'] as String?,
       state: json['state'] as String?,
       country: json['country'] as String?,
       lga: json['lga'] as String?,
-      businessName: json['businessName'] as String?,
-      businessAddress: json['businessAddress'] as String?,
-      businessPhone: json['businessPhone'] as String?,
-      businessState: json['businessState'] as String?,
+      businessName: (json['business_name'] ?? json['businessName']) as String?,
+      businessAddress: (json['business_address'] ?? json['businessAddress']) as String?,
+      businessPhone: (json['business_phone'] ?? json['businessPhone']) as String?,
+      businessState: (json['business_state'] ?? json['businessState']) as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      isVerified: json['isVerified'] as bool? ?? false,
+      isVerified: (json['is_verified'] ?? json['isVerified']) as bool? ?? false,
       services: (json['services'] as List?)?.cast<String>(),
-      availableFabrics: (json['availableFabrics'] as List?)?.cast<String>(),
-      workingHours: json['workingHours'] as String?,
-      workingHoursByDay: json['workingHoursByDay'] != null 
-          ? BusinessHours.fromJson(json['workingHoursByDay'] as Map<String, dynamic>) 
+      availableFabrics: (json['available_fabrics'] ?? json['availableFabrics'] as List?)?.cast<String>(),
+      workingHours: (json['working_hours'] ?? json['workingHours']) as String?,
+      workingHoursByDay: (json['working_hours_by_day'] ?? json['workingHoursByDay']) != null 
+          ? BusinessHours.fromJson((json['working_hours_by_day'] ?? json['workingHoursByDay']) as Map<String, dynamic>) 
           : null,
-      bodyType: json['bodyType'] as String?,
-      measurementUnit: json['measurementUnit'] as String?,
-      personalMeasurements: json['personalMeasurements'] as Map<String, dynamic>?,
-      preferredOccasions: (json['preferredOccasions'] as List?)?.cast<String>(),
-      preferredFabrics: (json['preferredFabrics'] as List?)?.cast<String>(),
-      loyaltyPoints: json['loyaltyPoints'] as int? ?? 0,
-      baseStitchingPrice: (json['baseStitchingPrice'] as num?)?.toDouble(),
-      materialCost: (json['materialCost'] as num?)?.toDouble(),
-      startingPrice: (json['startingPrice'] as num?)?.toDouble(),
-      hasPricing: json['hasPricing'] as bool? ?? false,
-      subscriptionPlanId: json['subscriptionPlanId'] as String?,
-      subscriptionExpiry: json['subscriptionExpiry'] != null 
-          ? DateTime.parse(json['subscriptionExpiry'] as String) 
+      bodyType: (json['body_type'] ?? json['bodyType']) as String?,
+      measurementUnit: (json['measurement_unit'] ?? json['measurementUnit']) as String?,
+      personalMeasurements: (json['personal_measurements'] ?? json['personalMeasurements']) as Map<String, dynamic>?,
+      preferredOccasions: (json['preferred_occasions'] ?? json['preferredOccasions'] as List?)?.cast<String>(),
+      preferredFabrics: (json['preferred_fabrics'] ?? json['preferredFabrics'] as List?)?.cast<String>(),
+      loyaltyPoints: (json['loyalty_points'] ?? json['loyaltyPoints']) as int? ?? 0,
+      baseStitchingPrice: (json['base_stitching_price'] ?? json['baseStitchingPrice'] as num?)?.toDouble(),
+      materialCost: (json['material_cost'] ?? json['materialCost'] as num?)?.toDouble(),
+      startingPrice: (json['starting_price'] ?? json['startingPrice'] as num?)?.toDouble(),
+      hasPricing: (json['has_pricing'] ?? json['hasPricing']) as bool? ?? false,
+      subscriptionPlanId: (json['subscription_plan_id'] ?? json['subscriptionPlanId']) as String?,
+      subscriptionExpiry: (json['subscription_expiry'] ?? json['subscriptionExpiry']) != null 
+          ? DateTime.parse((json['subscription_expiry'] ?? json['subscriptionExpiry']) as String) 
           : null,
+      preferredFinderStyle: (json['preferred_finder_style'] ?? json['preferredFinderStyle']) as String?,
+      distanceMinutes: (json['distance_minutes'] ?? json['distanceMinutes']) as int?,
+      isMeasurementsVerified: (json['is_measurements_verified'] ?? json['isMeasurementsVerified']) as bool? ?? false,
+      verifiedByTailorId: (json['verified_by_tailor_id'] ?? json['verifiedByTailorId']) as String?,
+      fitPreference: (json['fit_preference'] ?? json['fitPreference']) as String?,
     );
   }
 
-  /// Check if user is a client
-  bool get isClient => userType == 'client';
-
-  /// Check if user is a tailor
-  bool get isTailor => userType == 'tailor';
-
-  /// Check if user is an apprentice
-  bool get isApprentice => userType == 'apprentice';
-
-  /// Check if user is a fabric seller
-  bool get isFabricSeller => userType == 'fabric_seller';
-
-@override
-  List<Object?> get props => [
-    id,
-    email,
-    name,
-    phone,
-    profileImage,
-    userType,
-    createdAt,
-    updatedAt,
-    isActive,
-    metadata,
-    bio,
-    address,
-    state,
-    country,
-    lga,
-    businessName,
-    businessAddress,
-    businessPhone,
-    businessState,
-    latitude,
-    longitude,
-    isVerified,
-    services,
-    availableFabrics,
-    workingHours,
-    workingHoursByDay,
-    bodyType,
-    measurementUnit,
-    personalMeasurements,
-    preferredOccasions,
-    preferredFabrics,
-    loyaltyPoints,
-    baseStitchingPrice,
-    materialCost,
-    startingPrice,
-    hasPricing,
-    subscriptionPlanId,
-    subscriptionExpiry,
-  ];
-
   @override
-  bool get stringify => true;
+  List<Object?> get props => [
+    id, email, name, phone, profileImage, userType, createdAt, updatedAt, 
+    isActive, metadata, bio, address, state, country, lga,
+    businessName, businessAddress, businessPhone, businessState,
+    latitude, longitude, isVerified, services, availableFabrics,
+    workingHours, workingHoursByDay, bodyType,
+    measurementUnit, personalMeasurements, preferredOccasions, 
+    preferredFabrics, loyaltyPoints, baseStitchingPrice, materialCost,
+    startingPrice, hasPricing, subscriptionPlanId, subscriptionExpiry,
+    preferredFinderStyle, distanceMinutes,
+    isMeasurementsVerified, verifiedByTailorId, fitPreference,
+  ];
 }
 
-/// Extended user profile with additional details
+/// Detailed profile entity with additional statistics
 class UserProfileDetails extends UserProfile {
   final double? rating;
   final int? totalJobs;
@@ -476,12 +467,17 @@ class UserProfileDetails extends UserProfile {
     super.hasPricing,
     super.subscriptionPlanId,
     super.subscriptionExpiry,
+    super.preferredFinderStyle,
+    super.distanceMinutes,
+    super.isMeasurementsVerified,
+    super.verifiedByTailorId,
+    super.fitPreference,
     this.rating,
     this.totalJobs,
     this.completedJobs,
   });
 
-@override
+  @override
   UserProfileDetails copyWith({
     String? id,
     String? email,
@@ -521,6 +517,11 @@ class UserProfileDetails extends UserProfile {
     bool? hasPricing,
     String? subscriptionPlanId,
     DateTime? subscriptionExpiry,
+    String? preferredFinderStyle,
+    int? distanceMinutes,
+    bool? isMeasurementsVerified,
+    String? verifiedByTailorId,
+    String? fitPreference,
     double? rating,
     int? totalJobs,
     int? completedJobs,
@@ -564,6 +565,11 @@ class UserProfileDetails extends UserProfile {
       hasPricing: hasPricing ?? this.hasPricing,
       subscriptionPlanId: subscriptionPlanId ?? this.subscriptionPlanId,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
+      preferredFinderStyle: preferredFinderStyle ?? this.preferredFinderStyle,
+      distanceMinutes: distanceMinutes ?? this.distanceMinutes,
+      isMeasurementsVerified: isMeasurementsVerified ?? this.isMeasurementsVerified,
+      verifiedByTailorId: verifiedByTailorId ?? this.verifiedByTailorId,
+      fitPreference: fitPreference ?? this.fitPreference,
       rating: rating ?? this.rating,
       totalJobs: totalJobs ?? this.totalJobs,
       completedJobs: completedJobs ?? this.completedJobs,
@@ -575,60 +581,60 @@ class UserProfileDetails extends UserProfile {
     return {
       ...super.toJson(),
       'rating': rating,
-      'totalJobs': totalJobs,
-      'completedJobs': completedJobs,
+      'total_jobs': totalJobs,
+      'completed_jobs': completedJobs,
     };
   }
 
-factory UserProfileDetails.fromJson(Map<String, dynamic> json) {
+  factory UserProfileDetails.fromJson(Map<String, dynamic> json) {
+    final base = UserProfile.fromJson(json);
     return UserProfileDetails(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      name: json['name'] as String,
-      phone: json['phone'] as String?,
-      profileImage: json['profileImage'] as String?,
-      userType: json['userType'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt'] as String) 
-          : null,
-      isActive: json['isActive'] as bool? ?? true,
-      metadata: json['metadata'] as Map<String, dynamic>?,
-      bio: json['bio'] as String?,
-      address: json['address'] as String?,
-      state: json['state'] as String?,
-      country: json['country'] as String?,
-      lga: json['lga'] as String?,
-      businessName: json['businessName'] as String?,
-      businessAddress: json['businessAddress'] as String?,
-      businessPhone: json['businessPhone'] as String?,
-      businessState: json['businessState'] as String?,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
-      isVerified: json['isVerified'] as bool? ?? false,
-      services: (json['services'] as List?)?.cast<String>(),
-      availableFabrics: (json['availableFabrics'] as List?)?.cast<String>(),
-      workingHours: json['workingHours'] as String?,
-      workingHoursByDay: json['workingHoursByDay'] != null 
-          ? BusinessHours.fromJson(json['workingHoursByDay'] as Map<String, dynamic>) 
-          : null,
-      bodyType: json['bodyType'] as String?,
-      measurementUnit: json['measurementUnit'] as String?,
-      personalMeasurements: json['personalMeasurements'] as Map<String, dynamic>?,
-      preferredOccasions: (json['preferredOccasions'] as List?)?.cast<String>(),
-      preferredFabrics: (json['preferredFabrics'] as List?)?.cast<String>(),
-      loyaltyPoints: json['loyaltyPoints'] as int? ?? 0,
-      baseStitchingPrice: (json['baseStitchingPrice'] as num?)?.toDouble(),
-      materialCost: (json['materialCost'] as num?)?.toDouble(),
-      startingPrice: (json['startingPrice'] as num?)?.toDouble(),
-      hasPricing: json['hasPricing'] as bool? ?? false,
-      subscriptionPlanId: json['subscriptionPlanId'] as String?,
-      subscriptionExpiry: json['subscriptionExpiry'] != null 
-          ? DateTime.parse(json['subscriptionExpiry'] as String) 
-          : null,
+      id: base.id,
+      email: base.email,
+      name: base.name,
+      phone: base.phone,
+      profileImage: base.profileImage,
+      userType: base.userType,
+      createdAt: base.createdAt,
+      updatedAt: base.updatedAt,
+      isActive: base.isActive,
+      metadata: base.metadata,
+      bio: base.bio,
+      address: base.address,
+      state: base.state,
+      country: base.country,
+      lga: base.lga,
+      businessName: base.businessName,
+      businessAddress: base.businessAddress,
+      businessPhone: base.businessPhone,
+      businessState: base.businessState,
+      latitude: base.latitude,
+      longitude: base.longitude,
+      isVerified: base.isVerified,
+      services: base.services,
+      availableFabrics: base.availableFabrics,
+      workingHours: base.workingHours,
+      workingHoursByDay: base.workingHoursByDay,
+      bodyType: base.bodyType,
+      measurementUnit: base.measurementUnit,
+      personalMeasurements: base.personalMeasurements,
+      preferredOccasions: base.preferredOccasions,
+      preferredFabrics: base.preferredFabrics,
+      loyaltyPoints: base.loyaltyPoints,
+      baseStitchingPrice: base.baseStitchingPrice,
+      materialCost: base.materialCost,
+      startingPrice: base.startingPrice,
+      hasPricing: base.hasPricing,
+      subscriptionPlanId: base.subscriptionPlanId,
+      subscriptionExpiry: base.subscriptionExpiry,
+      preferredFinderStyle: base.preferredFinderStyle,
+      distanceMinutes: base.distanceMinutes,
+      isMeasurementsVerified: base.isMeasurementsVerified,
+      verifiedByTailorId: base.verifiedByTailorId,
+      fitPreference: base.fitPreference,
       rating: (json['rating'] as num?)?.toDouble(),
-      totalJobs: json['totalJobs'] as int?,
-      completedJobs: json['completedJobs'] as int?,
+      totalJobs: (json['total_jobs'] ?? json['totalJobs']) as int?,
+      completedJobs: (json['completed_jobs'] ?? json['completedJobs']) as int?,
     );
   }
 

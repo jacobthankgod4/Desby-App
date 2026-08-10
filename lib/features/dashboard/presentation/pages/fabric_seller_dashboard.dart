@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../widgets/stat_card.dart';
-import '../../../orders/domain/entities/order.dart';
-import '../../../orders/presentation/providers/logistics_provider.dart';
+import '../widgets/luxury_stat_card.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../marketplace/presentation/providers/fabric_provider.dart';
+import '../../../../core/widgets/luxury_glass_card.dart';
 import '../../../../theme/colors.dart';
 
 class FabricSellerDashboard extends ConsumerWidget {
@@ -10,104 +11,174 @@ class FabricSellerDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Note: Desktop shell is handled by MainPage on desktop
-    return SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildQuickActions(context),
-            const SizedBox(height: 32),
-            _buildStatsGrid(),
-            const SizedBox(height: 32),
-            _buildSectionHeader(context, 'Recent Inventory Uploads', () {}),
-            const SizedBox(height: 16),
-            _buildRecentUploads(),
-            const SizedBox(height: 32),
-            _buildSectionHeader(context, 'Marketplace Dispatch Requests', () {}),
-            const SizedBox(height: 16),
-            _buildDispatchRequests(context, ref),
-            const SizedBox(height: 32),
-            _buildSectionHeader(context, 'Top Selling Fabrics', () {}),
-            const SizedBox(height: 16),
-            _buildTopFabrics(),
-            const SizedBox(height: 40),
-          ],
-        ),
+    final user = ref.watch(currentUserProvider);
+    final statsAsync = ref.watch(merchantStatsProvider(user?.id ?? ''));
+
+    return Scaffold(
+      backgroundColor: AppColors.darkNavy,
+      body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 32),
+              
+              // 1. COMMERCE HUD
+              statsAsync.when(
+                data: (stats) => GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.5,
+                  children: [
+                    LuxuryStatCard(
+                      title: 'Total GMV', 
+                      value: '₦${(stats['total_gmv'] as num).toInt()}', 
+                      icon: Icons.monetization_on_rounded, 
+                      color: Colors.greenAccent
+                    ),
+                    LuxuryStatCard(
+                      title: 'Orders', 
+                      value: '${stats['order_count']}', 
+                      icon: Icons.local_shipping_rounded, 
+                      color: Colors.orangeAccent
+                    ),
+                    LuxuryStatCard(
+                      title: 'Total SKU', 
+                      value: '${stats['sku_count']}', 
+                      icon: Icons.inventory_2_rounded, 
+                      color: AppColors.amber
+                    ),
+                    const LuxuryStatCard(
+                      title: 'Global Rank', 
+                      value: '#12', 
+                      icon: Icons.workspace_premium_rounded, 
+                      color: Colors.blueAccent
+                    ),
+                  ],
+                ),
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
+                error: (e, _) => const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.analytics_outlined, color: Colors.white24, size: 48),
+                      SizedBox(height: 12),
+                      Text('STATS UNAVAILABLE', style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // 2. DISPATCH COMMAND
+              _buildSectionHeader('Logistics Radar', () {}),
+              const SizedBox(height: 16),
+              _buildDispatchHUD(context, ref),
+              
+              const SizedBox(height: 32),
+
+              // 3. INVENTORY VELOCITY
+              _buildSectionHeader('Stock Manifest', () {}),
+              const SizedBox(height: 16),
+              _buildRecentUploadsHUD(),
+              
+              const SizedBox(height: 32),
+
+              // 4. PERFORMANCE ANALYTICS
+              _buildSectionHeader('Material Popularity', () {}),
+              const SizedBox(height: 16),
+              _buildPerformanceHUD(),
+              const SizedBox(height: 40),
+            ],
+          ),
+      ),
     );
   }
 
-  Widget _buildHeader() {
-    return const Column(
+  Widget _buildHeader(BuildContext context) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Welcome back, Merchant!',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('MERCHANT TERMINAL', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            IconButton(
+              onPressed: () => Navigator.pushNamed(context, '/merchant-wallet'),
+              icon: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.amber, size: 20),
+            ),
+          ],
         ),
-        Text('Manage your inventory and orders.', style: TextStyle(color: Colors.grey, fontSize: 14)),
-      ],
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Row(
-      children: [
+        const SizedBox(height: 4),
+        const Text(
+          'Marketplace Live',
+          style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+        ),
+        const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () => Navigator.pushNamed(context, '/fabric-upload'),
-          icon: const Icon(Icons.add_photo_alternate_outlined),
-          label: const Text('Upload Fabric'),
+          icon: const Icon(Icons.add_photo_alternate_rounded, size: 18),
+          label: const Text('UPLOAD NEW MATERIAL', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.darkNavy,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            backgroundColor: AppColors.amber,
+            foregroundColor: AppColors.darkNavy,
+            minimumSize: const Size(double.infinity, 54),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatsGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.3,
-      children: const [
-        StatCard(
-          title: 'Monthly Sales',
-          value: '\$4.2k',
-          icon: Icons.monetization_on_outlined,
-          color: Colors.green,
-        ),
-        StatCard(
-          title: 'Active Orders',
-          value: '12',
-          icon: Icons.shopping_cart_outlined,
-          color: Colors.orange,
-        ),
-        StatCard(
-          title: 'Total Stock',
-          value: '1.2k yd',
-          icon: Icons.inventory_2_outlined,
-          color: AppColors.amber,
-        ),
-        StatCard(
-          title: 'Followers',
-          value: '850',
-          icon: Icons.people_outline,
-          color: Colors.blue,
-        ),
-      ],
+  Widget _buildDispatchHUD(BuildContext context, WidgetRef ref) {
+    return LuxuryGlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.emergency_share_rounded, color: Colors.orangeAccent, size: 20),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('PENDING DISPATCH', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                    Text('Bespoke Silk #442 • Lagos', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () => _handleDispatch(context, ref),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white10, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
+              child: const Text('SUMMON MERCHANT RIDER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildRecentUploads() {
+  Future<void> _handleDispatch(BuildContext context, WidgetRef ref) async {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CALIBRATING LOGISTICS...'), backgroundColor: Colors.blueAccent));
+  }
+
+  Widget _buildRecentUploadsHUD() {
     return SizedBox(
       height: 160,
       child: ListView.separated(
@@ -118,10 +189,9 @@ class FabricSellerDashboard extends ConsumerWidget {
           return Container(
             width: 130,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.03),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey[100]!),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,19 +199,19 @@ class FabricSellerDashboard extends ConsumerWidget {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.amber.withValues(alpha: 0.1),
+                      color: AppColors.amber.withValues(alpha: 0.05),
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                     ),
-                    child: const Center(child: Icon(Icons.texture_outlined, color: AppColors.amber, size: 32)),
+                    child: const Center(child: Icon(Icons.texture_rounded, color: AppColors.amber, size: 28)),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
+                const Padding(
+                  padding: EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Gold Damask', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                      Text('45yd in stock', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+                      Text('GOLD DAMASK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9)),
+                      Text('45 YD REMAINING', style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -153,118 +223,52 @@ class FabricSellerDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDispatchRequests(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
-      ),
+  Widget _buildPerformanceHUD() {
+    return LuxuryGlassCard(
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Row(
-            children: [
-              CircleAvatar(backgroundColor: AppColors.amber.withValues(alpha: 0.1), child: const Icon(Icons.local_shipping_rounded, color: AppColors.amber)),
-              const SizedBox(width: 20),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Pending Fabric Dispatch', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-                    Text('Bespoke Silk Request (Tailor ID: #442)', style: TextStyle(color: Colors.white38, fontSize: 10)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: () => _handleDispatch(context, ref),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              child: const Text('SUMMON MERCHANT RIDER', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
-            ),
-          ),
+          _buildFabricItem('PREMIUM SILK', 0.85, Colors.blueAccent),
+          const SizedBox(height: 16),
+          _buildFabricItem('EGYPTIAN COTTON', 0.65, AppColors.amber),
+          const SizedBox(height: 16),
+          _buildFabricItem('ITALIAN WOOL', 0.40, Colors.purpleAccent),
         ],
       ),
     );
   }
 
-  Future<void> _handleDispatch(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(const SnackBar(content: Text('INITIATING MERCHANT DISPATCH...'), backgroundColor: Colors.blueAccent));
-    
-    try {
-      // Logic for Seller Rider Summon
-      // In a real scenario, we would pull the most recent marketplace order
-      // For this audit pass, we simulate the dispatch of a pending order
-      final orderEntity = OrderEntity(
-        id: 'MKT_${DateTime.now().millisecondsSinceEpoch}',
-        clientId: 'MARKETPLACE_BUYER',
-        clientName: 'Luxury Fabric Buyer',
-        items: const [],
-        status: OrderStatus.bookingAccepted,
-        totalAmount: 0.0,
-        dueDate: DateTime.now(),
-        createdAt: DateTime.now(),
-      );
-
-      final result = await ref.read(logisticsRepositoryProvider).summonRider(orderEntity);
-      
-      result.fold(
-        (failure) => messenger.showSnackBar(SnackBar(content: Text('DISPATCH FAILED: ${failure.message}'), backgroundColor: Colors.redAccent)),
-        (fezOrderNo) => messenger.showSnackBar(SnackBar(content: Text('MERCHANT RIDER SUMMONED! WAYBILL: $fezOrderNo'), backgroundColor: Colors.greenAccent)),
-      );
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('DISPATCH ERROR: $e'), backgroundColor: Colors.redAccent));
-    }
-  }
-
-  Widget _buildTopFabrics() {
+  Widget _buildFabricItem(String name, double progress, Color color) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildFabricPerformanceItem('Premium Silk', 0.85, Colors.blue),
-        _buildFabricPerformanceItem('Egyptian Cotton', 0.65, AppColors.amber),
-        _buildFabricPerformanceItem('Italian Wool', 0.40, Colors.purple),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(name, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+            Text('${(progress * 100).toInt()}%', style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.white.withValues(alpha: 0.05),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 4,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildFabricPerformanceItem(String name, double progress, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text('${(progress * 100).toInt()}% popularity', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: color.withValues(alpha: 0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
+  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-        TextButton(onPressed: onSeeAll, child: const Text('See All')),
+        Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
+        GestureDetector(onTap: onSeeAll, child: const Text('MANAGE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1))),
       ],
     );
   }

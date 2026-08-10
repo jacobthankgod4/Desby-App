@@ -48,6 +48,9 @@ class Environment {
       _getEnv('KORRA_API_BASE_URL') ??
       'https://korra.work/api/v2';
 
+  /// EachLabs API Key (Professional Virtual Try-On)
+  String get eachLabsApiKey => _getEnv('EACHLABS_API_KEY') ?? '';
+
   /// API Timeout (seconds)
   int get apiTimeoutSeconds =>
       int.tryParse(_getEnv('API_TIMEOUT_SECONDS') ?? '30') ?? 30;

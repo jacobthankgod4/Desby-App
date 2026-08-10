@@ -178,7 +178,7 @@ class TailorShopCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    service.displayName,
+                    service,
                     style: const TextStyle(
                       color: AppColors.uberTextMuted,
                       fontSize: 10,

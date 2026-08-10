@@ -7,4 +7,8 @@ abstract class FabricRepository {
   Future<Result<void>> deleteFabric(String id);
   Stream<List<Fabric>> streamCatalog({String? category, String? sellerId});
   Future<Result<List<Fabric>>> getSellerInventory(String sellerId);
+  Future<Result<Fabric>> getFabricById(String id);
+  
+  // Financial & Performance
+  Future<Result<Map<String, dynamic>>> getMerchantStats(String merchantId);
 }

@@ -10,7 +10,7 @@ class SellerOrdersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ordersAsync = ref.watch(ordersProvider);
+    final ordersAsync = ref.watch(ordersProvider(null));
 
     return Scaffold(
       backgroundColor: AppColors.darkNavy,
@@ -27,7 +27,18 @@ class SellerOrdersPage extends ConsumerWidget {
           return _buildOrdersList(context, sellerOrders);
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-        error: (err, _) => Center(child: Text('Orders sync failed: $err', style: const TextStyle(color: Colors.white38))),
+        error: (err, _) => const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.receipt_long_outlined, color: Colors.white24, size: 48),
+              SizedBox(height: 12),
+              Text('ORDERS UNAVAILABLE', style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              SizedBox(height: 8),
+              Text('Check your connection and try again.', style: TextStyle(color: Colors.white24, fontSize: 11)),
+            ],
+          ),
+        ),
       ),
     );
   }

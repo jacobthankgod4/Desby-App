@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/widgets/onboarding_scaffold.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 class PricingSetupPage extends ConsumerStatefulWidget {
@@ -14,10 +14,35 @@ class PricingSetupPage extends ConsumerStatefulWidget {
 }
 
 class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
-  final _stitchingController = TextEditingController(text: '45000');
-  final _materialController = TextEditingController(text: '12500');
-  final _startingController = TextEditingController(text: '20000');
+  final _stitchingController = TextEditingController();
+  final _materialController = TextEditingController();
+  final _startingController = TextEditingController();
+  
   bool _isLoading = false;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPricing();
+  }
+
+  Future<void> _loadPricing() async {
+    if (_isInitialized) return;
+    
+    final user = ref.read(currentUserProvider);
+    if (user != null) {
+      final profile = await ref.read(userProfileProvider(user.id).future);
+      if (profile != null && mounted) {
+        setState(() {
+          _stitchingController.text = profile.baseStitchingPrice?.toInt().toString() ?? '45000';
+          _materialController.text = profile.materialCost?.toInt().toString() ?? '12500';
+          _startingController.text = profile.startingPrice?.toInt().toString() ?? '20000';
+          _isInitialized = true;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -28,7 +53,7 @@ class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
   }
 
   String _formatCurrency(double value) {
-    return '₦${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    return '₦${value.toStringAsFixed(0).replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (m) => "${m[1]},")}';
   }
 
   Future<void> _savePricing() async {
@@ -49,10 +74,15 @@ class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
         materialCost: materialCost,
         startingPrice: startingPrice,
         hasPricing: true,
+        userType: 'tailor', // ENSURE role is consistent
         updatedAt: DateTime.now(),
       );
 
       await ref.read(updateProfileUsecaseProvider)(updatedProfile);
+      
+      // REFRESH: Clear cached empty or stale profile
+      ref.invalidate(userProfileProvider(user.id));
+      await ref.read(userProfileProvider(user.id).future);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -61,7 +91,12 @@ class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context);
+        
+        if (ref.read(navigationProvider).route != '/main') {
+          ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+        } else {
+          Navigator.maybePop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -86,7 +121,13 @@ class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (ref.read(navigationProvider).route != '/main') {
+              ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+            } else {
+              Navigator.maybePop(context);
+            }
+          },
         ),
       ),
       body: SingleChildScrollView(
@@ -211,6 +252,7 @@ class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
+      onChanged: (_) => setState(() {}),
       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24),
       decoration: InputDecoration(
         prefixText: '₦ ', 

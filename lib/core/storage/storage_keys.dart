@@ -28,6 +28,7 @@ class StorageKeys {
 
   // App State
   static const String appTheme = 'app_theme';
+  static const String themeMode = 'theme_mode';
   static const String appLanguage = 'app_language';
   static const String appFirstLaunch = 'app_first_launch';
   static const String appVersion = 'app_version';

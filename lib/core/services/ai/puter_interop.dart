@@ -3,6 +3,9 @@ import 'dart:js_interop';
 /// PuterInterop - Dart bridge for Puter.js AI capabilities
 /// Leverages Puter's "User-Pays" serverless AI model.
 @JS('puter')
+external Puter get puter;
+
+@JS('puter')
 extension type Puter(JSObject _) implements JSObject {
   external PuterAI get ai;
 }
@@ -22,6 +25,7 @@ extension type PuterImageOptions._(JSObject _) implements JSObject {
   external factory PuterImageOptions({
     String? model,
     String? quality,
+    // ignore: non_constant_identifier_names
     bool? use_predefined_prompt,
   });
 }

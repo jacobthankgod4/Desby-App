@@ -15,6 +15,6 @@ extension UserModelX on UserModel {
     phone: phone,
     profileImage: profileImage,
     bio: bio,
-    isVerified: isVerified ?? false,
+    isVerified: isVerified,
   );
 }

@@ -17,8 +17,6 @@ class ClientLiveMilestonesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUser = ref.watch(currentUserProvider);
-
     // ordersProvider(null) is used elsewhere in ClientDashboard.
     final ordersAsync = ref.watch(ordersProvider(null));
 

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
 
+import '../../domain/entities/fabric.dart';
+
 class SpecificationTable extends StatelessWidget {
-  const SpecificationTable({super.key});
+  final Fabric? fabric;
+  const SpecificationTable({super.key, this.fabric});
 
   @override
   Widget build(BuildContext context) {
@@ -15,12 +18,12 @@ class SpecificationTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const _AttributeRow(label: 'Brand', value: 'Italian Silk Masters', isFirst: true),
-          const _AttributeRow(label: 'Type', value: 'Charmeuse Luxury'),
-          const _AttributeRow(label: 'Material', value: '100% Pure Mulberry Silk'),
-          const _AttributeRow(label: 'Weight', value: '19 momme'),
+          _AttributeRow(label: 'Brand', value: fabric?.origin ?? 'Italian Silk Masters', isFirst: true),
+          _AttributeRow(label: 'Type', value: fabric?.category ?? 'Charmeuse Luxury'),
+          _AttributeRow(label: 'Material', value: fabric?.composition ?? '100% Pure Mulberry Silk'),
+          _AttributeRow(label: 'Weight', value: fabric?.weight ?? '19 momme'),
           const _AttributeRow(label: 'Width', value: '45 inches'),
-          const _AttributeRow(label: 'Color', value: 'Midnight Navy'),
+          _AttributeRow(label: 'Color', value: fabric?.availableColors.first ?? 'Midnight Navy'),
           const _AttributeRow(label: 'Finish', value: 'High Sheen Gloss'),
           
           InkWell(

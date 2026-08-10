@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
 
 class ProductNarrative extends StatelessWidget {
-  const ProductNarrative({super.key});
+  final String? fabricName;
+  final String? composition;
+  final String? weight;
+  const ProductNarrative({super.key, this.fabricName, this.composition, this.weight});
 
   @override
   Widget build(BuildContext context) {
@@ -12,9 +15,9 @@ class ProductNarrative extends StatelessWidget {
         const Text('STORY & UTILITY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 3, color: Colors.white38)),
         const SizedBox(height: 24),
         
-        const Text(
-          'Elevate your craft with the finest mulberry silk imported directly from the Lombardy region.',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, height: 1.4, letterSpacing: -0.5),
+        Text(
+          'Elevate your craft with the finest ${fabricName ?? 'mulberry silk'} imported directly from the Lombardy region.',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, height: 1.4, letterSpacing: -0.5),
         ),
         const SizedBox(height: 24),
         
@@ -28,9 +31,9 @@ class ProductNarrative extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'This Midnight Navy Charmeuse silk is engineered for high-end bespoke tailoring. With a weight of 19 momme, it provides a substantial yet fluid drape, ideal for formal gowns and luxury lining. The high-sheen gloss finish ensures a professional aesthetic.',
-                style: TextStyle(fontSize: 16, color: AppColors.darkNavy, height: 1.8),
+              Text(
+                'This ${fabricName ?? 'Midnight Navy Charmeuse silk'} ${composition != null ? 'composed of $composition ' : ''}is engineered for high-end bespoke tailoring. It provides a substantial yet fluid drape, ideal for formal gowns and luxury lining. The high-sheen gloss finish ensures a professional aesthetic.',
+                style: const TextStyle(fontSize: 16, color: AppColors.darkNavy, height: 1.8),
               ),
               const SizedBox(height: 48),
               

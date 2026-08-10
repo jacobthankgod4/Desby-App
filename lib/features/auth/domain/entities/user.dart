@@ -17,21 +17,21 @@ class ServicePricing {
   });
 
   Map<String, dynamic> toMap() => {
-    'stitchingPrice': stitchingPrice,
-    'alterationPrice': alterationPrice,
-    'customPrice': customPrice,
-    'materialCost': materialCost,
-    'expressFee': expressFee,
+    'stitching_price': stitchingPrice,
+    'alteration_price': alterationPrice,
+    'custom_price': customPrice,
+    'material_cost': materialCost,
+    'express_fee': expressFee,
     'currency': currency,
   };
 
   factory ServicePricing.fromMap(Map<String, dynamic> map) {
     return ServicePricing(
-      stitchingPrice: (map['stitchingPrice'] as num?)?.toDouble() ?? 0.0,
-      alterationPrice: (map['alterationPrice'] as num?)?.toDouble() ?? 0.0,
-      customPrice: (map['customPrice'] as num?)?.toDouble() ?? 0.0,
-      materialCost: (map['materialCost'] as num?)?.toDouble() ?? 0.0,
-      expressFee: (map['expressFee'] as num?)?.toDouble() ?? 0.0,
+      stitchingPrice: (map['stitching_price'] as num?)?.toDouble() ?? 0.0,
+      alterationPrice: (map['alteration_price'] as num?)?.toDouble() ?? 0.0,
+      customPrice: (map['custom_price'] as num?)?.toDouble() ?? 0.0,
+      materialCost: (map['material_cost'] as num?)?.toDouble() ?? 0.0,
+      expressFee: (map['express_fee'] as num?)?.toDouble() ?? 0.0,
       currency: map['currency'] as String? ?? 'NGN',
     );
   }

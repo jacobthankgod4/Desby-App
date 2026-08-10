@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/nigeria_lga_data.dart';
 import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../providers/active_tailor_provider.dart';
-import 'tailor_discovery_page.dart'; // For the provider
+import '../providers/tailor_finder_provider.dart';
 
 /// ClassicTailorDiscoveryPage - High-density grid discovery
 /// Implements the standard 'Classic' list view with 2-column card grid.
@@ -32,20 +33,11 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
 
   @override
   Widget build(BuildContext context) {
-    final tailorsAsync = ref.watch(tailorsProvider);
+    final tailorsAsync = ref.watch(tailorsProvider(_searchQuery));
 
-    return Scaffold(
-      backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
-        backgroundColor: AppColors.darkNavy,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('DISCOVERY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3)),
-      ),
-      body: CustomScrollView(
+    return Container(
+      color: AppColors.darkNavy,
+      child: CustomScrollView(
         slivers: [
           _buildFilterHero(),
           _buildSectionHeader('TOP ARCHITECTS'),
@@ -170,22 +162,22 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
     );
   }
 
-  Widget _buildTechnicalGrid(List<Map<String, dynamic>> tailors) {
+  Widget _buildTechnicalGrid(List<UserProfile> tailors) {
     var filtered = tailors.where((t) {
-      final name = (t['name'] ?? '').toString().toLowerCase();
-      final specialty = (t['specialty'] ?? '').toString().toLowerCase();
-      final services \u003d (t['services'] as List<dynamic>?)?.map((e) \u003d\u003e e.toString().toLowerCase()).toList() ?? [];
+      final name = t.name.toLowerCase();
+      final specialty = (t.businessName ?? '').toLowerCase();
+      final services = t.services?.map((e) => e.toLowerCase()).toList() ?? [];
       
-      final matchesSearch \u003d name.contains(_searchQuery) || specialty.contains(_searchQuery);
-      final matchesService \u003d _selectedService \u003d\u003d null || 
-        services.any((s) \u003d\u003e s.contains(_selectedService!.toLowerCase()));
+      final matchesSearch = name.contains(_searchQuery) || specialty.contains(_searchQuery);
+      final matchesService = _selectedService == null || 
+        services.any((s) => s.contains(_selectedService!.toLowerCase()));
       
-      return matchesSearch \u0026\u0026 matchesService;
+      return matchesSearch && matchesService;
     }).toList();
 
     if (filtered.isEmpty) {
       return const SliverToBoxAdapter(
-        child: Center(child: Padding(padding: EdgeInsets.all(80), child: Text(\u0027NO ARCHITECTS MATCHING CRITERIA\u0027, style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)))),
+        child: Center(child: Padding(padding: EdgeInsets.all(80), child: Text('NO ARCHITECTS MATCHING CRITERIA', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)))),
       );
     }
 
@@ -199,23 +191,23 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
           childAspectRatio: 0.85,
         ),
         delegate: SliverChildBuilderDelegate(
-          (context, index) \u003d\u003e _buildCompactCard(filtered[index]),
+          (context, index) => _buildCompactCard(filtered[index]),
           childCount: filtered.length,
         ),
       ),
     );
   }
 
-  Widget _buildCompactCard(Map\u003cString, dynamic\u003e tailor) {
-    final String name \u003d tailor[\u0027name\u0027] ?? \u0027Tailor\u0027;
-    final double rating \u003d (tailor[\u0027rating\u0027] as num?)?.toDouble() ?? 4.9;
-    final services \u003d (tailor[\u0027services\u0027] as List\u003cdynamic\u003e?)?.cast\u003cString\u003e() ?? [];
-    final String specialty \u003d services.isNotEmpty ? services.first : \u0027Bespoke\u0027;
+  Widget _buildCompactCard(UserProfile tailor) {
+    final String name = tailor.name;
+    final double rating = 4.9; // Rating not yet in core UserProfile, using default
+    final services = tailor.services ?? [];
+    final String specialty = services.isNotEmpty ? services.first : 'Bespoke';
 
     return InkWell(
       onTap: () {
-        ref.read(activeTailorProvider.notifier).state \u003d tailor;
-        Navigator.pushNamed(context, \u0027/tailor-profile\u0027, arguments: tailor);
+        ref.read(activeTailorProvider.notifier).state = tailor.toJson();
+        Navigator.pushNamed(context, '/tailor-profile', arguments: tailor.toJson());
       },
       borderRadius: BorderRadius.circular(24),
       child: Container(
@@ -232,8 +224,8 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 child: Container(
                   color: Colors.black26,
-                  child: tailor[\u0027profileImage\u0027] !\u003d null 
-                      ? Image.network(tailor[\u0027profileImage\u0027], fit: BoxFit.cover, width: double.infinity)
+                  child: tailor.profileImage != null 
+                      ? Image.network(tailor.profileImage!, fit: BoxFit.cover, width: double.infinity)
                       : Center(child: Text(name[0], style: const TextStyle(color: AppColors.amber, fontSize: 40, fontWeight: FontWeight.w900))),
                 ),
               ),
@@ -254,7 +246,7 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(children: [const Icon(Icons.star_rounded, color: AppColors.amber, size: 14), const SizedBox(width: 4), Text(\u0027$rating\u0027, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))]),
+                        Row(children: [const Icon(Icons.star_rounded, color: AppColors.amber, size: 14), const SizedBox(width: 4), Text('$rating', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))]),
                         const Icon(Icons.verified_rounded, color: Colors.green, size: 14),
                       ],
                     ),

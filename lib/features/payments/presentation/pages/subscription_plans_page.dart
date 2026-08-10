@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/onboarding_scaffold.dart';
-import '../../../../core/services/paystack_service.dart';
+import '../../../../core/services/flutterwave_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../domain/models/plan_registry.dart';
@@ -16,7 +16,7 @@ class SubscriptionPlansPage extends ConsumerStatefulWidget {
 }
 
 class _SubscriptionPlansPageState extends ConsumerState<SubscriptionPlansPage> {
-  final PaystackService _paystackService = PaystackService();
+  final FlutterwaveService _flutterwaveService = FlutterwaveService();
 
   void _handleUpgrade(SubscriptionPlan plan) {
     FocusManager.instance.primaryFocus?.unfocus();
@@ -30,12 +30,13 @@ class _SubscriptionPlansPageState extends ConsumerState<SubscriptionPlansPage> {
         final user = ref.read(currentUserProvider);
         if (user == null) return;
 
-        _paystackService.checkout(
+        _flutterwaveService.checkout(
           context: context,
           email: user.email,
+          fullName: user.name,
           amount: plan.amount,
-          reference: 'SUB_${user.id.substring(0, 5)}_${DateTime.now().millisecondsSinceEpoch}',
-          onSuccess: (refId) async {
+          orderId: 'SUB_${user.id.substring(0, 5)}',
+          onSuccess: (txId) async {
             final profile = ref.read(userProfileProvider(user.id)).value;
             if (profile != null) {
               final updatedProfile = profile.copyWith(

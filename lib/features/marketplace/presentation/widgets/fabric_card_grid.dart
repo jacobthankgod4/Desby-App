@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/fabric.dart';
-import '../pages/fabric_details_page.dart';
 
 class FabricCardGrid extends StatelessWidget {
   final bool isGridView;
@@ -51,8 +50,7 @@ class _FabricTallCard extends StatelessWidget {
           context,
           '/fabric-details',
           arguments: {
-            'fabricName': fabric.name,
-            'price': fabric.pricePerYard,
+            'fabricId': fabric.id,
           },
         );
       },
@@ -140,8 +138,7 @@ class _FabricListTile extends StatelessWidget {
           context,
           '/fabric-details',
           arguments: {
-            'fabricName': fabric.name,
-            'price': fabric.pricePerYard,
+            'fabricId': fabric.id,
           },
         );
       },

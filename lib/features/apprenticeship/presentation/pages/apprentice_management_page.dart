@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:desby_app/features/apprenticeship/domain/entities/apprentice_task.dart';
 import 'package:desby_app/features/apprenticeship/presentation/providers/apprenticeship_provider.dart';
+import '../widgets/create_task_dialog.dart';
 import 'apprentice_task_grading_page.dart';
 import 'package:desby_app/features/auth/presentation/providers/auth_provider.dart';
 import '../../../../theme/colors.dart';
@@ -85,6 +86,9 @@ class _PendingRequestCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profile = apprenticeship.apprenticeProfile;
+    final name = profile?.name ?? 'Candidate ${apprenticeship.apprenticeId.substring(0, 5)}';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -95,14 +99,18 @@ class _PendingRequestCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const CircleAvatar(backgroundColor: AppColors.amber, child: Icon(Icons.person, color: AppColors.darkNavy)),
+          CircleAvatar(
+            backgroundColor: AppColors.amber, 
+            backgroundImage: profile?.profileImage != null ? NetworkImage(profile!.profileImage!) : null,
+            child: profile?.profileImage == null ? const Icon(Icons.person, color: AppColors.darkNavy) : null,
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('New Apprentice Invite Request', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                Text('Candidate ${apprenticeship.apprenticeId.substring(0, 5)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
           ),
@@ -134,6 +142,9 @@ class _ApprenticeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profile = apprenticeship.apprenticeProfile;
+    final name = profile?.name ?? 'Apprentice ${apprenticeship.apprenticeId.substring(0, 5)}';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       padding: const EdgeInsets.all(24),
@@ -146,16 +157,30 @@ class _ApprenticeCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const CircleAvatar(radius: 28, backgroundColor: Colors.white10, child: Icon(Icons.person_outline, color: Colors.white70)),
+              CircleAvatar(
+                radius: 28, 
+                backgroundColor: Colors.white10, 
+                backgroundImage: profile?.profileImage != null ? NetworkImage(profile!.profileImage!) : null,
+                child: profile?.profileImage == null ? const Icon(Icons.person_outline, color: Colors.white70) : null,
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Master-in-Training', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                    Text('Apprentice ${apprenticeship.apprenticeId.substring(0, 5)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                    const Text('Master-in-Training', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_task_rounded, color: AppColors.amber, size: 20),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => CreateTaskDialog(apprenticeshipId: apprenticeship.id),
+                  );
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white24, size: 20),

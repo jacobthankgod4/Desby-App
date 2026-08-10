@@ -64,17 +64,10 @@ class _TailorMapViewState extends State<TailorMapView> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size for mobile-specific sizing
-    final screenSize = MediaQuery.of(context).size;
-    final isMobile = widget.enableMobileOptimizations && _isMobile;
-    
     return Container(
-      color: AppColors.uberBg,
-      // Mobile: use percentage-based height; Desktop: use available space
+      color: Colors.black, // Dark background while tiles load
       width: double.infinity,
-      height: isMobile 
-          ? screenSize.height * 0.55  // Map takes 55% on mobile
-          : double.infinity,
+      height: double.infinity, // Let parent Expanded handle sizing
       child: Stack(
         children: [
           FlutterMap(
@@ -85,9 +78,8 @@ class _TailorMapViewState extends State<TailorMapView> {
               onTap: (_, position) {
                 widget.onMapTap?.call(position);
               },
-              backgroundColor: AppColors.uberBg,
               // Mobile: enable interactive flags for better touch handling
-              interactionOptions: isMobile 
+              interactionOptions: _isMobile
                   ? const InteractionOptions(
                       flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                     )
@@ -101,6 +93,7 @@ children: [
                 subdomains: const ['a', 'b', 'c', 'd'],
                 userAgentPackageName: 'com.desby.app',
                 maxZoom: 19,
+                retinaMode: RetinaMode.isHighDensity(context),
               ),
               if (widget.selectedTailor != null && widget.userLocation != null)
                 PolylineLayer(
@@ -205,14 +198,14 @@ class _TailorMapMarker extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.amber : AppColors.uberCard,
+        color: isSelected ? AppColors.amber : const Color(0xFF1E3A45), // DARKER BLUE-NAVY
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -309,8 +302,8 @@ class _MapHeader extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.uberBg,
-            AppColors.uberBg.withValues(alpha: 0),
+            AppColors.darkNavy,
+            AppColors.darkNavy.withValues(alpha: 0),
           ],
         ),
       ),
@@ -322,12 +315,13 @@ class _MapHeader extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.uberCard,
+                color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
+                border: Border.all(color: Colors.white10),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: AppColors.uberTextPrimary,
+                color: Colors.white,
                 size: 18,
               ),
             ),
@@ -336,8 +330,9 @@ class _MapHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.uberCard,
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white10),
             ),
             child: const Row(
               children: [
@@ -350,9 +345,10 @@ class _MapHeader extends StatelessWidget {
                 Text(
                   'MY LOCATION',
                   style: TextStyle(
-                    color: AppColors.uberTextPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
                   ),
                 ),
               ],
@@ -363,12 +359,13 @@ class _MapHeader extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.uberCard,
+              color: Colors.white.withValues(alpha: 0.05),
               shape: BoxShape.circle,
+              border: Border.all(color: Colors.white10),
             ),
             child: const Icon(
               Icons.tune_rounded,
-              color: AppColors.uberTextPrimary,
+              color: Colors.white,
               size: 18,
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../auth/domain/entities/user.dart';
 
 enum ApprenticeshipStatus {
   invitedByMaster,      // Master pushed invite, student needs to accept
@@ -18,6 +19,10 @@ class Apprenticeship extends Equatable {
   final DateTime startDate;
   final DateTime? endDate;
   final List<String> skillIds;
+  
+  // UI Enrichment (optional, populated via joins)
+  final User? apprenticeProfile;
+  final User? tailorProfile;
 
   const Apprenticeship({
     required this.id,
@@ -28,6 +33,8 @@ class Apprenticeship extends Equatable {
     required this.startDate,
     this.endDate,
     this.skillIds = const [],
+    this.apprenticeProfile,
+    this.tailorProfile,
   });
 
   @override
@@ -40,6 +47,8 @@ class Apprenticeship extends Equatable {
         startDate,
         endDate,
         skillIds,
+        apprenticeProfile,
+        tailorProfile,
       ];
 
   Apprenticeship copyWith({
@@ -51,6 +60,8 @@ class Apprenticeship extends Equatable {
     DateTime? startDate,
     DateTime? endDate,
     List<String>? skillIds,
+    User? apprenticeProfile,
+    User? tailorProfile,
   }) {
     return Apprenticeship(
       id: id ?? this.id,
@@ -61,6 +72,8 @@ class Apprenticeship extends Equatable {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       skillIds: skillIds ?? this.skillIds,
+      apprenticeProfile: apprenticeProfile ?? this.apprenticeProfile,
+      tailorProfile: tailorProfile ?? this.tailorProfile,
     );
   }
 }

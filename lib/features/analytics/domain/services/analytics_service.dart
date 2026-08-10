@@ -5,4 +5,7 @@ abstract class AnalyticsService {
   Future<void> setUserProperty(String name, String value);
   Future<List<BusinessMetric>> getDashboardMetrics(String userId);
   Future<Map<String, dynamic>> getRevenueReport(String userId, DateTime start, DateTime end);
+  Future<Map<String, dynamic>> getBusinessInsights(String userId);
+  Future<List<Map<String, dynamic>>> getMonthlyRevenue(String userId);
+  Future<Map<String, int>> getOrderCategoryDistribution(String userId);
 }

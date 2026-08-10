@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/notification.dart';
 import '../../domain/repositories/notification_repository.dart';
-import '../../data/repositories/firebase_notification_repository.dart';
+import '../../data/repositories/supabase_notification_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 // Repository Provider
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
-  return FirebaseNotificationRepository();
+  return SupabaseNotificationRepository();
 });
 
 // Notifications List Provider

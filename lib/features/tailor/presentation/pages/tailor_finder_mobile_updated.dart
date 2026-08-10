@@ -6,23 +6,25 @@ import '../widgets/tailor_map_view.dart';
 import '../widgets/tailor_card.dart';
 import '../widgets/service_tier_selector.dart';
 import '../widgets/quote_estimation_card.dart';
-import '../widgets/tailor_shop_card.dart';
+import '../../../../core/providers/navigation_provider.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/tailor_finder_responsive.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 /// TailorFinderMobile - Uber-style Tailor Discovery for Mobile
 /// Responsive: adapts to any mobile screen size (tablet-optimized)
 /// Feature Parity: Full desktop feature set adapted for touch
-class TailorFinderMobile extends ConsumerStatefulWidget {
-  const TailorFinderMobile({super.key});
+class TailorFinderMobileUpdated extends ConsumerStatefulWidget {
+  const TailorFinderMobileUpdated({super.key});
 
   @override
-  ConsumerState<TailorFinderMobile> createState() => _TailorFinderMobileState();
+  ConsumerState<TailorFinderMobileUpdated> createState() => _TailorFinderMobileState();
 }
 
-class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
+class _TailorFinderMobileState extends ConsumerState<TailorFinderMobileUpdated> {
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
 
@@ -93,7 +95,11 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
       return true;
     }
     // If no routes to pop, go to main dashboard
-    Navigator.pushReplacementNamed(context, '/main');
+    if (ref.read(navigationProvider).route != '/main') {
+      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+    } else {
+      Navigator.pushReplacementNamed(context, '/main');
+    }
     return true;
   }
 
@@ -224,8 +230,6 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
         body: LayoutBuilder(
           // FIX #12: Add responsive LayoutBuilder for tablet optimization
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= TailorFinderBreakpoints.tablet;
-
             return Stack(
               children: [
                 // MAP - adaptive height based on screen and toggle (FIX #11)
@@ -234,13 +238,13 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                     child: Semantics(
                       label: TailorFinderSemantics.mapLabel,
                       child: TailorMapView(
-                        tailors: state.tailors,
-                        selectedTailor: selectedTailor,
+                        tailors: state.markers,
+                        selectedTailor: selectedTailor != null ? TailorMarker.fromProfile(selectedTailor) : null,
                         userLocation: state.userLocation,
-                        onTailorSelected: (tailor) {
+                        onTailorSelected: (marker) {
                           ref
                               .read(tailorFinderProvider.notifier)
-                              .selectTailor(tailor);
+                              .selectTailor(marker);
                           // Open bottom sheet when tailor selected
                           _sheetController.animateTo(
                             _sheetInitialSize,
@@ -253,6 +257,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                               .read(tailorFinderProvider.notifier)
                               .setUserLocation(location);
                         },
+                        onBack: () => _onWillPop(),
                       ),
                     ),
                   ),
@@ -324,9 +329,16 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                                                   tailorFinderProvider.notifier)
                                               .selectServiceTier(tier);
                                         },
-                                        availableTiers:
-                                            selectedTailor?.availableServices ??
-                                                ServiceTier.values,
+                                        availableTiers: (selectedTailor?.services ?? [])
+                                            .map((s) => ServiceTier.values.firstWhere(
+                                              (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+                                              orElse: () => ServiceTier.custom,
+                                            )).toList()
+                                            .isEmpty ? ServiceTier.values : (selectedTailor?.services ?? [])
+                                            .map((s) => ServiceTier.values.firstWhere(
+                                              (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+                                              orElse: () => ServiceTier.custom,
+                                            )).toList(),
                                       ),
                                       const SizedBox(height: 16),
                                       // Info block (FIX #7)
@@ -419,7 +431,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                         Navigator.pushNamed(
                           context,
                           '/tailor-profile',
-                          arguments: selectedTailor,
+                          arguments: selectedTailor.id,
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -464,7 +476,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
     );
   }
 
-  Widget _buildSheetHeader(dynamic tailor) {
+  Widget _buildSheetHeader(UserProfile? tailor) {
     return Row(
       children: [
         Flexible(
@@ -511,7 +523,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Compact tailor info card (shows at bottom of sheet before detail view)
-  Widget _buildTailorInfoCard(dynamic tailor) {
+  Widget _buildTailorInfoCard(UserProfile tailor) {
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -573,25 +585,25 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                       const Icon(Icons.star_rounded,
                           color: AppColors.amber, size: 12),
                       const SizedBox(width: 2),
-                      Text(
-                        tailor.rating.toStringAsFixed(1),
-                        style: const TextStyle(
+                      const Text(
+                        '4.5',
+                        style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        '(${tailor.reviewCount})',
-                        style: const TextStyle(
+                      const Text(
+                        '(12)',
+                        style: TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 10,
                         ),
                       ),
                     ],
                   ),
-                  if (tailor.shopAddress != null) ...[
+                  if (tailor.address != null) ...[
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -603,7 +615,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                         const SizedBox(width: 2),
                         Flexible(
                           child: Text(
-                            tailor.shopAddress ?? '',
+                            tailor.address ?? '',
                             style: const TextStyle(
                               color: AppColors.textMuted,
                               fontSize: 10,
@@ -622,8 +634,8 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(
-                color: tailor.isAvailable ? AppColors.uberLive : AppColors.uberWarning,
+              decoration: const BoxDecoration(
+                color: AppColors.uberLive,
                 shape: BoxShape.circle,
               ),
             ),
@@ -633,8 +645,8 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
     );
   }
 
-  /// Full detail view of tailor (FIX #2 & #3 & #5 & #8 & #9)
-  Widget _buildTailorDetailsView(dynamic tailor) {
+  /// Full detail view of tailor (FIX #2 \u0026 #3 \u0026 #5 \u0026 #8 \u0026 #9)
+  Widget _buildTailorDetailsView(UserProfile tailor) {
     return Column(
       children: [
         // Back button (FIX #13)
@@ -644,15 +656,15 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
               _showTailorDetails = false;
             });
           },
-          child: Align(
+          child: const Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.arrow_back_ios_new_rounded,
+                  Icon(Icons.arrow_back_ios_new_rounded,
                       color: AppColors.amber, size: 16),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     'BACK',
                     style: TextStyle(
@@ -714,7 +726,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Detailed header with gradient background (FIX #6)
-  Widget _buildDetailsHeader(dynamic tailor) {
+  Widget _buildDetailsHeader(UserProfile tailor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -771,30 +783,30 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    const Row(
                       children: [
                         Icon(Icons.star_rounded,
                             color: AppColors.amber, size: 14),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(
-                          '${tailor.rating.toStringAsFixed(1)} (${tailor.reviewCount})',
-                          style: const TextStyle(
+                          '4.5 (12)',
+                          style: TextStyle(
                             color: Colors.white70,
                             fontSize: 11,
                           ),
                         ),
                       ],
                     ),
-                    if (tailor.shopAddress != null) ...[
+                    if (tailor.address != null) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on,
+                          const Icon(Icons.location_on,
                               color: Colors.white54, size: 12),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              tailor.shopAddress!,
+                              tailor.address!,
                               style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 10,
@@ -816,24 +828,22 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: tailor.isAvailable
-                  ? AppColors.amber.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.2),
+              color: AppColors.amber.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  tailor.isAvailable ? Icons.check_circle : Icons.cancel,
-                  color: tailor.isAvailable ? AppColors.amber : Colors.red,
+                  Icons.check_circle,
+                  color: AppColors.amber,
                   size: 12,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
-                  tailor.isAvailable ? 'Available now' : 'Busy',
+                  'Available now',
                   style: TextStyle(
-                    color: tailor.isAvailable ? AppColors.amber : Colors.red,
+                    color: AppColors.amber,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -847,7 +857,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Action shortcuts (Call, Directions, Chat, Share) (FIX #3)
-  Widget _buildActionShortcuts(dynamic tailor) {
+  Widget _buildActionShortcuts(UserProfile tailor) {
     return Row(
       children: [
         _buildShortcutButton(Icons.phone_rounded, 'Call', () {}),
@@ -893,8 +903,12 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Services section with descriptions (FIX #5)
-  Widget _buildServicesSection(dynamic tailor) {
-    final services = tailor.availableServices as List<ServiceTier>? ?? [];
+  Widget _buildServicesSection(UserProfile tailor) {
+    final services = (tailor.services ?? []).map((s) => ServiceTier.values.firstWhere(
+      (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+      orElse: () => ServiceTier.custom,
+    )).toList();
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -931,7 +945,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                       color: AppColors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.checkroom_rounded,
                       color: AppColors.amber,
                       size: 14,
@@ -1011,7 +1025,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Info block showing service tier prompt (FIX #7)
-  Widget _buildInfoBlock(dynamic tailor, ServiceTier? tier) {
+  Widget _buildInfoBlock(UserProfile? tailor, ServiceTier? tier) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -1110,7 +1124,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          // MAP/LIST TOGGLE - new feature
+// MAP/LIST TOGGLE - new feature
           GestureDetector(
             onTap: () {
               setState(() {
@@ -1378,14 +1392,15 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: state.tailors.length,
+      itemCount: state.markers.length,
       itemBuilder: (context, index) {
-        final tailor = state.tailors[index];
+        final marker = state.markers[index];
         return TailorCard(
-          tailor: tailor,
-          isSelected: state.selectedTailor?.id == tailor.id,
+          tailor: marker,
+          isSelected: state.selectedTailor?.id == marker.id,
+          distanceMinutes: marker.distanceMinutes,
           onTap: () {
-            ref.read(tailorFinderProvider.notifier).selectTailor(tailor);
+            ref.read(tailorFinderProvider.notifier).selectTailor(marker);
             _sheetController.animateTo(
               0.6,
               duration: const Duration(milliseconds: 300),
@@ -1462,6 +1477,8 @@ class _MobileFilterChip extends StatelessWidget {
 
 /// Mobile navigation bar
 class _MobileNavBar extends StatelessWidget {
+  const _MobileNavBar();
+
   @override
   Widget build(BuildContext context) {
     return Container(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/utils/async_handler.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../domain/entities/client.dart';
 import '../providers/client_provider.dart';
 import '../../../orders/domain/entities/order.dart';
@@ -217,6 +219,8 @@ class _UnifiedAddClientPageState extends ConsumerState<UnifiedAddClientPage> wit
     await handleAsync(context, () async {
       final Map<String, String> measurementMap = {
         'Height': _heightController.text, // INCLUDE HEIGHT
+        'Budget Min': _budgetMin.toInt().toString(),
+        'Budget Max': _budgetMax.toInt().toString(),
       };
       _measurementControllers.forEach((key, controller) {
         if (controller.text.isNotEmpty) measurementMap[key] = controller.text;
@@ -243,7 +247,12 @@ class _UnifiedAddClientPageState extends ConsumerState<UnifiedAddClientPage> wit
 
     if (mounted) {
       ref.invalidate(clientsProvider(null));
-      Navigator.pop(context);
+      
+      if (ref.read(navigationProvider).route != '/main') {
+        ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+      } else {
+        Navigator.maybePop(context);
+      }
     }
   }
 

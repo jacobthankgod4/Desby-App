@@ -2,12 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/repositories/chat_repository.dart';
-import '../../data/repositories/firebase_chat_repository.dart';
+import '../../data/repositories/supabase_chat_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 // Repository Provider
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  return FirebaseChatRepository();
+  return SupabaseChatRepository();
 });
 
 // Conversations List Provider

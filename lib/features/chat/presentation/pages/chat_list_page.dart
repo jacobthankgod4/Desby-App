@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/error_state_widget.dart';
-import 'chat_detail_page.dart';
 
 class ChatListPage extends ConsumerWidget {
   const ChatListPage({super.key});
@@ -63,15 +63,13 @@ class _ConversationTile extends ConsumerWidget {
     return peerProfile.when(
       data: (profile) => ListTile(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChatDetailPage(
-                conversationId: conversation.id,
-                peerId: peerId,
-                orderId: conversation.orderId,
-              ),
-            ),
+          ref.read(navigationProvider.notifier).state = NavigationState(
+            '/chat-detail',
+            {
+              'conversationId': conversation.id,
+              'peerId': peerId,
+              'orderId': conversation.orderId,
+            },
           );
         },
         leading: CircleAvatar(

@@ -25,6 +25,16 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
   final _businessNameController = TextEditingController();
   final _businessPhoneController = TextEditingController();
   final _businessAddressController = TextEditingController();
+  
+  // WEB STABILITY: Explicit Focus Nodes
+  final _nameFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+  final _addressFocus = FocusNode();
+  final _stateFocus = FocusNode();
+  final _lgaFocus = FocusNode();
+  final _yardageFocus = FocusNode();
+  final _rangeFocus = FocusNode();
+
   String? _selectedCountry = 'Nigeria';
   String? _selectedState;
   String? _selectedLga;
@@ -47,6 +57,15 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
     _businessPhoneController.dispose();
     _businessAddressController.dispose();
     _estimatedYardageController.dispose();
+    
+    // Dispose focus nodes
+    _nameFocus.dispose();
+    _phoneFocus.dispose();
+    _addressFocus.dispose();
+    _stateFocus.dispose();
+    _lgaFocus.dispose();
+    _yardageFocus.dispose();
+    _rangeFocus.dispose();
     super.dispose();
   }
 
@@ -78,6 +97,10 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
   }
 
   Future<void> _finishOnboarding() async {
+    // WEB STABILITY: Force terminal unfocus
+    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+
     setState(() => _isLoading = true);
     try {
       final user = ref.read(currentUserProvider);
@@ -94,9 +117,13 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
 
       await ref.read(updateProfileUsecaseProvider)(updatedProfile);
       await localStorage.save(StorageKeys.fabricSellerOnboardingComplete, true);
+      
+      // Delay navigation slightly to let DOM state settle after unfocus
+      await Future.delayed(const Duration(milliseconds: 250));
+      
       if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.redAccent));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save profile. Please try again.'), backgroundColor: Colors.redAccent));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -114,11 +141,14 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
       nextLabel: _currentStep == _totalSteps - 1 ? 'OPEN STORE' : 'CONTINUE',
       onBack: _currentStep > 0 ? _previousStep : null,
       onNext: _nextStep,
-      content: SizedBox(
-        height: 500,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 400, maxHeight: 600),
         child: PageView(
           controller: _pageController,
-          onPageChanged: (i) => setState(() => _currentStep = i),
+          onPageChanged: (i) {
+            FocusScope.of(context).unfocus();
+            setState(() => _currentStep = i);
+          },
           physics: const NeverScrollableScrollPhysics(),
           children: [
             _buildBusinessDetailsStep(),
@@ -143,45 +173,52 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
 
   Widget _buildBusinessDetailsStep() {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
-          _buildField('BUSINESS NAME', Icons.store_rounded, _businessNameController),
+          _buildField('BUSINESS NAME', Icons.store_rounded, _businessNameController, focusNode: _nameFocus),
           const SizedBox(height: 16),
-          _buildField('BUSINESS PHONE', Icons.phone_rounded, _businessPhoneController, type: TextInputType.phone),
+          _buildField('BUSINESS PHONE', Icons.phone_rounded, _businessPhoneController, type: TextInputType.phone, focusNode: _phoneFocus),
           const SizedBox(height: 16),
-          _buildField('BUSINESS ADDRESS', Icons.location_on_rounded, _businessAddressController),
+          _buildField('BUSINESS ADDRESS', Icons.location_on_rounded, _businessAddressController, focusNode: _addressFocus),
           const SizedBox(height: 16),
           _buildDropdown('STATE', Icons.map_rounded, _selectedState, NigeriaLgaData.states, (v) {
             setState(() { _selectedState = v; _selectedLga = null; _availableLgas = v != null ? NigeriaLgaData.getLgasForState(v) : []; });
-          }),
+          }, focusNode: _stateFocus),
           const SizedBox(height: 16),
-          _buildDropdown('LGA', Icons.location_city_rounded, _selectedLga, _availableLgas, (v) => setState(() => _selectedLga = v), enabled: _selectedState != null),
+          _buildDropdown('LGA', Icons.location_city_rounded, _selectedLga, _availableLgas, (v) => setState(() => _selectedLga = v), enabled: _selectedState != null, focusNode: _lgaFocus),
         ],
       ),
     );
   }
 
   Widget _buildFabricTypesStep() {
-    return Wrap(
-      spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
-      children: availableFabricTypes.map((f) => OptionPill(
-        label: f, isSelected: _selectedFabricTypes.contains(f),
-        onTap: () => setState(() => _selectedFabricTypes.contains(f) ? _selectedFabricTypes.remove(f) : _selectedFabricTypes.add(f)),
-      )).toList(),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Wrap(
+        spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
+        children: availableFabricTypes.map((f) => OptionPill(
+          label: f, isSelected: _selectedFabricTypes.contains(f),
+          onTap: () => setState(() => _selectedFabricTypes.contains(f) ? _selectedFabricTypes.remove(f) : _selectedFabricTypes.add(f)),
+        )).toList(),
+      ),
     );
   }
 
   Widget _buildInventoryDetailsStep() {
-    return Column(
-      children: [
-        _buildField('ESTIMATED MONTHLY YARDAGE', Icons.straighten_rounded, _estimatedYardageController, type: TextInputType.number),
-        const SizedBox(height: 16),
-        _buildDropdown('PRICE RANGE', Icons.local_offer_rounded, _priceRange, ['Budget', 'Mid-Range', 'Premium', 'Luxury'], (v) => setState(() => _priceRange = v!)),
-        const SizedBox(height: 24),
-        _buildToggleTile('OFFERS CUSTOM ORDERS', _offersCustomOrders, (v) => setState(() => _offersCustomOrders = v)),
-        const SizedBox(height: 12),
-        _buildToggleTile('OFFERS WHOLESALE', _offersWholesale, (v) => setState(() => _offersWholesale = v)),
-      ],
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          _buildField('ESTIMATED MONTHLY YARDAGE', Icons.straighten_rounded, _estimatedYardageController, type: TextInputType.number, focusNode: _yardageFocus),
+          const SizedBox(height: 16),
+          _buildDropdown('PRICE RANGE', Icons.local_offer_rounded, _priceRange, ['Budget', 'Mid-Range', 'Premium', 'Luxury'], (v) => setState(() => _priceRange = v!), focusNode: _rangeFocus),
+          const SizedBox(height: 24),
+          _buildToggleTile('OFFERS CUSTOM ORDERS', _offersCustomOrders, (v) => setState(() => _offersCustomOrders = v)),
+          const SizedBox(height: 12),
+          _buildToggleTile('OFFERS WHOLESALE', _offersWholesale, (v) => setState(() => _offersWholesale = v)),
+        ],
+      ),
     );
   }
 
@@ -200,14 +237,17 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
   }
 
   Widget _buildReviewStep() {
-    return Column(
-      children: [
-        _buildReviewCard('BUSINESS', '${_businessNameController.text}\n${_businessAddressController.text}'),
-        const SizedBox(height: 16),
-        _buildReviewCard('FABRICS', _selectedFabricTypes.join(' • ').toUpperCase()),
-        const SizedBox(height: 16),
-        _buildReviewCard('INVENTORY', '$_priceRange • ${_estimatedYardageController.text} YDS/MO'),
-      ],
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          _buildReviewCard('BUSINESS', '${_businessNameController.text}\n${_businessAddressController.text}'),
+          const SizedBox(height: 16),
+          _buildReviewCard('FABRICS', _selectedFabricTypes.join(' • ').toUpperCase()),
+          const SizedBox(height: 16),
+          _buildReviewCard('INVENTORY', '$_priceRange • ${_estimatedYardageController.text} YDS/MO'),
+        ],
+      ),
     );
   }
 
@@ -226,9 +266,11 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
     );
   }
 
-  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text}) {
+  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text, FocusNode? focusNode}) {
     return TextField(
-      controller: controller, keyboardType: type,
+      controller: controller, 
+      keyboardType: type,
+      focusNode: focusNode,
       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900),
@@ -240,13 +282,15 @@ focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borde
     );
   }
 
-  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged, {bool enabled = true}) {
+  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged, {bool enabled = true, FocusNode? focusNode}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(18)),
       child: DropdownButtonHideUnderline(
         child: DropdownButtonFormField<String>(
-          initialValue: value, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
+          initialValue: value, 
+          focusNode: focusNode,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
           onChanged: enabled ? onChanged : null,
           decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900), prefixIcon: Icon(icon, color: AppColors.amber, size: 20), border: InputBorder.none),
           dropdownColor: AppColors.darkNavy, icon: const Icon(Icons.expand_more_rounded, color: Colors.white24),

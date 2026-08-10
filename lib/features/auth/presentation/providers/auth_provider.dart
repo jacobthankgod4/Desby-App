@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import '../../../../core/error/failures.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/auth_usecases.dart';
 import '../../data/models/user_model.dart';
@@ -11,10 +12,7 @@ import '../state/auth_state.dart';
 import '../../domain/entities/auth_response.dart';
 import '../../domain/entities/user.dart';
 import '../../data/datasources/auth_local_datasource.dart';
-import '../../data/repositories/firebase_auth_repository.dart';
-
-// Type alias for FirebaseAuth to avoid conflicts
-typedef FirebaseAuth = fb.FirebaseAuth;
+import '../../data/repositories/supabase_auth_repository.dart';
 
 final loginUsecaseProvider = Provider((ref) => LoginUsecase(ref.watch(authRepositoryProvider)));
 final registerUsecaseProvider = Provider((ref) => RegisterUsecase(ref.watch(authRepositoryProvider)));
@@ -54,15 +52,20 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   }
 
   void _initAuthStateListener() {
-    // Listen to Firebase auth state changes for persistent sessions on web
-    final auth = FirebaseAuth.instance;
-    _authStateSubscription = auth.authStateChanges().listen((firebaseUser) async {
-      if (firebaseUser != null) {
-        // User is logged in via Firebase session (including browser refresh)
-        await _restoreAuthenticatedState(firebaseUser);
+    // Listen to Supabase auth state changes for persistent sessions
+    final auth = sb.Supabase.instance.client.auth;
+    _authStateSubscription = auth.onAuthStateChange.listen((data) async {
+      final session = data.session;
+      final event = data.event;
+
+      if (session != null) {
+        // User is logged in via Supabase session
+        await _restoreAuthenticatedState(session.user, session);
+      } else if (event == sb.AuthChangeEvent.signedOut) {
+        // Explicit logout
+        await _checkOnboardingAndUser();
       } else {
-        // No Firebase session - check local storage for fallback
-        // STABILITY: Don't flip to unauthenticated if we're currently loading
+        // No Supabase session - check local storage for fallback
         if (state.maybeMap(loading: (_) => true, orElse: () => false)) return;
         
         await _checkOnboardingAndUser();
@@ -70,58 +73,85 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     });
   }
 
-  Future<void> _restoreAuthenticatedState(firebaseUser) async {
+  Future<void> _restoreAuthenticatedState(sb.User sbUser, sb.Session? session) async {
     try {
       // Get user data from local storage
       final hasOnboarded = localStorage.get(StorageKeys.appFirstLaunch, defaultValue: false);
       if (!hasOnboarded) {
-        // Only reset if not in the middle of a transition
         if (!state.maybeMap(loading: (_) => true, orElse: () => false)) {
           state = const AuthState.unauthenticated();
         }
         return;
       }
       
-      final cachedUserType = localStorage.get(StorageKeys.userType, defaultValue: 'tailor');
+      // EXPERT FIX: Prefer current_user metadata from local storage if available
       final currentUserData = localStorage.get(StorageKeys.currentUser, defaultValue: null);
-      
+      String userType = 'tailor';
       String? email;
       String? name;
       
       if (currentUserData != null && currentUserData is Map) {
+        userType = (currentUserData['user_type'] ?? currentUserData['userType']) as String? ?? 'tailor';
         email = currentUserData['email'] as String?;
         name = currentUserData['name'] as String?;
+      } else {
+        // Fallback to separate userType key
+        userType = localStorage.get(StorageKeys.userType, defaultValue: 'tailor');
       }
       
+      // EXPERT SYNC: If userType is still tailor, attempt a hard fetch from Supabase
+      // to resolve the "everyone is a tailor" routing bug.
+      if (userType == 'tailor') {
+         try {
+           final profileResponse = await sb.Supabase.instance.client
+               .from('users')
+               .select('user_type')
+               .eq('id', sbUser.id)
+               .maybeSingle();
+           
+           if (profileResponse != null && profileResponse['user_type'] != null) {
+             userType = profileResponse['user_type'] as String;
+             // Update local cache immediately
+             await localStorage.save(StorageKeys.userType, userType);
+             if (currentUserData != null && currentUserData is Map) {
+                final updatedMap = Map<String, dynamic>.from(currentUserData);
+                updatedMap['user_type'] = userType;
+                await localStorage.save(StorageKeys.currentUser, updatedMap);
+             }
+           }
+         } catch (e) {
+           debugPrint('[AUTH] Emergency Profile Fetch Failed: $e');
+         }
+      }
+
       // Update state
       final newState = AuthState.authenticated(
         AuthResponse(
           user: UserModel(
-            id: firebaseUser.uid,
-            email: email ?? firebaseUser.email ?? '',
-            name: name ?? firebaseUser.displayName ?? '',
-            userType: cachedUserType,
+            id: sbUser.id,
+            email: email ?? sbUser.email ?? '',
+            name: name ?? sbUser.userMetadata?['name'] ?? '',
+            userType: userType,
             createdAt: DateTime.now(),
           ).toEntity(),
-          accessToken: firebaseUser.uid,
-          refreshToken: 'firebase_session',
-          expiresIn: 3600,
+          accessToken: session?.accessToken ?? sbUser.id,
+          refreshToken: session?.refreshToken ?? 'supabase_session',
+          expiresIn: session?.expiresIn ?? 3600,
         ),
       );
 
-      // STABILITY: Only update if the user isn't already the same (prevent flicker)
       state.maybeMap(
         authenticated: (current) {
-          if (current.authResponse.user.id != firebaseUser.uid) {
+          if (current.authResponse.user.id != sbUser.id || 
+              current.authResponse.user.userType != userType) {
             state = newState;
           }
         },
         orElse: () => state = newState,
       );
     } catch (e) {
-      // On error, try to maintain session - Firebase session may still be valid
-      final auth = FirebaseAuth.instance;
-      if (auth.currentUser == null) {
+      final auth = sb.Supabase.instance.client.auth;
+      if (auth.currentSession == null) {
         state = const AuthState.unauthenticated();
       }
     }
@@ -140,16 +170,21 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       final accessToken = accessTokenResult.getOrNull();
 
       if (accessToken == null) {
-        // If we are authenticated but have no token, stay silent to allow Firebase listener to fire
-        // Only flip to unauthenticated if truly logged out
-        final auth = FirebaseAuth.instance;
-        if (auth.currentUser == null) {
+        final auth = sb.Supabase.instance.client.auth;
+        if (auth.currentSession == null) {
           state = const AuthState.unauthenticated();
         }
         return;
       }
 
-      final cachedUserType = localStorage.get(StorageKeys.userType, defaultValue: 'tailor');
+      // EXPERT FIX: Get userType from correct source
+      final currentUserData = localStorage.get(StorageKeys.currentUser, defaultValue: null);
+      String userType = 'tailor';
+      if (currentUserData != null && currentUserData is Map) {
+         userType = (currentUserData['user_type'] ?? currentUserData['userType']) as String? ?? 'tailor';
+      } else {
+         userType = localStorage.get(StorageKeys.userType, defaultValue: 'tailor');
+      }
 
       state = AuthState.authenticated(
         AuthResponse(
@@ -157,7 +192,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
             id: accessToken,
             email: '',
             name: '',
-            userType: cachedUserType,
+            userType: userType,
             createdAt: DateTime.now(),
           ).toEntity(),
           accessToken: accessToken,
@@ -174,8 +209,12 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     state = const AuthState.loading();
     final result = await loginUsecase(email, password);
     result.fold(
-      (failure) => state = AuthState.error(failure.toString()),
+      (failure) {
+        debugPrint('[AUTH] Login failure: ${failure.message}');
+        state = AuthState.error(failure.message);
+      },
       (authResponse) async {
+        debugPrint('[AUTH] Login success. User ID: ${authResponse.user.id}');
         await localStorage.save(StorageKeys.appFirstLaunch, true);
         await localStorage.save(StorageKeys.userType, authResponse.user.userType);
         
@@ -197,7 +236,13 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     state = const AuthState.loading();
     final result = await registerUsecase(email, password, name, userType);
     result.fold(
-      (failure) => state = AuthState.error(failure.toString()),
+      (failure) {
+        if (failure is VerificationRequiredFailure) {
+          state = AuthState.unverified(email);
+        } else {
+          state = AuthState.error(failure.message);
+        }
+      },
       (authResponse) async {
         await localStorage.save(StorageKeys.appFirstLaunch, true);
         await localStorage.save(StorageKeys.userType, authResponse.user.userType);
@@ -240,7 +285,7 @@ final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return FirebaseAuthRepository(
+  return SupabaseAuthRepository(
     localDatasource: ref.watch(authLocalDatasourceProvider),
   );
 });

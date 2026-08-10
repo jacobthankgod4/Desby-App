@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/dashboard_provider.dart';
-import '../widgets/stat_card.dart';
+import '../widgets/luxury_stat_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../orders/domain/entities/order.dart';
 import '../../../orders/presentation/providers/logistics_provider.dart';
-import '../../../../core/widgets/error_state_widget.dart';
+import '../../../../core/widgets/luxury_glass_card.dart';
 import '../../../../theme/colors.dart';
+import '../../../../core/providers/navigation_provider.dart';
 
 class TailorDashboard extends ConsumerStatefulWidget {
   const TailorDashboard({super.key});
@@ -21,192 +22,245 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
     final currentUser = ref.watch(currentUserProvider);
     final userId = currentUser?.id ?? '';
 
-    // Guard: Only fetch if valid userId to prevent red screen errors
-    final statsAsync = userId.isNotEmpty ? ref.watch(dashboardStatsProvider(userId)) : const AsyncValue.loading();
-    final recentOrdersAsync = userId.isNotEmpty ? ref.watch(recentOrdersProvider(userId)) : const AsyncValue<List<dynamic>>.data([]);
-    final recentClientsAsync = userId.isNotEmpty ? ref.watch(recentClientsProvider(userId)) : const AsyncValue<List<dynamic>>.data([]);
+    // If no userId, we are likely in a transitional auth state - show loader
+    if (userId.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.amber));
+    }
 
-    return statsAsync.when(
-      data: (stats) => Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+    final statsAsync = ref.watch(dashboardStatsProvider(userId));
+    final recentOrdersAsync = ref.watch(recentOrdersProvider(userId));
+    final recentClientsAsync = ref.watch(recentClientsProvider(userId));
+
+    return Scaffold(
+      backgroundColor: AppColors.darkNavy,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(dashboardStatsProvider(userId));
+          ref.invalidate(recentOrdersProvider(userId));
+          ref.invalidate(recentClientsProvider(userId));
+        },
+        color: AppColors.amber,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. NEURAL WELCOME
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Dashboard'.toUpperCase(), style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                      Text(
-                        'Welcome, ${currentUser?.name ?? 'Designer'}',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: const Color(0xFF00FF7F).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF00FF7F).withValues(alpha: 0.3))),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.wifi_tethering_rounded, color: Color(0xFF00FF7F), size: 12),
-                        SizedBox(width: 8),
-                        Text('SYSTEM LIVE', style: TextStyle(color: Color(0xFF00FF7F), fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              // 1. NEURAL WELCOME HUD
+              _buildHeader(currentUser?.name),
               const SizedBox(height: 24),
             
-// 2. RAPID ACTIONS (MTN STYLE) - Compact 3-column grid
-              GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1.35, // Flattened further
-                children: [
-                  _buildActionCard('Add Client', Icons.person_add_rounded, () => Navigator.pushNamed(context, '/unified-add-client')),
-                  _buildActionCard('Active Tasks', Icons.assignment_turned_in_rounded, () => Navigator.pushNamed(context, '/orders')),
-                  _buildActionCard('Invite Talent', Icons.school_rounded, () => Navigator.pushNamed(context, '/apprentice-onboarding')),
-                  _buildActionCard('Setup Shop', Icons.storefront_rounded, () => Navigator.pushNamed(context, '/shop-setup')),
-                  _buildActionCard('Marketplace', Icons.shopping_bag_rounded, () => Navigator.pushNamed(context, '/marketplace')),
-                  _buildActionCard('Payments Hub', Icons.account_balance_wallet_rounded, () => Navigator.pushNamed(context, '/insights')),
-                ],
+              // 2. INDUSTRIALIZED STATS GRID
+              statsAsync.when(
+                data: (stats) => GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.5,
+                  children: [
+                    LuxuryStatCard(title: 'Active Orders', value: stats.pendingOrders.toString(), icon: Icons.description_rounded, trend: '+12%'),
+                    LuxuryStatCard(title: 'Net Revenue', value: '₦${stats.totalRevenue.toInt()}', icon: Icons.payments_rounded, color: Colors.greenAccent),
+                    LuxuryStatCard(title: 'Total Bookings', value: stats.totalClients.toString(), icon: Icons.handshake_rounded, color: Colors.blueAccent),
+                    LuxuryStatCard(title: 'Urgent Alerts', value: stats.urgentDeadlines.toString(), icon: Icons.bolt_rounded, color: Colors.redAccent),
+                  ],
+                ),
+                loading: () => _buildStatsLoadingPlaceholder(),
+                error: (error, _) => _buildStatsErrorPlaceholder(error.toString()),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
 
-              // 3. OPERATIONAL STATS
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 2.4, // Extremely compact/flat
-                children: [
-                  StatCard(title: 'Active Orders', value: stats.pendingOrders.toString(), icon: Icons.description_rounded, color: AppColors.amber),
-                  StatCard(title: 'Revenue', value: '₦${stats.totalRevenue.toInt()}', icon: Icons.payments_rounded, color: AppColors.amber),
-                  StatCard(title: 'Total Bookings', value: stats.totalClients.toString(), icon: Icons.handshake_rounded, color: AppColors.amber),
-                  StatCard(title: 'Urgent Alerts', value: stats.urgentDeadlines.toString(), icon: Icons.bolt_rounded, color: AppColors.amber),
-                ],
-              ),
-              const SizedBox(height: 40),
+              // 3. RAPID OPERATION TILES
+              const Text('RAPID OPERATIONS', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              const SizedBox(height: 16),
+              _buildOperationsGrid(),
+              
+              const SizedBox(height: 32),
 
-              // 4. HANDSHAKE FLOW (UBER-STYLE)
-              _buildSectionHeader(context, 'Pending Bookings', () {}),
-              const SizedBox(height: 12),
+              // 4. PENDING BOOKING MANIFESTS
+              _buildSectionHeader(context, 'Pipeline Handshakes', '/orders'),
+              const SizedBox(height: 16),
               recentOrdersAsync.when(
-                data: (orders) => _buildOrdersList(orders),
-                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-                error: (err, _) => const ErrorStateWidget(message: 'Dossier sync failed.'),
+                data: (orders) => _buildOrdersManifest(orders),
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber, strokeWidth: 2)),
+                error: (err, _) => Center(child: Text('Manifest sync offline.', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 10))),
               ),
-              const SizedBox(height: 40),
+              
+              const SizedBox(height: 32),
 
-              _buildSectionHeader(context, 'Top Clients', () {}),
-              const SizedBox(height: 12),
+              // 5. CLIENT PORTFOLIO
+              _buildSectionHeader(context, 'Elite Clients', '/clients'),
+              const SizedBox(height: 16),
               recentClientsAsync.when(
-                data: (clients) => _buildClientsGrid(clients),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) => const ErrorStateWidget(message: 'Client sync failed.'),
+                data: (clients) => _buildClientsStrip(clients),
+                loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                error: (err, _) => const SizedBox(),
               ),
-              const SizedBox(height: 60),
             ],
           ),
         ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-      error: (error, _) => const ErrorStateWidget(message: 'Booking request timeout.'),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
+  Widget _buildHeader(String? name) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title.toUpperCase(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.5, color: Colors.white38)),
-        TextButton(onPressed: onSeeAll, child: const Text('SEE ALL', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 11))),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('COMMAND CENTER v2.1', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const SizedBox(height: 4),
+            Text(
+              'Welcome, ${name ?? 'Designer'}',
+              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00FF7F).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF00FF7F).withValues(alpha: 0.2)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.shield_moon_rounded, color: Color(0xFF00FF7F), size: 14),
+              SizedBox(width: 8),
+              Text('SECURE', style: TextStyle(color: Color(0xFF00FF7F), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildActionCard(String label, IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.02),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.amber.withValues(alpha: 0.08), width: 1.0),
-        ),
+  Widget _buildStatsLoadingPlaceholder() {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.5,
+      children: List.generate(4, (index) => const LuxuryGlassCard(child: Center(child: CircularProgressIndicator(strokeWidth: 1, color: Colors.white10)))),
+    );
+  }
+
+  Widget _buildStatsErrorPlaceholder(String error) {
+    return LuxuryGlassCard(
+      padding: const EdgeInsets.all(24),
+      child: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.amber, size: 18),
-            const SizedBox(height: 6),
-            Text(label.toUpperCase(), 
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white70, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+            const Icon(Icons.cloud_off_rounded, color: Colors.white10, size: 32),
+            const SizedBox(height: 12),
+            const Text('DATA SYNC OFFLINE', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 4),
+            Text(error, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.redAccent, fontSize: 8)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildOrdersList(List<dynamic> orders) {
-    if (orders.isEmpty) return const Center(child: Text('NO ORDERS PENDING', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 16)));
+  Widget _buildOperationsGrid() {
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.0,
+      children: [
+        _buildOpTile(Icons.person_add_rounded, 'CLIENT', () => ref.read(navigationProvider.notifier).state = const NavigationState('/unified-add-client')),
+        _buildOpTile(Icons.add_shopping_cart_rounded, 'ORDER', () => ref.read(navigationProvider.notifier).state = const NavigationState('/order-create')),
+        _buildOpTile(Icons.storefront_rounded, 'SHOP', () => ref.read(navigationProvider.notifier).state = const NavigationState('/virtual-atelier')),
+        _buildOpTile(Icons.bar_chart_rounded, 'HUB', () => ref.read(navigationProvider.notifier).state = const NavigationState('/insights')),
+      ],
+    );
+  }
+
+  Widget _buildOpTile(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.amber, size: 20),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title, String route) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
+        GestureDetector(
+          onTap: () {
+            ref.read(navigationProvider.notifier).state = NavigationState(route);
+          },
+          child: const Text('VIEW ALL', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrdersManifest(List<dynamic> orders) {
+    if (orders.isEmpty) {
+      return const LuxuryGlassCard(
+        padding: EdgeInsets.all(40),
+        child: Center(child: Text('NO PENDING MANIFESTS', style: TextStyle(color: Colors.white10, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2))),
+      );
+    }
     
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: orders.length > 5 ? 5 : orders.length,
+      itemCount: orders.length > 3 ? 3 : orders.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final order = orders[index];
         final status = order['status'] ?? 'pending';
         final isPending = status == 'pending';
         
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isPending ? AppColors.amber.withValues(alpha: 0.3) : Colors.white10),
-          ),
+        return LuxuryGlassCard(
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Row(
                 children: [
-                  CircleAvatar(radius: 20, backgroundColor: AppColors.amber.withValues(alpha: 0.1), child: const Icon(Icons.description_rounded, color: AppColors.amber, size: 18)),
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.checkroom_rounded, color: AppColors.amber, size: 20),
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(order['clientName']?.toString().toUpperCase() ?? 'NEW BOOKING', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
-                        Text('STATUS: ${status.toString().toUpperCase()}', style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.w900)),
+                        Text(order['clientName']?.toString().toUpperCase() ?? 'ANONYMOUS', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                        Text('MANIFEST #${order['id'].toString().substring(0, 8).toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
                       ],
                     ),
                   ),
-                  if (!isPending)
-                    IconButton(
-                      icon: Icon(order['fezOrderNo'] != null ? Icons.location_on_rounded : Icons.arrow_forward_ios_rounded, 
-                        color: order['fezOrderNo'] != null ? AppColors.amber : Colors.white10, size: 14),
-                      onPressed: () {
-                        if (order['fezOrderNo'] != null) {
-                          Navigator.pushNamed(context, '/delivery-tracking', arguments: order['fezOrderNo']);
-                        }
-                      },
-                    ),
+                  _StatusBadge(status: isPending ? OrderStatus.pending : OrderStatus.inProgress),
                 ],
               ),
               if (isPending) ...[
@@ -214,17 +268,18 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextButton(
+                      child: OutlinedButton(
                         onPressed: () => _handleHandshake(order, false),
-                        child: const Text('REJECT', style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                        style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                        child: const Text('REJECT', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _handleHandshake(order, true),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                        child: const Text('ACCEPT BOOKING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
+                        child: const Text('ACCEPT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
                       ),
                     ),
                   ],
@@ -240,14 +295,9 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
   Future<void> _handleHandshake(Map<String, dynamic> order, bool accepted) async {
     if (accepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('BOOKING ACCEPTED. SUMMONING FEZ RIDER...'), backgroundColor: Colors.greenAccent),
+        const SnackBar(content: Text('BOOKING ACCEPTED. CALIBRATING LOGISTICS...'), backgroundColor: Colors.greenAccent),
       );
-      
       try {
-        if (!mounted) return;
-        final messenger = ScaffoldMessenger.of(context);
-        
-        // Map dynamic map to OrderEntity for the repository
         final orderEntity = OrderEntity(
           id: order['id'],
           clientId: order['clientId'] ?? '',
@@ -258,41 +308,18 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
           dueDate: DateTime.now(),
           createdAt: DateTime.now(),
         );
-
-        final result = await ref.read(logisticsRepositoryProvider).summonRider(orderEntity);
-        
-        result.fold(
-          (failure) {
-            messenger.showSnackBar(
-              SnackBar(content: Text('RIDER SUMMON FAILED: ${failure.message}'), backgroundColor: Colors.redAccent),
-            );
-          },
-          (fezOrderNo) {
-            messenger.showSnackBar(
-              SnackBar(content: Text('FEZ RIDER ON THE WAY! TRACK NO: $fezOrderNo'), backgroundColor: Colors.blueAccent),
-            );
-            // Refresh dashboard data
-            final userId = ref.read(currentUserProvider)?.id ?? '';
-            ref.invalidate(recentOrdersProvider(userId));
-          },
-        );
+        await ref.read(logisticsRepositoryProvider).summonRider(orderEntity);
+        ref.invalidate(recentOrdersProvider(ref.read(currentUserProvider)?.id ?? ''));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('SYSTEM ERROR: $e'), backgroundColor: Colors.redAccent),
-        );
+        debugPrint('Handshake Error: $e');
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('BOOKING CANCELLED.'), backgroundColor: Colors.redAccent),
-      );
-      // Logic for cancelling booking in Firestore...
     }
   }
 
-  Widget _buildClientsGrid(List<dynamic> clients) {
-    if (clients.isEmpty) return const Center(child: Text('NO CLIENTS YET', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900)));
+  Widget _buildClientsStrip(List<dynamic> clients) {
+    if (clients.isEmpty) return const SizedBox();
     return SizedBox(
-      height: 100,
+      height: 90,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: clients.length,
@@ -300,21 +327,39 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
         itemBuilder: (context, index) {
           final client = clients[index];
           final String name = client['name']?.toString() ?? 'T';
-          final String initial = name.isNotEmpty ? name[0].toUpperCase() : 'T';
           
           return Column(
             children: [
-              CircleAvatar(
-                radius: 30, 
-                backgroundColor: Colors.white.withValues(alpha: 0.05),
-                child: Text(initial, style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900)),
+              Container(
+                width: 54, height: 54,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.amber.withValues(alpha: 0.2), width: 1.5),
+                  color: Colors.white.withValues(alpha: 0.03),
+                ),
+                child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 18))),
               ),
               const SizedBox(height: 8),
-              Text(name.toUpperCase(), style: const TextStyle(fontSize: 8, color: Colors.white38, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+              Text(name.split(' ').first.toUpperCase(), style: const TextStyle(fontSize: 8, color: Colors.white38, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
             ],
           );
         },
       ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final OrderStatus status;
+  const _StatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    Color color = status == OrderStatus.pending ? Colors.orange : AppColors.amber;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.2))),
+      child: Text(status.name.toUpperCase(), style: TextStyle(color: color, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
     );
   }
 }

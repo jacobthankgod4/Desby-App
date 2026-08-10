@@ -6,6 +6,7 @@ part 'apprentice_task_model.g.dart';
 
 @freezed
 class ApprenticeTaskModel with _$ApprenticeTaskModel {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ApprenticeTaskModel({
     required String id,
     required String apprenticeshipId,

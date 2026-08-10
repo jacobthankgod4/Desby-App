@@ -28,6 +28,14 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
   final _businessNameController = TextEditingController();
   final _businessPhoneController = TextEditingController();
   final _businessAddressController = TextEditingController();
+  
+  // WEB STABILITY: Explicit Focus Nodes
+  final _nameFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+  final _addressFocus = FocusNode();
+  final _stateFocus = FocusNode();
+  final _lgaFocus = FocusNode();
+
   String? _selectedCountry = 'Nigeria';
   String? _selectedState;
   String? _selectedLga;
@@ -52,6 +60,13 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
     _businessNameController.dispose();
     _businessPhoneController.dispose();
     _businessAddressController.dispose();
+    
+    // Dispose focus nodes
+    _nameFocus.dispose();
+    _phoneFocus.dispose();
+    _addressFocus.dispose();
+    _stateFocus.dispose();
+    _lgaFocus.dispose();
     super.dispose();
   }
 
@@ -84,6 +99,10 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
   }
 
   Future<void> _finishOnboarding() async {
+    // WEB STABILITY: Force terminal unfocus
+    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+    
     setState(() => _isLoading = true);
     try {
       final user = ref.read(currentUserProvider);
@@ -118,6 +137,10 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
 
       await ref.read(updateProfileUsecaseProvider)(updatedProfile);
       await localStorage.save(StorageKeys.tailorOnboardingComplete, true);
+      
+      // Delay navigation slightly to let DOM state settle after unfocus
+      await Future.delayed(const Duration(milliseconds: 250));
+      
       if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.redAccent));
@@ -145,11 +168,14 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
       nextLabel: _currentStep == _totalSteps - 1 ? 'START BUSINESS' : 'CONTINUE',
       onBack: _currentStep > 0 ? _previousStep : null,
       onNext: _nextStep,
-      content: SizedBox(
-        height: 500, 
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 400, maxHeight: 600), 
         child: PageView(
           controller: _pageController,
-          onPageChanged: (i) => setState(() => _currentStep = i),
+          onPageChanged: (i) {
+            FocusScope.of(context).unfocus();
+            setState(() => _currentStep = i);
+          },
           physics: const NeverScrollableScrollPhysics(),
           children: [
             _buildServicesStep(),
@@ -176,142 +202,149 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
 
   Widget _buildServicesStep() {
     final services = TailorServices.detailed;
-    return ListView.builder(
-      itemCount: services.length,
-      itemBuilder: (context, index) {
-        final s = services[index];
-        final id = s['id']!;
-        final name = s['name']!;
-        final desc = s['description']!;
-        final isSelected = _selectedServices.contains(name);
-        final isExpanded = _expandedServiceId == id;
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: services.map((s) => _buildServiceItem(s)).toList(),
+      ),
+    );
+  }
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOutCubic,
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: isSelected 
-                ? AppColors.amber.withValues(alpha: 0.05) 
-                : Colors.white.withValues(alpha: 0.03),
+  Widget _buildServiceItem(Map<String, String> s) {
+    final id = s['id']!;
+    final name = s['name']!;
+    final desc = s['description']!;
+    final isSelected = _selectedServices.contains(name);
+    final isExpanded = _expandedServiceId == id;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubic,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isSelected 
+            ? AppColors.amber.withValues(alpha: 0.05) 
+            : Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.05), 
+          width: isSelected ? 2.0 : 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  _selectedServices.remove(name);
+                } else {
+                  _selectedServices.add(name);
+                  _expandedServiceId = id;
+                }
+              });
+            },
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.05), 
-              width: isSelected ? 2.0 : 1.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    if (isSelected) {
-                      _selectedServices.remove(name);
-                    } else {
-                      _selectedServices.add(name);
-                      _expandedServiceId = id;
-                    }
-                  });
-                },
-                borderRadius: BorderRadius.circular(24),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      AnimatedScale(
-                        duration: const Duration(milliseconds: 300),
-                        scale: isSelected ? 1.05 : 1.0,
-                        child: Container(
-                          width: 80, height: 80,
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.black26),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Stack(
-                              children: [
-                                Image.asset('assets/images/tailor.jpg', fit: BoxFit.cover, width: 80, height: 80),
-                                Container(color: Colors.black.withValues(alpha: 0.3)),
-                                Center(child: Text(name.split(' ').first.toUpperCase(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1))),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  AnimatedScale(
+                    duration: const Duration(milliseconds: 300),
+                    scale: isSelected ? 1.05 : 1.0,
+                    child: Container(
+                      width: 80, height: 80,
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.black26),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
                           children: [
-                            Text(name.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
-                            const SizedBox(height: 4),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 300),
-                              child: Text(
-                                isSelected ? 'SERVICE SELECTED' : 'TAP TO SELECT', 
-                                key: ValueKey<bool>(isSelected),
-                                style: TextStyle(
-                                  color: isSelected ? AppColors.amber : Colors.white24, 
-                                  fontSize: 9, 
-                                  fontWeight: FontWeight.w800, 
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
+                            Image.asset('assets/images/tailor.jpg', fit: BoxFit.cover, width: 80, height: 80),
+                            Container(color: Colors.black.withValues(alpha: 0.3)),
+                            Center(child: Text(name.split(' ').first.toUpperCase(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1))),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: AnimatedRotation(
-                          duration: const Duration(milliseconds: 300),
-                          turns: isExpanded ? 0.5 : 0,
-                          child: const Icon(Icons.expand_more_rounded, color: Colors.white24),
-                        ),
-                        onPressed: () => setState(() => _expandedServiceId = isExpanded ? null : id),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                        const SizedBox(height: 4),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: Text(
+                            isSelected ? 'SERVICE SELECTED' : 'TAP TO SELECT', 
+                            key: ValueKey<bool>(isSelected),
+                            style: TextStyle(
+                              color: isSelected ? AppColors.amber : Colors.white24, 
+                              fontSize: 9, 
+                              fontWeight: FontWeight.w800, 
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: AnimatedRotation(
+                      duration: const Duration(milliseconds: 300),
+                      turns: isExpanded ? 0.5 : 0,
+                      child: const Icon(Icons.expand_more_rounded, color: Colors.white24),
+                    ),
+                    onPressed: () => setState(() => _expandedServiceId = isExpanded ? null : id),
+                  ),
+                ],
               ),
-              AnimatedCrossFade(
-                firstChild: const SizedBox(width: double.infinity),
-                secondChild: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: Text(desc, style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.5, fontWeight: FontWeight.w500)),
-                ),
-                crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                duration: const Duration(milliseconds: 400),
-              ),
-            ],
+            ),
           ),
-        );
-      },
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Text(desc, style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.5, fontWeight: FontWeight.w500)),
+            ),
+            crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 400),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildFabricsStep() {
-    return Wrap(
-      spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
-      children: FabricTypes.all.map((f) => OptionPill(
-        label: f, isSelected: _selectedFabrics.contains(f),
-        onTap: () => setState(() => _selectedFabrics.contains(f) ? _selectedFabrics.remove(f) : _selectedFabrics.add(f)),
-      )).toList(),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Wrap(
+        spacing: 12, runSpacing: 12, alignment: WrapAlignment.center,
+        children: FabricTypes.all.map((f) => OptionPill(
+          label: f, isSelected: _selectedFabrics.contains(f),
+          onTap: () => setState(() => _selectedFabrics.contains(f) ? _selectedFabrics.remove(f) : _selectedFabrics.add(f)),
+        )).toList(),
+      ),
     );
   }
 
   Widget _buildBusinessDetailsStep() {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
-          _buildField('BUSINESS NAME', Icons.store_rounded, _businessNameController),
+          _buildField('BUSINESS NAME', Icons.store_rounded, _businessNameController, focusNode: _nameFocus),
           const SizedBox(height: 16),
-          _buildField('PHONE NUMBER', Icons.phone_rounded, _businessPhoneController, type: TextInputType.phone),
+          _buildField('PHONE NUMBER', Icons.phone_rounded, _businessPhoneController, type: TextInputType.phone, focusNode: _phoneFocus),
           const SizedBox(height: 16),
-          _buildField('SHOP ADDRESS', Icons.location_on_rounded, _businessAddressController),
+          _buildField('SHOP ADDRESS', Icons.location_on_rounded, _businessAddressController, focusNode: _addressFocus),
           const SizedBox(height: 16),
           _buildDropdown('STATE', Icons.map_rounded, _selectedState, NigeriaLgaData.states, (v) {
             setState(() { _selectedState = v; _selectedLga = null; _availableLgas = v != null ? NigeriaLgaData.getLgasForState(v) : []; });
-          }),
+          }, focusNode: _stateFocus),
           const SizedBox(height: 16),
-          _buildDropdown('LGA', Icons.location_city_rounded, _selectedLga, _availableLgas, (v) => setState(() => _selectedLga = v), enabled: _selectedState != null),
+          _buildDropdown('LGA', Icons.location_city_rounded, _selectedLga, _availableLgas, (v) => setState(() => _selectedLga = v), enabled: _selectedState != null, focusNode: _lgaFocus),
         ],
       ),
     );
@@ -319,9 +352,11 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
 
   Widget _buildWorkingHoursStep() {
     final days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    return ListView(
-      shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-      children: days.map((d) => _buildDayRow(d)).toList(),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: days.map((d) => _buildDayRow(d)).toList(),
+      ),
     );
   }
 
@@ -374,6 +409,7 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
 
   Widget _buildReviewStep() {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
           _buildReviewCard('BUSINESS', '${_businessNameController.text}\n${_businessAddressController.text}'),
@@ -401,9 +437,11 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
     );
   }
 
-  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text}) {
+  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text, FocusNode? focusNode}) {
     return TextField(
-      controller: controller, keyboardType: type,
+      controller: controller, 
+      keyboardType: type,
+      focusNode: focusNode,
       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900),
@@ -415,13 +453,15 @@ focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borde
     );
   }
 
-  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged, {bool enabled = true}) {
+  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged, {bool enabled = true, FocusNode? focusNode}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(18)),
       child: DropdownButtonHideUnderline(
         child: DropdownButtonFormField<String>(
-          initialValue: value, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
+          initialValue: value, 
+          focusNode: focusNode,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
           onChanged: enabled ? onChanged : null,
           decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900), prefixIcon: Icon(icon, color: AppColors.amber, size: 20), border: InputBorder.none),
           dropdownColor: AppColors.darkNavy, icon: const Icon(Icons.expand_more_rounded, color: Colors.white24),

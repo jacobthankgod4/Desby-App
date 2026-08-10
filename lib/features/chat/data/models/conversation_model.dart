@@ -7,6 +7,7 @@ part 'conversation_model.g.dart';
 
 @freezed
 class ConversationModel with _$ConversationModel {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ConversationModel({
     required String id,
     required List<String> participantIds,

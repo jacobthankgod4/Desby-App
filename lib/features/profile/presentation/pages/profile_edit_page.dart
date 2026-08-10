@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/services/image_upload_service.dart';
@@ -179,7 +180,13 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (ref.read(navigationProvider).route != '/main') {
+              ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+            } else {
+              Navigator.maybePop(context);
+            }
+          },
         ),
       ),
       backgroundColor: const Color(0xFF0A1921),
@@ -667,11 +674,14 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
 
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
-      final navigator = Navigator.of(context);
 
       final usecase = ref.read(updateProfileUsecaseProvider);
       final result = await usecase(updatedProfile);
       
+      // REFRESH: Clear cached empty or stale profile
+      ref.invalidate(userProfileProvider(widget.userId));
+      await ref.read(userProfileProvider(widget.userId).future);
+
       result.fold(
         (failure) {
           messenger.showSnackBar(
@@ -689,7 +699,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               backgroundColor: AppColors.amber,
             ),
           );
-          navigator.pop();
+          
+          if (ref.read(navigationProvider.notifier).state.route != '/main') {
+            ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+          } else {
+            Navigator.maybePop(context);
+          }
         },
       );
     } finally {

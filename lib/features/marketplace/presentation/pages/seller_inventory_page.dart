@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/fabric_provider.dart';
-import '../widgets/fabric_card.dart';
+import 'fabric_upload_page.dart';
 
 class SellerInventoryPage extends ConsumerWidget {
   const SellerInventoryPage({super.key});
@@ -13,7 +13,7 @@ class SellerInventoryPage extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     if (user == null) return const Center(child: Text('User not found'));
 
-    final inventoryAsync = ref.watch(fabricCatalogProvider(sellerId: user.id));
+    final inventoryAsync = ref.watch(sellerInventoryProvider(user.id));
 
     return Scaffold(
       backgroundColor: AppColors.darkNavy,
@@ -22,7 +22,18 @@ class SellerInventoryPage extends ConsumerWidget {
             ? _buildEmptyState(context)
             : _buildInventoryList(context, fabrics, ref),
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-        error: (err, _) => Center(child: Text('Inventory sync failed: $err', style: const TextStyle(color: Colors.white38))),
+        error: (err, _) => const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.inventory_2_outlined, color: Colors.white24, size: 48),
+              SizedBox(height: 12),
+              Text('INVENTORY UNAVAILABLE', style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              SizedBox(height: 8),
+              Text('Check your connection and try again.', style: TextStyle(color: Colors.white24, fontSize: 11)),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.pushNamed(context, '/fabric-upload'),
@@ -91,7 +102,12 @@ class SellerInventoryPage extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.edit_outlined, color: Colors.white38, size: 20),
                     onPressed: () {
-                      // TODO: Implement Edit logic
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FabricUploadPage(fabric: fabric),
+                        ),
+                      );
                     },
                   ),
                   IconButton(

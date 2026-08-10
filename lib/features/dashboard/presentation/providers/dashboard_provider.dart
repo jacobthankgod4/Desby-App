@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/dashboard_repository.dart';
 import '../../domain/usecases/dashboard_usecases.dart';
-import '../../data/repositories/firebase_dashboard_repository.dart';
+import '../../data/repositories/supabase_dashboard_repository.dart';
 
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
-  return FirebaseDashboardRepository();
+  return SupabaseDashboardRepository();
 });
 
 final getDashboardStatsUsecaseProvider = Provider((ref) {

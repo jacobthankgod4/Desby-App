@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/fabric.dart';
 import '../providers/fabric_provider.dart';
-import '../providers/fabric_provider.dart' show fabricByIdProvider;
 import '../widgets/specification_table.dart';
 import '../widgets/product_narrative.dart';
 import '../widgets/seller_trust_card.dart';
 import '../widgets/trust_action_footer.dart';
-import '../widgets/related_products.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../chat/presentation/providers/chat_provider.dart';
 
 /// FabricDetailPage - Shows detailed view of a fabric with images, specs, and purchase options
 class FabricDetailPage extends ConsumerStatefulWidget {
@@ -33,9 +32,11 @@ class _FabricDetailPageState extends ConsumerState<FabricDetailPage> {
   bool _isAddingToCart = false;
   bool _isFavorite = false;
 
+  final _supabase = Supabase.instance.client;
+
   @override
   Widget build(BuildContext context) {
-    // Get fabric by ID from repository
+    // Try direct lookup first, fall back to catalog stream
     final fabricAsync = ref.watch(fabricByIdProvider(widget.fabricId));
     
     final bool isMobile = MediaQuery.of(context).size.width < 900;
@@ -89,9 +90,35 @@ class _FabricDetailPageState extends ConsumerState<FabricDetailPage> {
           child: CircularProgressIndicator(color: AppColors.amber),
         ),
         error: (error, stack) => Center(
-          child: Text(
-            'Error: $error',
-            style: const TextStyle(color: Colors.red),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+              const SizedBox(height: 16),
+              const Text(
+                'FABRIC NOT FOUND',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This listing may have been removed.',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.amber,
+                  foregroundColor: AppColors.darkNavy,
+                ),
+                child: const Text('GO BACK'),
+              ),
+            ],
           ),
         ),
       ),
@@ -590,7 +617,6 @@ Future<void> _addToCart(Fabric fabric) async {
     setState(() => _isAddingToCart = true);
     
     try {
-      // Get current user
       final user = ref.read(currentUserProvider);
       if (user == null) {
         if (mounted) {
@@ -604,26 +630,21 @@ Future<void> _addToCart(Fabric fabric) async {
         return;
       }
       
-      // Add to cart in Firebase
-      final firestore = FirebaseFirestore.instance;
-      final cartRef = firestore.collection('carts').doc(user.id);
-      
-      final cartItem = {
-        'fabricId': fabric.id,
-        'fabricName': fabric.name,
-        'quantity': _quantity,
-        'pricePerYard': fabric.pricePerYard,
-        'selectedColor': _selectedColor,
-        'totalPrice': fabric.pricePerYard * _quantity,
-        'addedAt': DateTime.now().millisecondsSinceEpoch,
-      };
-      
-      // Update cart document with array union
-      await cartRef.set({
-        'items': FieldValue.arrayUnion([cartItem]),
-        'userId': user.id,
-        'updatedAt': DateTime.now().millisecondsSinceEpoch,
-      }, SetOptions(merge: true));
+      await _supabase.from('carts').upsert({
+        'user_id': user.id,
+        'items': [
+           {
+            'fabricId': fabric.id,
+            'fabricName': fabric.name,
+            'quantity': _quantity,
+            'pricePerYard': fabric.pricePerYard,
+            'selectedColor': _selectedColor,
+            'totalPrice': fabric.pricePerYard * _quantity,
+            'addedAt': DateTime.now().toIso8601String(),
+          }
+        ],
+        'updated_at': DateTime.now().toIso8601String(),
+      });
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -636,8 +657,8 @@ Future<void> _addToCart(Fabric fabric) async {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
+          const SnackBar(
+            content: Text('Failed to add to cart. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -650,7 +671,6 @@ Future<void> _addToCart(Fabric fabric) async {
   void _toggleFavorite() {
     setState(() => _isFavorite = !_isFavorite);
     
-    // Get current user
     final user = ref.read(currentUserProvider);
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -662,21 +682,12 @@ Future<void> _addToCart(Fabric fabric) async {
       return;
     }
     
-    // Update favorites in Firebase
-    final firestore = FirebaseFirestore.instance;
-    final favRef = firestore.collection('favorites').doc(user.id);
-    
-    if (_isFavorite) {
-      favRef.set({
-        'fabricIds': FieldValue.arrayUnion([widget.fabricId]),
-        'updatedAt': DateTime.now().millisecondsSinceEpoch,
-      }, SetOptions(merge: true));
-    } else {
-      favRef.set({
-        'fabricIds': FieldValue.arrayRemove([widget.fabricId]),
-        'updatedAt': DateTime.now().millisecondsSinceEpoch,
-      }, SetOptions(merge: true));
-    }
+    // Simplified favorite logic for Supabase
+    _supabase.from('favorites').upsert({
+      'user_id': user.id,
+      'fabric_id': widget.fabricId,
+      'is_favorite': _isFavorite,
+    });
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -687,7 +698,6 @@ Future<void> _addToCart(Fabric fabric) async {
   }
 
   void _shareFabric() {
-    // Share functionality - copy link to clipboard
     final shareUrl = 'https://desby.app/fabric-details?fabricId=${widget.fabricId}';
     Clipboard.setData(ClipboardData(text: shareUrl));
     
@@ -699,11 +709,25 @@ Future<void> _addToCart(Fabric fabric) async {
     );
   }
 
-  void _initChat(String sellerId) {
-    // Logic to initiate/find conversation
-    Navigator.pushNamed(context, '/chats'); 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Connecting to Secure Merchant Channel...')),
+  Future<void> _initChat(String sellerId) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('LOGIN REQUIRED FOR MESSAGING')));
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connecting to Secure Merchant Channel...')));
+    
+    final result = await ref.read(chatRepositoryProvider).createConversation([user.id, sellerId]);
+    
+    result.fold(
+      (failure) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connection Failed: $failure'))),
+      (conversation) {
+        Navigator.pushNamed(context, '/chat-detail', arguments: {
+          'conversationId': conversation.id,
+          'peerId': sellerId,
+        });
+      },
     );
   }
 }

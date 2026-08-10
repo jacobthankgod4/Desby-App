@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/paystack_service.dart';
+import '../../../../core/services/flutterwave_service.dart';
 import '../../../../theme/colors.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 
@@ -15,7 +15,7 @@ class CheckoutPage extends ConsumerStatefulWidget {
 }
 
 class _CheckoutPageState extends ConsumerState<CheckoutPage> {
-  final PaystackService _paystackService = PaystackService();
+  final FlutterwaveService _flutterwaveService = FlutterwaveService();
   bool _isProcessing = false;
 
   @override
@@ -145,15 +145,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       // For this audit, we assume ₦500 split if orderId contains 'ORD'
       final String? subaccount = widget.orderId.startsWith('ORD') ? 'DESBY_LOGISTICS_ACCOUNT' : null;
 
-      await _paystackService.checkout(
+      // FLUTTERWAVE IMPLEMENTATION
+      await _flutterwaveService.checkout(
         context: context,
         email: user.email,
+        fullName: user.name,
         amount: widget.amount,
-        reference: 'ORD_${user.id.substring(0, 5)}_${DateTime.now().millisecondsSinceEpoch}',
+        orderId: widget.orderId,
         subAccountCode: subaccount,
-        onSuccess: (refId) {
+        onSuccess: (txId) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('PAYMENT VERIFIED: $refId'), backgroundColor: Colors.greenAccent),
+            SnackBar(content: Text('PAYMENT VERIFIED: $txId'), backgroundColor: Colors.greenAccent),
           );
           Navigator.pop(context, true);
         },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../widgets/market_header.dart';
 import '../widgets/search_hero.dart';
@@ -24,7 +25,7 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
     final bool isMobile = MediaQuery.of(context).size.width < 900;
     final fabricsAsync = ref.watch(fabricCatalogProvider(_selectedCategory));
 
-return Scaffold(
+    return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.darkNavy,
       // Drawer works on both mobile and desktop - opens category filter
@@ -35,15 +36,23 @@ return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.darkNavy,
         elevation: 0,
-        leading: Navigator.canPop(context) 
+        leading: isMobile 
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-              onPressed: () => Navigator.pop(context),
-            )
-          : IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
+            )
+          : (Navigator.canPop(context) 
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
+                  onPressed: () {
+                    if (ref.read(navigationProvider).route != '/main') {
+                      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+                    } else {
+                      Navigator.maybePop(context);
+                    }
+                  },
+                )
+              : null),
         title: const Text('MARKETPLACE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1.5)),
         centerTitle: true,
       ),
@@ -75,7 +84,35 @@ return Scaffold(
                       ),
                     ),
                     loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-                    error: (e, _) => Center(child: Text('Marketplace Offline: $e', style: const TextStyle(color: Colors.white38))),
+                    error: (e, _) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.storefront_outlined, color: Colors.white24, size: 64),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'MARKETPLACE UNAVAILABLE',
+                            style: TextStyle(
+                              color: Colors.white38,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Check your connection and try again.',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 12),
+                          ),
+                          const SizedBox(height: 24),
+                          TextButton.icon(
+                            onPressed: () => ref.invalidate(fabricCatalogProvider(_selectedCategory)),
+                            icon: const Icon(Icons.refresh, color: AppColors.amber, size: 16),
+                            label: const Text('RETRY', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 /// Product entity for tailor shop items
 class ShopProduct {
   final String id;
@@ -75,47 +73,43 @@ class ShopProduct {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'tailorId': tailorId,
+      'tailor_id': tailorId,
       'name': name,
       'description': description,
       'price': price,
       'currency': currency,
-      'imageUrls': imageUrls,
+      'image_urls': imageUrls,
       'category': category,
-      'availableFabrics': availableFabrics,
-      'availableSizes': availableSizes,
-      'isVisible': isVisible,
-      'isAvailable': isAvailable,
-      'orderCount': orderCount,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
+      'available_fabrics': availableFabrics,
+      'available_sizes': availableSizes,
+      'is_visible': isVisible,
+      'is_available': isAvailable,
+      'order_count': orderCount,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
   factory ShopProduct.fromMap(Map<String, dynamic> map) {
     return ShopProduct(
       id: map['id'] as String? ?? '',
-      tailorId: map['tailorId'] as String? ?? '',
+      tailorId: map['tailor_id'] as String? ?? '',
       name: map['name'] as String? ?? '',
       description: map['description'] as String? ?? '',
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
       currency: map['currency'] as String? ?? 'NGN',
-      imageUrls: (map['imageUrls'] as List?)?.cast<String>() ?? [],
+      imageUrls: (map['image_urls'] as List?)?.cast<String>() ?? [],
       category: map['category'] as String? ?? 'Custom',
-      availableFabrics: (map['availableFabrics'] as List?)?.cast<String>() ?? [],
-      availableSizes: (map['availableSizes'] as List?)?.cast<String>() ?? [],
-      isVisible: map['isVisible'] as bool? ?? true,
-      isAvailable: map['isAvailable'] as bool? ?? true,
-      orderCount: map['orderCount'] as int? ?? 0,
-      createdAt: (map['createdAt'] is Timestamp)
-          ? (map['createdAt'] as Timestamp).toDate()
-          : (map['createdAt'] is String)
-              ? DateTime.parse(map['createdAt'] as String)
-              : DateTime.now(),
-      updatedAt: map['updatedAt'] != null
-          ? (map['updatedAt'] is Timestamp)
-              ? (map['updatedAt'] as Timestamp).toDate()
-              : DateTime.tryParse(map['updatedAt'] as String)
+      availableFabrics: (map['available_fabrics'] as List?)?.cast<String>() ?? [],
+      availableSizes: (map['available_sizes'] as List?)?.cast<String>() ?? [],
+      isVisible: map['is_visible'] as bool? ?? true,
+      isAvailable: map['is_available'] as bool? ?? true,
+      orderCount: map['order_count'] as int? ?? 0,
+      createdAt: map['created_at'] != null 
+          ? DateTime.parse(map['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: map['updated_at'] != null
+          ? DateTime.tryParse(map['updated_at'] as String)
           : null,
     );
   }

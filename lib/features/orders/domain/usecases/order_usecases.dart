@@ -5,8 +5,8 @@ import '../repositories/order_repository.dart';
 class GetOrdersUsecase {
   final OrderRepository repository;
   GetOrdersUsecase(this.repository);
-  Future<Result<List<OrderEntity>>> call({OrderStatus? status, String? clientId}) =>
-      repository.getOrders(status: status, clientId: clientId);
+  Future<Result<List<OrderEntity>>> call({OrderStatus? status, String? clientId, String? tailorId}) =>
+      repository.getOrders(status: status, clientId: clientId, tailorId: tailorId);
 }
 
 class GetOrderByIdUsecase {

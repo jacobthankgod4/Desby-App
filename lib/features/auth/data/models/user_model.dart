@@ -1,7 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/user.dart';
 
-/// Simplified UserModel for Firebase storage - avoids freezed code generation issues
+/// Simplified UserModel for Supabase storage - avoids freezed code generation issues
 class UserModel {
   final String id;
   final String email;
@@ -34,14 +33,14 @@ class UserModel {
     'id': id,
     'email': email,
     'name': name,
-    'userType': userType,
-    'createdAt': Timestamp.fromDate(createdAt),
+    'user_type': userType,
+    'created_at': createdAt.toIso8601String(),
     'phone': phone,
-    'profileImage': profileImage,
+    'profile_image': profileImage,
     'bio': bio,
-    'isVerified': isVerified,
-    'servicePricing': servicePricing,
-    'pricingTier': pricingTier,
+    'is_verified': isVerified,
+    'service_pricing': servicePricing,
+    'pricing_tier': pricingTier,
   };
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -49,18 +48,16 @@ class UserModel {
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      userType: json['userType'] as String? ?? '',
-      createdAt: json['createdAt'] is Timestamp
-          ? (json['createdAt'] as Timestamp).toDate()
-          : json['createdAt'] is String
-              ? DateTime.parse(json['createdAt'] as String)
+      userType: (json['user_type'] ?? json['userType']) as String? ?? '',
+      createdAt: (json['created_at'] ?? json['createdAt']) is String
+              ? DateTime.parse((json['created_at'] ?? json['createdAt']) as String)
               : DateTime.now(),
       phone: json['phone'] as String?,
-      profileImage: json['profileImage'] as String?,
+      profileImage: (json['profile_image'] ?? json['profileImage']) as String?,
       bio: json['bio'] as String?,
-      isVerified: json['isVerified'] as bool? ?? false,
-      servicePricing: json['servicePricing'] as Map<String, dynamic>?,
-      pricingTier: json['pricingTier'] as String?,
+      isVerified: (json['is_verified'] ?? json['isVerified']) as bool? ?? false,
+      servicePricing: (json['service_pricing'] ?? json['servicePricing']) as Map<String, dynamic>?,
+      pricingTier: (json['pricing_tier'] ?? json['pricingTier']) as String?,
     );
   }
 

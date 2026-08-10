@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "ARCHITECTURE.md",
+    "CODING_STANDARDS.md",
+    "CONTRIBUTING.md",
+    "DEVELOPMENT.md"
+  ],
+  "references": {
+    "docs": {
+      "path": ".",
+      "description": "Desby OS project documentation, architecture guides, and implementation plans"
+    }
+  },
+  "permission": {
+    "bash": {
+      "flutter *": "allow",
+      "dart *": "allow",
+      "git *": "allow"
+    }
+  }
+}

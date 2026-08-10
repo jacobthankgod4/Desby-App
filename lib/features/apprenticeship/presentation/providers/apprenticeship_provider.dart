@@ -3,11 +3,11 @@ import '../../domain/entities/apprenticeship.dart';
 import '../../domain/entities/apprentice_task.dart';
 import '../../domain/entities/apprentice_module.dart';
 import '../../domain/repositories/apprenticeship_repository.dart';
-import '../../data/repositories/firebase_apprenticeship_repository.dart';
+import '../../data/repositories/supabase_apprenticeship_repository.dart';
 
 // Repository Provider
 final apprenticeshipRepositoryProvider = Provider<ApprenticeshipRepository>((ref) {
-  return FirebaseApprenticeshipRepository();
+  return SupabaseApprenticeshipRepository();
 });
 
 // Apprenticeships for a Tailor

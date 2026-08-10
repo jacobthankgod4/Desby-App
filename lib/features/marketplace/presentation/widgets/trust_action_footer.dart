@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
 
 class TrustActionFooter extends StatelessWidget {
-  const TrustActionFooter({super.key});
+  final double? amount;
+  final String? orderId;
+  const TrustActionFooter({super.key, this.amount, this.orderId});
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +36,8 @@ class TrustActionFooter extends StatelessWidget {
                 context, 
                 '/checkout', 
                 arguments: {
-                  'amount': 85000.0, // Calibrated standard fabric purchase
-                  'orderId': 'MKT_${DateTime.now().millisecondsSinceEpoch}',
+                  'amount': amount ?? 85000.0, // Calibrated standard fabric purchase
+                  'orderId': orderId ?? 'MKT_${DateTime.now().millisecondsSinceEpoch}',
                 }
               );
             },

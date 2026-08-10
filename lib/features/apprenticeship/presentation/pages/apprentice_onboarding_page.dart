@@ -28,6 +28,14 @@ class _ApprenticeOnboardingPageState extends ConsumerState<ApprenticeOnboardingP
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
+  
+  // WEB STABILITY: Explicit Focus Nodes
+  final _nameFocus = FocusNode();
+  final _phoneFocus = FocusNode();
+  final _addressFocus = FocusNode();
+  final _bioFocus = FocusNode();
+  final _stateFocus = FocusNode();
+
   String? _selectedState;
   String _selectedGender = 'MALE';
 
@@ -55,6 +63,13 @@ class _ApprenticeOnboardingPageState extends ConsumerState<ApprenticeOnboardingP
     _phoneController.dispose();
     _addressController.dispose();
     _bioController.dispose();
+    
+    // Dispose focus nodes
+    _nameFocus.dispose();
+    _phoneFocus.dispose();
+    _addressFocus.dispose();
+    _bioFocus.dispose();
+    _stateFocus.dispose();
     super.dispose();
   }
 
@@ -87,6 +102,10 @@ class _ApprenticeOnboardingPageState extends ConsumerState<ApprenticeOnboardingP
   }
 
 void _finish() async {
+    // WEB STABILITY: Force terminal unfocus
+    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final user = ref.read(currentUserProvider);
     if (user == null) return;
 
@@ -114,6 +133,9 @@ void _finish() async {
     // Save onboarding completion status
     await localStorage.save(StorageKeys.apprenticeOnboardingComplete, true);
     
+    // Delay navigation slightly to let DOM state settle after unfocus
+    await Future.delayed(const Duration(milliseconds: 250));
+    
     if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
   }
 
@@ -128,11 +150,14 @@ void _finish() async {
       nextLabel: _currentStep == _totalSteps - 1 ? (widget.preSelectedMasterId != null ? 'START ACADEMY' : 'APPLY TO ACADEMY') : 'CONTINUE',
       onBack: _currentStep > 0 ? _previousStep : null,
       onNext: _nextStep,
-      content: SizedBox(
-        height: 500,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 400, maxHeight: 600),
         child: PageView(
           controller: _pageController,
-          onPageChanged: (i) => setState(() => _currentStep = i),
+          onPageChanged: (i) {
+            FocusScope.of(context).unfocus();
+            setState(() => _currentStep = i);
+          },
           physics: const NeverScrollableScrollPhysics(),
           children: [
             _buildPersonalInfoStep(),
@@ -161,48 +186,57 @@ void _finish() async {
 
   Widget _buildPersonalInfoStep() {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
           Row(children: ['MALE', 'FEMALE'].map((g) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: OptionPill(label: g, isSelected: _selectedGender == g, onTap: () => setState(() => _selectedGender = g))))).toList()),
           const SizedBox(height: 24),
-          _buildField('FULL NAME', Icons.person_rounded, _nameController),
+          _buildField('FULL NAME', Icons.person_rounded, _nameController, focusNode: _nameFocus),
           const SizedBox(height: 16),
-          _buildField('PHONE NUMBER', Icons.phone_rounded, _phoneController, type: TextInputType.phone),
+          _buildField('PHONE NUMBER', Icons.phone_rounded, _phoneController, type: TextInputType.phone, focusNode: _phoneFocus),
           const SizedBox(height: 16),
-          _buildField('RESIDENTIAL ADDRESS', Icons.location_on_rounded, _addressController),
+          _buildField('RESIDENTIAL ADDRESS', Icons.location_on_rounded, _addressController, focusNode: _addressFocus),
           const SizedBox(height: 16),
-          _buildDropdown('STATE', Icons.map_rounded, _selectedState, NigeriaLgaData.states, (v) => setState(() => _selectedState = v)),
+          _buildDropdown('STATE', Icons.map_rounded, _selectedState, NigeriaLgaData.states, (v) => setState(() => _selectedState = v), focusNode: _stateFocus),
         ],
       ),
     );
   }
 
   Widget _buildBioStep() {
-    return Column(
-      children: [
-        TextField(
-          controller: _bioController, maxLines: 5, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          decoration: InputDecoration(
-            hintText: 'Share your background and vision...',
-            hintStyle: const TextStyle(color: Colors.white24),
-            filled: true, fillColor: Colors.white.withValues(alpha: 0.03),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          TextField(
+            controller: _bioController, 
+            focusNode: _bioFocus,
+            maxLines: 5, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
+              hintText: 'Share your background and vision...',
+              hintStyle: const TextStyle(color: Colors.white24),
+              filled: true, fillColor: Colors.white.withValues(alpha: 0.03),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+            ),
+            onChanged: (_) => setState(() {}),
           ),
-          onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: 12),
-        Text('${_bioController.text.length}/20 characters minimum', style: TextStyle(color: _bioController.text.length > 20 ? Colors.greenAccent : Colors.white24, fontSize: 10, fontWeight: FontWeight.w900)),
-      ],
+          const SizedBox(height: 12),
+          Text('${_bioController.text.length}/20 characters minimum', style: TextStyle(color: _bioController.text.length > 20 ? Colors.greenAccent : Colors.white24, fontSize: 10, fontWeight: FontWeight.w900)),
+        ],
+      ),
     );
   }
 
   Widget _buildExperienceStep() {
     final levels = ['Beginner', 'Intermediate', 'Advanced'];
-    return Column(
-      children: levels.map((l) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: OptionPill(label: l, isSelected: _selectedLevel == l, onTap: () => setState(() => _selectedLevel = l)),
-      )).toList(),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: levels.map((l) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: OptionPill(label: l, isSelected: _selectedLevel == l, onTap: () => setState(() => _selectedLevel = l)),
+        )).toList(),
+      ),
     );
   }
 
@@ -223,35 +257,38 @@ void _finish() async {
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(color: const Color(0xFF00FF7F).withValues(alpha: 0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF00FF7F).withValues(alpha: 0.3))),
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.verified_user_rounded, color: Color(0xFF00FF7F), size: 48),
-              const SizedBox(height: 16),
-              const Text('MENTOR CONFIRMED', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
+              Icon(Icons.verified_user_rounded, color: Color(0xFF00FF7F), size: 48),
+              SizedBox(height: 16),
+              Text('MENTOR CONFIRMED', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
             ],
           ),
         ),
       );
     }
 
-    return Column(
-      children: [
-        _buildField('SEARCH MASTER', Icons.search_rounded, TextEditingController(text: _searchQuery), onChanged: (v) => setState(() => _searchQuery = v)),
-        const SizedBox(height: 24),
-        if (_selectedMaster != null)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: const Color(0xFF00FF7F).withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF00FF7F).withValues(alpha: 0.3))),
-            child: Row(
-              children: [
-                const Icon(Icons.verified, color: Color(0xFF00FF7F)),
-                const SizedBox(width: 16),
-                Text('Linked: ${_selectedMaster!.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ],
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        children: [
+          _buildField('SEARCH MASTER', Icons.search_rounded, TextEditingController(text: _searchQuery), onChanged: (v) => setState(() => _searchQuery = v)),
+          const SizedBox(height: 24),
+          if (_selectedMaster != null)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: const Color(0xFF00FF7F).withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF00FF7F).withValues(alpha: 0.3))),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified, color: Color(0xFF00FF7F)),
+                  const SizedBox(width: 16),
+                  Text('Linked: ${_selectedMaster!.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -276,9 +313,12 @@ void _finish() async {
     );
   }
 
-  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text, Function(String)? onChanged}) {
+  Widget _buildField(String label, IconData icon, TextEditingController controller, {TextInputType type = TextInputType.text, Function(String)? onChanged, FocusNode? focusNode}) {
     return TextField(
-      controller: controller, keyboardType: type, onChanged: onChanged,
+      controller: controller, 
+      keyboardType: type, 
+      onChanged: onChanged,
+      focusNode: focusNode,
       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900),
@@ -290,13 +330,15 @@ focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borde
     );
   }
 
-  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdown(String label, IconData icon, String? value, List<String> items, Function(String?) onChanged, {FocusNode? focusNode}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(18)),
       child: DropdownButtonHideUnderline(
         child: DropdownButtonFormField<String>(
-          initialValue: value, items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
+          initialValue: value, 
+          focusNode: focusNode,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 14)))).toList(),
           onChanged: onChanged,
           decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900), prefixIcon: Icon(icon, color: AppColors.amber, size: 20), border: InputBorder.none),
           dropdownColor: AppColors.darkNavy, icon: const Icon(Icons.expand_more_rounded, color: Colors.white24),

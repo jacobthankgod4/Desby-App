@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/colors.dart';
-import '../../../../core/services/paystack_service.dart';
+import '../../../../core/services/flutterwave_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../domain/entities/shop_product.dart';
 
 class ProductDetailsPage extends ConsumerWidget {
-  final Map<String, dynamic> product;
+  final ShopProduct product;
 
   const ProductDetailsPage({super.key, required this.product});
 
-  // --- REAL PAYSTACK INTEGRATION ---
+  // --- REAL FLUTTERWAVE INTEGRATION ---
   Future<void> _processPayment(BuildContext context, WidgetRef ref) async {
-    final double amount = double.tryParse(product['price'].toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    final double amount = product.price;
     
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid product price architecture.'), backgroundColor: Colors.redAccent));
@@ -25,13 +26,14 @@ class ProductDetailsPage extends ConsumerWidget {
     }
 
     try {
-      await PaystackService().checkout(
+      await FlutterwaveService().checkout(
         context: context,
         email: user.email,
+        fullName: user.name,
         amount: amount,
-        reference: 'PUR_${user.id.substring(0, 5)}_${DateTime.now().millisecondsSinceEpoch}',
-        onSuccess: (refId) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PURCHASE SUCCESSFUL: $refId'), backgroundColor: Colors.greenAccent));
+        orderId: 'PUR_${user.id.substring(0, 5)}',
+        onSuccess: (txId) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('PURCHASE SUCCESSFUL: $txId'), backgroundColor: Colors.greenAccent));
           Navigator.pop(context);
         },
         onCancel: () {
@@ -39,12 +41,16 @@ class ProductDetailsPage extends ConsumerWidget {
         },
       );
     } catch (e) {
-      debugPrint('❌ [PAYSTACK] Failed: $e');
+      debugPrint('❌ [FLUTTERWAVE] Failed: $e');
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final String name = product.name;
+    final String price = '₦${product.price.toInt()}';
+    final String description = product.description;
+
     return Scaffold(
       backgroundColor: AppColors.darkNavy,
       body: CustomScrollView(
@@ -83,15 +89,17 @@ class ProductDetailsPage extends ConsumerWidget {
                   child: Stack(
                     children: [
                       Center(child: Icon(Icons.checkroom_rounded, color: AppColors.amber.withValues(alpha: 0.1), size: 180)),
+                      if (product.imageUrls.isNotEmpty)
+                         Positioned.fill(child: Image.network(product.imageUrls.first, fit: BoxFit.cover)),
                       Positioned(
                         bottom: 32, left: 32,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(product['name']?.toString().toUpperCase() ?? 'MASTERPIECE', 
+                            Text(name.toUpperCase(), 
                               style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1.0)),
                             const SizedBox(height: 8),
-                            Text(product['price']?.toString() ?? 'N/A', 
+                            Text(price, 
                               style: const TextStyle(color: AppColors.amber, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1)),
                           ],
                         ),
@@ -113,8 +121,8 @@ class ProductDetailsPage extends ConsumerWidget {
                   const Text('DESIGN NARRATIVE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 12)),
                   const SizedBox(height: 16),
                   Text(
-                    product['description'] != null && product['description'].toString().isNotEmpty 
-                      ? product['description'] 
+                    description.isNotEmpty 
+                      ? description
                       : 'Professionally tailored using high-density premium fabrics. Features reinforced stitching and digital-precision alignment for a world-class bespoke finish.',
                     style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.6, fontWeight: FontWeight.w500),
                   ),

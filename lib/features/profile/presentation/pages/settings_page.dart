@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../../core/storage/storage_keys.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../profile/presentation/pages/profile_edit_page.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -14,24 +14,11 @@ class SettingsPage extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final userType = user?.userType ?? 'tailor';
 
-    return Scaffold(
-      backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
-        title: const Text('MASTER SETTINGS', 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 2)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             _buildSectionHeader('ACCOUNT ARCHITECTURE'),
             _buildSettingsCard([
               _buildSettingsTile(
@@ -118,7 +105,36 @@ class SettingsPage extends ConsumerWidget {
             const SizedBox(height: 40),
           ],
         ),
-      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth > 1000;
+        if (isDesktop) {
+          return Container(color: AppColors.darkNavy, child: content);
+        }
+        return Scaffold(
+          backgroundColor: AppColors.darkNavy,
+          appBar: AppBar(
+            title: const Text('MASTER SETTINGS',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 2)),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
+              onPressed: () {
+                if (ref.read(navigationProvider).route != '/main') {
+                  ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+                } else {
+                  Navigator.maybePop(context);
+                }
+              },
+            ),
+          ),
+          body: content,
+        );
+      },
     );
   }
 

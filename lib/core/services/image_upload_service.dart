@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ImageUploadService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
   final ImagePicker _picker = ImagePicker();
 
   /// Pick image from gallery - Returns XFile for cross-platform compatibility
@@ -51,24 +51,22 @@ class ImageUploadService {
     return [];
   }
 
-  /// Upload image to Firebase Storage (Byte-based for Web/Mobile support)
+  /// Upload image to Supabase Storage
   Future<String?> uploadImage(XFile xFile, String userId, String folder) async {
     try {
-      final String fileName = '${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference ref = _storage.ref().child(folder).child(userId).child(fileName);
-
+      final String fileName = '$folder/$userId/${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final Uint8List bytes = await xFile.readAsBytes();
       
-      final UploadTask task = ref.putData(
+      await _supabase.storage.from('images').uploadBinary(
+        fileName,
         bytes,
-        SettableMetadata(
+        fileOptions: const FileOptions(
           contentType: 'image/jpeg',
-          customMetadata: {'userId': userId},
+          upsert: true,
         ),
       );
 
-      final TaskSnapshot snapshot = await task;
-      return await snapshot.ref.getDownloadURL();
+      return _supabase.storage.from('images').getPublicUrl(fileName);
     } catch (e) {
       debugPrint('Error uploading image: $e');
       return null;
@@ -85,11 +83,15 @@ class ImageUploadService {
     return imageUrls;
   }
 
-  /// Delete image from Firebase Storage
+  /// Delete image from Supabase Storage
   Future<bool> deleteImage(String imageUrl) async {
     try {
-      final Reference ref = _storage.refFromURL(imageUrl);
-      await ref.delete();
+      // Extract path from URL - this is simplified
+      final uri = Uri.parse(imageUrl);
+      final pathSegments = uri.pathSegments;
+      final path = pathSegments.sublist(pathSegments.indexOf('images') + 1).join('/');
+      
+      await _supabase.storage.from('images').remove([path]);
       return true;
     } catch (e) {
       debugPrint('Error deleting image: $e');

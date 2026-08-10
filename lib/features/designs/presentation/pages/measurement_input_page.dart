@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/utils/async_handler.dart';
+import '../../../../core/utils/measurement_mapper.dart';
 import '../widgets/guided_crop_widget.dart';
+import 'ai_body_scan_page.dart';
 // ignore: depend_on_referenced_packages
 import 'package:o3d/o3d.dart';
 
@@ -23,7 +27,10 @@ class _MeasurementInputPageState extends ConsumerState<MeasurementInputPage> wit
   String _unit = 'Inches';
   String? _focusedField;
 
-// RESTORED: Detailed Parameters
+  // Track which fields were auto-filled by AI
+  final Set<String> _aiFields = {};
+
+  // RESTORED: Detailed Parameters
   String _selectedOccasion = 'Casual';
   String _selectedColor = '#000000'; // Store as hex code
   String _selectedFabric = 'Cotton';
@@ -32,7 +39,45 @@ class _MeasurementInputPageState extends ConsumerState<MeasurementInputPage> wit
   
   // Height input (for clients)
   final _heightController = TextEditingController();
+  final _budgetMinController = TextEditingController();
+  final _budgetMaxController = TextEditingController();
   double _sliderColorValue = 0;
+
+  void _launchAiScan() async {
+    final Map<String, double>? results = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AiBodyScanPage()),
+    );
+
+    if (results != null && results.isNotEmpty) {
+      _populateFromScan(results);
+    }
+  }
+
+  void _populateFromScan(Map<String, double> rawResults) {
+    // 1. Map keys to UI labels
+    final mapped = MeasurementMapper.mapResults(rawResults);
+
+    setState(() {
+      _aiFields.clear();
+      mapped.forEach((label, value) {
+        if (_controllers.containsKey(label)) {
+          // Convert CM to Inches if necessary
+          final double finalValue = _unit == 'Inches' ? value / 2.54 : value;
+          _controllers[label]!.text = finalValue.toStringAsFixed(1);
+          _aiFields.add(label);
+        }
+      });
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('NEURAL SYNC: ${_aiFields.length} metrics auto-filled.'),
+        backgroundColor: Colors.greenAccent,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
   
   // Visual color palette with actual colors
   static const Map<String, Color> _colorPalette = {
@@ -130,6 +175,8 @@ class _MeasurementInputPageState extends ConsumerState<MeasurementInputPage> wit
     super.initState();
     _initControllers();
     _checkModel();
+    _budgetMinController.text = _budgetMin.toInt().toString();
+    _budgetMaxController.text = _budgetMax.toInt().toString();
   }
 
   void _initControllers() {
@@ -172,6 +219,9 @@ class _MeasurementInputPageState extends ConsumerState<MeasurementInputPage> wit
   @override
   void dispose() {
     _pageController.dispose();
+    _heightController.dispose();
+    _budgetMinController.dispose();
+    _budgetMaxController.dispose();
     _controllers.forEach((_, c) => c.dispose());
     _focusNodes.forEach((_, n) => n.dispose());
     super.dispose();
@@ -199,14 +249,38 @@ class _MeasurementInputPageState extends ConsumerState<MeasurementInputPage> wit
   }
 
   void _save() {
-    final Map<String, String> saveData = {};
+    final Map<String, dynamic> saveData = {
+      'occasion': _selectedOccasion,
+      'color': _selectedColor,
+      'fabric': _selectedFabric,
+      'height': _heightController.text,
+      'budget_min': _budgetMin,
+      'budget_max': _budgetMax,
+      'unit': _unit,
+      'gender': _gender,
+      'measurements': {},
+    };
+
     _controllers.forEach((key, controller) {
-      if (controller.text.isNotEmpty) saveData[key] = controller.text;
+      if (controller.text.isNotEmpty) {
+        saveData['measurements'][key] = controller.text;
+      }
     });
+
+    debugPrint('[MEASUREMENT] Establishing Profile: $saveData');
+    
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${saveData.length} measurements established.'), backgroundColor: AppColors.amber),
+      SnackBar(
+        content: Text('Profile established: ${saveData['measurements'].length} metrics captured.'), 
+        backgroundColor: AppColors.amber
+      ),
     );
-    Navigator.pop(context);
+    
+    if (ref.read(navigationProvider).route != '/main') {
+      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+    } else {
+      Navigator.maybePop(context);
+    }
   }
 
   // --- RIGGING & DYNAMIC ZOOM ---
@@ -292,9 +366,18 @@ class _MeasurementInputPageState extends ConsumerState<MeasurementInputPage> wit
         backgroundColor: Colors.transparent, elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.of(context).maybePop();
+          },
         ),
-        actions: [TextButton(onPressed: _save, child: const Text('SAVE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold)))],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_fix_high_rounded, color: AppColors.amber),
+            tooltip: 'AI Body Scan',
+            onPressed: _launchAiScan,
+          ),
+          TextButton(onPressed: _save, child: const Text('SAVE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.bold)))
+        ],
       ),
       body: Column(
         children: [
@@ -590,22 +673,31 @@ Widget _buildStylePreferencesStep() {
 
   Widget _buildInput(String label) {
     final isFocused = _focusedField == label;
+    final isAiFilled = _aiFields.contains(label);
+    
     return Focus(onFocusChange: (h) { if (h) _onFieldFocus(label); }, child: TextField(
       controller: _controllers[label],
       focusNode: _focusNodes[label],
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       textAlign: TextAlign.center,
-      // FIX: removed duplicate onTap - onFocusChange handles focus tracking
-      // fixing event_position_helper assertion error in Flutter Web
-      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900),
-      decoration: InputDecoration(
-        labelText: label.toUpperCase(), labelStyle: TextStyle(color: isFocused ? Colors.white : Colors.white38, fontSize: 7, fontWeight: FontWeight.w900),
-        suffixText: _unit == 'Inches' ? 'IN' : 'CM', suffixStyle: const TextStyle(color: AppColors.amber, fontSize: 7, fontWeight: FontWeight.w900),
-        filled: true, fillColor: Colors.white.withValues(alpha: 0.04),
-        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
-focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.white)),
+      style: TextStyle(
+        color: isAiFilled ? Colors.greenAccent : Colors.white, 
+        fontSize: 15, 
+        fontWeight: FontWeight.w900
       ),
+      decoration: InputDecoration(
+        labelText: label.toUpperCase(), 
+        labelStyle: TextStyle(color: isFocused ? Colors.white : (isAiFilled ? Colors.greenAccent.withValues(alpha: 0.5) : Colors.white38), fontSize: 7, fontWeight: FontWeight.w900),
+        suffixText: _unit == 'Inches' ? 'IN' : 'CM', suffixStyle: const TextStyle(color: AppColors.amber, fontSize: 7, fontWeight: FontWeight.w900),
+        filled: true, fillColor: isAiFilled ? Colors.greenAccent.withValues(alpha: 0.02) : Colors.white.withValues(alpha: 0.04),
+        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isAiFilled ? Colors.greenAccent.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isAiFilled ? Colors.greenAccent : Colors.white)),
+        prefixIcon: isAiFilled ? const Icon(Icons.auto_fix_normal_rounded, color: Colors.greenAccent, size: 10) : null,
+      ),
+      onChanged: (_) {
+        if (isAiFilled) setState(() => _aiFields.remove(label));
+      },
     ));
   }
 
@@ -669,18 +761,19 @@ focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), border
         const Text('BUDGET RANGE (NGN)', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900)),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: _buildBudgetInput('MIN', _budgetMin, (v) => setState(() => _budgetMin = v))),
+          Expanded(child: _buildBudgetInput('MIN', _budgetMinController, (v) => setState(() => _budgetMin = v))),
           const SizedBox(width: 16),
           const Icon(Icons.arrow_forward, color: Colors.white24, size: 20),
           const SizedBox(width: 16),
-          Expanded(child: _buildBudgetInput('MAX', _budgetMax, (v) => setState(() => _budgetMax = v))),
+          Expanded(child: _buildBudgetInput('MAX', _budgetMaxController, (v) => setState(() => _budgetMax = v))),
         ]),
       ],
     );
   }
 
-  Widget _buildBudgetInput(String label, double value, Function(double) onChanged) {
+  Widget _buildBudgetInput(String label, TextEditingController controller, Function(double) onChanged) {
     return TextField(
+      controller: controller,
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
@@ -692,8 +785,10 @@ focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), border
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       onChanged: (text) {
-        final parsed = double.tryParse(text.replaceAll(RegExp(r'[^\d.]'), ''));
-        if (parsed != null) onChanged(parsed);
+        final parsed = double.tryParse(text.replaceAll(RegExp(r'[^0-9.]'), ''));
+        if (parsed != null) {
+          onChanged(parsed);
+        }
       },
     );
   }

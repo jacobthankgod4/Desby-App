@@ -45,10 +45,10 @@ class SubscriptionPlan {
       price: map['price'] ?? '',
       amount: (map['amount'] ?? 0).toDouble(),
       features: List<String>.from(map['features'] ?? []),
-      isElite: map['isElite'] ?? false,
-      accentColor: Color(map['accentColor'] ?? AppColors.amber.toARGB32()),
-      buttonLabel: map['buttonLabel'] ?? 'GET STARTED',
-      userType: map['userType'] ?? 'tailor',
+      isElite: map['is_elite'] ?? map['isElite'] ?? false,
+      accentColor: Color(map['accent_color'] ?? map['accentColor'] ?? AppColors.amber.toARGB32()),
+      buttonLabel: map['button_label'] ?? map['buttonLabel'] ?? 'GET STARTED',
+      userType: map['user_type'] ?? map['userType'] ?? 'tailor',
     );
   }
 }

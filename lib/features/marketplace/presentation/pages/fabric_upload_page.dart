@@ -8,7 +8,8 @@ import '../../domain/entities/fabric.dart';
 import '../providers/fabric_provider.dart';
 
 class FabricUploadPage extends ConsumerStatefulWidget {
-  const FabricUploadPage({super.key});
+  final Fabric? fabric; // Pass this for Edit Mode
+  const FabricUploadPage({super.key, this.fabric});
 
   @override
   ConsumerState<FabricUploadPage> createState() => _FabricUploadPageState();
@@ -25,7 +26,29 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
   
   String _category = 'Cotton';
   final List<XFile> _selectedImages = [];
+  final List<String> _existingImageUrls = [];
   bool _isUploading = false;
+  
+  // Variants & Tiers State
+  final List<FabricVariant> _variants = [];
+  final List<WholesaleTier> _tiers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.fabric != null) {
+      _nameController.text = widget.fabric!.name;
+      _priceController.text = widget.fabric!.pricePerYard.toString();
+      _stockController.text = widget.fabric!.stockQuantity.toString();
+      _compositionController.text = widget.fabric!.composition ?? '';
+      _weightController.text = widget.fabric!.weight ?? '';
+      _originController.text = widget.fabric!.origin ?? '';
+      _category = widget.fabric!.category;
+      _existingImageUrls.addAll(widget.fabric!.imageUrls);
+      _variants.addAll(widget.fabric!.variants);
+      _tiers.addAll(widget.fabric!.wholesaleTiers);
+    }
+  }
 
   @override
   void dispose() {
@@ -46,7 +69,7 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
   }
 
   Future<void> _publish() async {
-    if (_nameController.text.isEmpty || _priceController.text.isEmpty || _selectedImages.isEmpty) {
+    if (_nameController.text.isEmpty || _priceController.text.isEmpty || (_selectedImages.isEmpty && _existingImageUrls.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Name, Price, and at least one image are mandatory.'), backgroundColor: Colors.orangeAccent),
       );
@@ -58,15 +81,14 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
     try {
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
-      final navigator = Navigator.of(context);
-
       final user = ref.read(currentUserProvider);
       if (user == null) return;
 
-      final fabricId = 'FAB_${DateTime.now().millisecondsSinceEpoch}';
+      final fabricId = widget.fabric?.id ?? 'FAB_${DateTime.now().millisecondsSinceEpoch}';
       
-      // 1. Upload Images using byte-based architecture
-      final imageUrls = await _imageService.uploadImages(_selectedImages, user.id, 'fabrics');
+      // 1. Upload New Images
+      final newImageUrls = await _imageService.uploadImages(_selectedImages, user.id, 'fabrics');
+      final totalImageUrls = [..._existingImageUrls, ...newImageUrls];
 
       // 2. Create Fabric Entity
       final fabric = Fabric(
@@ -76,27 +98,35 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
         pricePerYard: double.tryParse(_priceController.text) ?? 0.0,
         stockQuantity: double.tryParse(_stockController.text) ?? 0.0,
         sellerId: user.id,
-        imageUrls: imageUrls,
+        imageUrls: totalImageUrls,
         composition: _compositionController.text.trim(),
         weight: _weightController.text.trim(),
         origin: _originController.text.trim(),
-        availableColors: const ['Standard'], 
-        createdAt: DateTime.now(),
+        availableColors: _variants.map((v) => v.colorName).toList(),
+        variants: _variants,
+        wholesaleTiers: _tiers,
+        createdAt: widget.fabric?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      // 3. Save to Firestore
-      final result = await ref.read(fabricRepositoryProvider).uploadFabric(fabric);
+      // 3. Save/Update
+      final repository = ref.read(fabricRepositoryProvider);
+      final result = widget.fabric == null 
+          ? await repository.uploadFabric(fabric)
+          : await repository.updateFabric(fabric);
 
       result.fold(
-        (failure) => messenger.showSnackBar(SnackBar(content: Text('Upload Failed: $failure'), backgroundColor: Colors.redAccent)),
+        (failure) => messenger.showSnackBar(const SnackBar(content: Text('Failed to save fabric. Please try again.'), backgroundColor: Colors.redAccent)),
         (_) {
-          messenger.showSnackBar(const SnackBar(content: Text('FABRIC PUBLISHED TO MARKETPLACE!'), backgroundColor: Colors.greenAccent));
-          navigator.pop();
+          messenger.showSnackBar(SnackBar(
+            content: Text(widget.fabric == null ? 'FABRIC PUBLISHED!' : 'FABRIC UPDATED!'), 
+            backgroundColor: Colors.greenAccent
+          ));
+          Navigator.maybePop(context);
         },
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('System Error: $e'), backgroundColor: Colors.redAccent));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Something went wrong. Please try again.'), backgroundColor: Colors.redAccent));
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -107,7 +137,8 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
     return Scaffold(
       backgroundColor: AppColors.darkNavy,
       appBar: AppBar(
-        title: const Text('MARKETPLACE UPLOAD', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 2)),
+        title: Text(widget.fabric == null ? 'MARKETPLACE UPLOAD' : 'EDIT MATERIAL', 
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 2)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -137,6 +168,17 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
             const SizedBox(height: 16),
             _buildCategoryDropdown(),
             const SizedBox(height: 32),
+            
+            _buildSectionTitle('VARIANTS & COLORS'),
+            const SizedBox(height: 16),
+            _buildVariantsSection(),
+            const SizedBox(height: 32),
+
+            _buildSectionTitle('WHOLESALE TIERS'),
+            const SizedBox(height: 16),
+            _buildTiersSection(),
+            const SizedBox(height: 32),
+
             _buildSectionTitle('PROFESSIONAL METADATA'),
             const SizedBox(height: 16),
             _buildField('COMPOSITION (e.g. 100% COTTON)', _compositionController),
@@ -169,6 +211,7 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
             scrollDirection: Axis.horizontal,
             children: [
               _buildAddImageButton(),
+              ..._existingImageUrls.map((url) => _buildExistingImageThumbnail(url)),
               ..._selectedImages.map((file) => _buildImageThumbnail(file)),
             ],
           ),
@@ -189,6 +232,32 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
           border: Border.all(color: Colors.white10),
         ),
         child: const Icon(Icons.add_a_photo_rounded, color: AppColors.amber, size: 28),
+      ),
+    );
+  }
+
+  Widget _buildExistingImageThumbnail(String url) {
+    return Container(
+      width: 120,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            Positioned.fill(child: Image.network(url, fit: BoxFit.cover)),
+            Positioned(
+              top: 4, right: 4,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                onPressed: () => setState(() => _existingImageUrls.remove(url)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -223,6 +292,108 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVariantsSection() {
+    return Column(
+      children: [
+        ..._variants.map((v) => ListTile(
+          title: Text(v.colorName, style: const TextStyle(color: Colors.white)),
+          subtitle: Text('${v.stockQuantity} yds', style: const TextStyle(color: Colors.white38)),
+          trailing: IconButton(
+            icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+            onPressed: () => setState(() => _variants.remove(v)),
+          ),
+        )),
+        TextButton.icon(
+          onPressed: _showAddVariantDialog,
+          icon: const Icon(Icons.add, color: AppColors.amber),
+          label: const Text('ADD COLOR VARIANT', style: TextStyle(color: AppColors.amber)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTiersSection() {
+    return Column(
+      children: [
+        ..._tiers.map((t) => ListTile(
+          title: Text('Min ${t.minQuantity} yds', style: const TextStyle(color: Colors.white)),
+          subtitle: Text('₦${t.unitPrice}/yd', style: const TextStyle(color: Colors.white38)),
+          trailing: IconButton(
+            icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+            onPressed: () => setState(() => _tiers.remove(t)),
+          ),
+        )),
+        TextButton.icon(
+          onPressed: _showAddTierDialog,
+          icon: const Icon(Icons.add, color: AppColors.amber),
+          label: const Text('ADD WHOLESALE TIER', style: TextStyle(color: AppColors.amber)),
+        ),
+      ],
+    );
+  }
+
+  void _showAddVariantDialog() {
+    final nameController = TextEditingController();
+    final stockController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkNavy,
+        title: const Text('New Variant'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Color Name')),
+            TextField(controller: stockController, decoration: const InputDecoration(labelText: 'Stock (yds)'), keyboardType: TextInputType.number),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () {
+            setState(() {
+              _variants.add(FabricVariant(
+                colorName: nameController.text,
+                stockQuantity: double.tryParse(stockController.text) ?? 0.0,
+              ));
+            });
+            Navigator.pop(context);
+          }, child: const Text('Add')),
+        ],
+      ),
+    );
+  }
+
+  void _showAddTierDialog() {
+    final qtyController = TextEditingController();
+    final priceController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkNavy,
+        title: const Text('New Wholesale Tier'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: qtyController, decoration: const InputDecoration(labelText: 'Min Quantity'), keyboardType: TextInputType.number),
+            TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Unit Price'), keyboardType: TextInputType.number),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () {
+            setState(() {
+              _tiers.add(WholesaleTier(
+                minQuantity: double.tryParse(qtyController.text) ?? 0.0,
+                unitPrice: double.tryParse(priceController.text) ?? 0.0,
+              ));
+            });
+            Navigator.pop(context);
+          }, child: const Text('Add')),
+        ],
       ),
     );
   }
@@ -275,7 +446,7 @@ class _FabricUploadPageState extends ConsumerState<FabricUploadPage> {
         ),
         child: _isUploading 
           ? const CircularProgressIndicator(color: AppColors.darkNavy)
-          : const Text('PUBLISH TO MARKETPLACE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+          : Text(widget.fabric == null ? 'PUBLISH TO MARKETPLACE' : 'UPDATE MATERIAL', style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
       ),
     );
   }

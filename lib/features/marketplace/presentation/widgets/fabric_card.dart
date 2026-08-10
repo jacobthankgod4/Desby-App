@@ -1,53 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
-
-/// Fabric Model (Stub - should be generated from domain layer)
-class Fabric {
-  final String id;
-  final String name;
-  final double pricePerYard;
-  final int stockQuantity;
-  final List<String> imageUrls;
-  final String? sellerId;
-  final String category;
-  final String? description;
-  final String? materialType;
-  final double? rating;
-  final int reviewCount;
-
-  const Fabric({
-    required this.id,
-    required this.name,
-    required this.pricePerYard,
-    required this.stockQuantity,
-    this.imageUrls = const [],
-    this.sellerId,
-    this.category = 'General',
-    this.description,
-    this.materialType,
-    this.rating,
-    this.reviewCount = 0,
-  });
-
-  factory Fabric.fromJson(Map<String, dynamic> json) {
-    return Fabric(
-      id: json['id'] as String,
-      name: json['name'] as String? ?? '',
-      pricePerYard: (json['pricePerYard'] as num?)?.toDouble() ?? 0.0,
-      stockQuantity: json['stockQuantity'] as int? ?? 0,
-      imageUrls: (json['imageUrls'] as List<dynamic>?)?.cast<String>() ?? [],
-      sellerId: json['sellerId'] as String?,
-      category: json['category'] as String? ?? 'General',
-      description: json['description'] as String?,
-      materialType: json['materialType'] as String?,
-      rating: (json['rating'] as num?)?.toDouble(),
-      reviewCount: json['reviewCount'] as int? ?? 0,
-    );
-  }
-}
+import '../../domain/entities/fabric.dart';
 
 /// Fabric Card Widget
-/// 
+///
 /// Displays a fabric item with image, name, price, and stock information.
 class FabricCard extends StatelessWidget {
   final Fabric fabric;
@@ -77,7 +33,6 @@ class FabricCard extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  // Fabric Image
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: fabric.imageUrls.isNotEmpty
@@ -89,7 +44,6 @@ class FabricCard extends StatelessWidget {
                           )
                         : _buildPlaceholder(),
                   ),
-                  // Favorite Button
                   if (onFavorite != null)
                     Positioned(
                       top: 8,
@@ -106,7 +60,6 @@ class FabricCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  // Stock Badge
                   if (fabric.stockQuantity < 10)
                     Positioned(
                       top: 8,
@@ -126,7 +79,6 @@ class FabricCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Details
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -143,11 +95,11 @@ class FabricCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '₦${fabric.pricePerYard.toStringAsFixed(0)}/yd',
+                        '\u20A6${fabric.pricePerYard.toStringAsFixed(0)}/yd',
                         style: const TextStyle(color: AppColors.amber, fontSize: 14, fontWeight: FontWeight.w900),
                       ),
                       Text(
-                        '${fabric.stockQuantity} yds',
+                        '${fabric.stockQuantity.toInt()} yds',
                         style: TextStyle(
                           color: fabric.stockQuantity < 5 ? Colors.redAccent : Colors.white38,
                           fontSize: 10,

@@ -61,6 +61,17 @@ class AppColors {
 
   // Border colors
   static const Color borderActive = amber;
+
+  // Uber-stylediscovery colors
+  static const Color uberBg = Color(0xFFFFFFFF);
+  static const Color uberCard = Color(0xFFF3F3F3);
+  static const Color uberInfo = Color(0xFF276EF1);
+  static const Color uberWarning = Color(0xFFFFC043);
+  static const Color uberError = Color(0xFFE11900);
+  static const Color uberLive = Color(0xFF05A357);
+  static const Color uberTextPrimary = Color(0xFF000000);
+  static const Color uberTextMuted = Color(0xFF545454);
+  static const Color figmaCardFill = Color(0xFFF6F6F6);
   
   // Clothing Color Palette for Client Selection
   static const List<Color> clothingColors = [

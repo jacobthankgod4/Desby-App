@@ -76,3 +76,22 @@ coverage/
 *.dll
 *.so
 *.dylib
+
+# Firebase / Google Services
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+
+# Payment / API keys
+**/paystack_config.dart
+**/*secret*
+**/*apikey*
+**/*api_key*
+
+# Supabase / env
+.env*
+!.env.example
+
+# macOS sensitive
+macos/Runner/GoogleService-Info.plist
+macos/Runner/Resources/GoogleService-Info.plist

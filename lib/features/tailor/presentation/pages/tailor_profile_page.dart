@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../theme/colors.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
+import '../providers/shop_provider.dart';
 import 'product_details_page.dart';
 
 class TailorProfilePage extends ConsumerWidget {
-  final Map<String, dynamic> tailor;
+  final String tailorId;
+  final Map<String, dynamic>? initialData;
 
-  const TailorProfilePage({super.key, required this.tailor});
+  const TailorProfilePage({
+    super.key, 
+    required this.tailorId, 
+    this.initialData,
+  });
 
   Future<void> _makeCall(String phoneNumber) async {
     final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -27,118 +34,134 @@ class TailorProfilePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final List<dynamic> services = tailor['services'] ?? [];
-    final List<dynamic> shopProducts = tailor['products'] ?? [];
+    final profileAsync = ref.watch(userProfileProvider(tailorId));
+    final productsAsync = ref.watch(shopProductsProvider(tailorId));
 
     return Scaffold(
-      backgroundColor: AppColors.darkNavy, // PURE NAVY GREEN
-      body: CustomScrollView(
-        slivers: [
-          // 1. ATELIER HEADER
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: AppColors.darkNavy,
-            elevation: 0,
-            toolbarHeight: 60,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: const Text('TAILOR PROFILE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2.8)),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(10),
-              child: Container(height: 10, color: AppColors.amber),
-            ),
-          ),
+      backgroundColor: AppColors.darkNavy,
+      body: profileAsync.when(
+        data: (profile) {
+          if (profile == null) {
+            return const Center(child: Text('Tailor not found', style: TextStyle(color: Colors.white)));
+          }
 
-          // 2. HERO CARD
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: _buildProfileHeroCard(),
-            ),
-          ),
-
-          // 3. ACTION RIBBON - LARGE AMBER SQUARES
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildLargeSquareShortcut(Icons.phone_rounded, 'Call', () => _makeCall(tailor['phone'] ?? '+234 800 000 0000')),
-                  _buildLargeSquareShortcut(Icons.near_me_rounded, 'Route', () => _getDirections(tailor['location'] ?? 'Nigeria')),
-                  _buildLargeSquareShortcut(Icons.chat_bubble_rounded, 'Chat', () {}),
-                  _buildLargeSquareShortcut(Icons.ios_share_rounded, 'Share', () {}),
-                ],
-              ),
-            ),
-          ),
-
-          // 4. VIRTUAL ATELIER SHOP
-          _buildSectionHeader('TAILOR SHOP'),
-          SliverToBoxAdapter(
-            child: shopProducts.isEmpty 
-              ? const Padding(padding: EdgeInsets.symmetric(horizontal: 24), child: Text('SHOP EMPTY', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900)))
-              : SizedBox(
-                  height: 220,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: shopProducts.length,
-                    itemBuilder: (context, index) => _buildShopProductCard(context, Map<String, dynamic>.from(shopProducts[index])),
-                  ),
-                ),
-          ),
-
-          // 5. MASTERED SERVICES
-          _buildSectionHeader('SERVICES'),
-          SliverPadding(
-            padding: const EdgeInsets.all(24),
-            sliver: SliverToBoxAdapter(
-              child: services.isEmpty
-                ? const Text('CRAFT DETAILS', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900))
-                : Column(
-                    children: services.map((s) => Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: _buildServiceItem(Icons.auto_awesome_rounded, s.toString(), 'Professionally executed precision tailoring for this category.'),
-                    )).toList(),
-                  ),
-            ),
-          ),
-
-          // 6. QUICK LINKS
-          _buildSectionHeader('RESOURCES'),
-          SliverPadding(
-            padding: const EdgeInsets.all(24),
-            sliver: SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  color: Colors.white.withValues(alpha: 0.03),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildGlassLink('AVAILABLE FABRICS', () {}),
-                    const SizedBox(height: 12),
-                    _buildGlassLink('MEASUREMENT STATION', () => Navigator.pushNamed(context, '/measurements-input')),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          final List<String> services = profile.services ?? [];
           
-          const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
-        ],
+          return CustomScrollView(
+            slivers: [
+              // 1. ATELIER HEADER
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: AppColors.darkNavy,
+                elevation: 0,
+                toolbarHeight: 60,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                title: const Text('TAILOR PROFILE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2.8)),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(10),
+                  child: Container(height: 10, color: AppColors.amber),
+                ),
+              ),
+
+              // 2. HERO CARD
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: _buildProfileHeroCard(profile.name, profile.address, 4.9), // Rating placeholder
+                ),
+              ),
+
+              // 3. ACTION RIBBON
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildLargeSquareShortcut(Icons.phone_rounded, 'Call', () => _makeCall(profile.phone ?? '+234 800 000 0000')),
+                      _buildLargeSquareShortcut(Icons.near_me_rounded, 'Route', () => _getDirections(profile.address ?? 'Nigeria')),
+                      _buildLargeSquareShortcut(Icons.chat_bubble_rounded, 'Chat', () {}),
+                      _buildLargeSquareShortcut(Icons.ios_share_rounded, 'Share', () {}),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 4. VIRTUAL ATELIER SHOP
+              _buildSectionHeader('TAILOR SHOP'),
+              SliverToBoxAdapter(
+                child: productsAsync.when(
+                  data: (products) => products.isEmpty 
+                    ? const Padding(padding: EdgeInsets.symmetric(horizontal: 24), child: Text('SHOP EMPTY', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900)))
+                    : SizedBox(
+                        height: 220,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          itemCount: products.length,
+                          itemBuilder: (context, index) => _buildShopProductCard(context, products[index]),
+                        ),
+                      ),
+                  loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
+                  error: (err, _) => Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Text('SYNC ERROR: $err', style: const TextStyle(color: Colors.redAccent, fontSize: 10))),
+                ),
+              ),
+
+              // 5. MASTERED SERVICES
+              _buildSectionHeader('SERVICES'),
+              SliverPadding(
+                padding: const EdgeInsets.all(24),
+                sliver: SliverToBoxAdapter(
+                  child: services.isEmpty
+                    ? const Text('CRAFT DETAILS', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900))
+                    : Column(
+                        children: services.map((s) => Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: _buildServiceItem(Icons.auto_awesome_rounded, s, 'Professionally executed precision tailoring for this category.'),
+                        )).toList(),
+                      ),
+                ),
+              ),
+
+              // 6. QUICK LINKS
+              _buildSectionHeader('RESOURCES'),
+              SliverPadding(
+                padding: const EdgeInsets.all(24),
+                sliver: SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      color: Colors.white.withValues(alpha: 0.03),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildGlassLink('AVAILABLE FABRICS', () {}),
+                        const SizedBox(height: 12),
+                        _buildGlassLink('MEASUREMENT STATION', () => Navigator.pushNamed(context, '/measurements-input')),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
+        error: (err, _) => Center(child: Text('Fatal Sync Error: $err', style: const TextStyle(color: Colors.redAccent))),
       ),
       bottomSheet: _buildBottomAction(context),
     );
   }
 
-  Widget _buildProfileHeroCard() {
+  Widget _buildProfileHeroCard(String name, String? location, double rating) {
     return Container(
       height: 270,
       padding: const EdgeInsets.all(24),
@@ -156,16 +179,16 @@ class TailorProfilePage extends ConsumerWidget {
           const Text('PROFILE', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2.2)),
           const SizedBox(height: 12),
           Text(
-            (tailor['name'] ?? 'MASTER TAILOR').toUpperCase(),
+            name.toUpperCase(),
             style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900, height: 1.0, letterSpacing: -1),
           ),
           const SizedBox(height: 8),
-          Text(tailor['location'] ?? 'LAGOS, NIGERIA', style: const TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          Text(location ?? 'LAGOS, NIGERIA', style: const TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1)),
           const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('RATING: ${tailor['rating'] ?? "4.9"}', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1)),
+              Text('RATING: $rating', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1)),
               Container(
                 width: 80, height: 80,
                 decoration: BoxDecoration(
@@ -175,7 +198,7 @@ class TailorProfilePage extends ConsumerWidget {
                 ),
                 child: Center(
                   child: Text(
-                    (tailor['name'] ?? 'T')[0].toUpperCase(),
+                    name[0].toUpperCase(),
                     style: const TextStyle(color: AppColors.amber, fontSize: 32, fontWeight: FontWeight.w900),
                   ),
                 ),
@@ -210,7 +233,11 @@ class TailorProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildShopProductCard(BuildContext context, Map<String, dynamic> product) {
+  Widget _buildShopProductCard(BuildContext context, dynamic product) {
+    final String name = product.name;
+    final String price = '₦${product.price.toInt()}';
+    final String? image = product.imageUrls.isNotEmpty ? product.imageUrls.first : null;
+
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/product-details', arguments: product),
       child: Container(
@@ -230,8 +257,8 @@ class TailorProfilePage extends ConsumerWidget {
                   color: Colors.black26,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
-                child: product['image'] != null 
-                  ? ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(product['image'], fit: BoxFit.cover))
+                child: image != null 
+                  ? ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)), child: Image.network(image, fit: BoxFit.cover))
                   : Center(child: Icon(Icons.checkroom_rounded, color: AppColors.amber.withValues(alpha: 0.1), size: 60)),
               ),
             ),
@@ -240,8 +267,8 @@ class TailorProfilePage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product['name']!.toString().toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5), maxLines: 1),
-                  Text(product['price']?.toString() ?? 'N/A', style: const TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.w900)),
+                  Text(name.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5), maxLines: 1),
+                  Text(price, style: const TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.w900)),
                 ],
               ),
             ),
@@ -313,7 +340,7 @@ class TailorProfilePage extends ConsumerWidget {
           width: double.infinity,
           height: 60,
           child: ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/booking-cart', arguments: tailor),
+            onPressed: () => Navigator.pushNamed(context, '/booking-cart', arguments: tailorId),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.amber,
               foregroundColor: AppColors.darkNavy,

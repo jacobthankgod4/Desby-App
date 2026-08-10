@@ -132,26 +132,7 @@ Future<void> _handleRegister() async {
       _userType,
     );
 
-    if (!mounted) return;
-    
-    // Small delay for web engine synchronization
-    await Future.delayed(const Duration(milliseconds: 150));
-    
-    if (!mounted) return;
-
-// Navigate based on user type after successful registration
-    final userType = _userType;
-    final route = userType == UserType.tailor.value
-        ? '/tailor-onboarding'
-        : userType == UserType.apprentice.value
-            ? '/apprentice-onboarding'
-            : userType == UserType.client.value
-                ? '/client-onboarding'
-                : userType == UserType.fabricSeller.value
-                    ? '/fabric-seller-onboarding'
-                    : '/main';
-
-    Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
+    // Navigation is handled by the state listener in build()
   }
 
   void _showTermsDialog() {
@@ -211,9 +192,29 @@ Future<void> _handleRegister() async {
       orElse: () => false,
     );
 
-    // Listen for errors
+    // Listen for state changes
     ref.listen(authStateProvider, (previous, next) {
       next.maybeMap(
+        authenticated: (auth) {
+          final userType = auth.authResponse.user.userType;
+          final route = userType == UserType.tailor.value
+              ? '/tailor-onboarding'
+              : userType == UserType.apprentice.value
+                  ? '/apprentice-onboarding'
+                  : userType == UserType.client.value
+                      ? '/client-onboarding'
+                      : userType == UserType.fabricSeller.value
+                          ? '/fabric-seller-onboarding'
+                          : '/main';
+          Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
+        },
+        unverified: (state) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/verify-email', 
+            (route) => false,
+            arguments: state.email,
+          );
+        },
         error: (error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(error.message), backgroundColor: Colors.red),

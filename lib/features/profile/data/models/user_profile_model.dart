@@ -23,6 +23,11 @@ class UserProfileModel with _$UserProfileModel {
     double? materialCost,
     double? startingPrice,
     @Default(false) bool hasPricing,
+    String? preferredFinderStyle,
+    int? distanceMinutes,
+    @Default(false) bool isMeasurementsVerified,
+    String? verifiedByTailorId,
+    String? fitPreference,
     required DateTime createdAt,
     DateTime? updatedAt,
   }) = _UserProfileModel;
@@ -48,6 +53,11 @@ extension UserProfileModelX on UserProfileModel {
     materialCost: materialCost,
     startingPrice: startingPrice,
     hasPricing: hasPricing,
+    preferredFinderStyle: preferredFinderStyle,
+    distanceMinutes: distanceMinutes,
+    isMeasurementsVerified: isMeasurementsVerified,
+    verifiedByTailorId: verifiedByTailorId,
+    fitPreference: fitPreference,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );

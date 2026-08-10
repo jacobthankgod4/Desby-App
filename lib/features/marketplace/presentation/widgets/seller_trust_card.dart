@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
 
 class SellerTrustCard extends StatelessWidget {
-  const SellerTrustCard({super.key});
+  final String? sellerId;
+  const SellerTrustCard({super.key, this.sellerId});
 
   @override
   Widget build(BuildContext context) {

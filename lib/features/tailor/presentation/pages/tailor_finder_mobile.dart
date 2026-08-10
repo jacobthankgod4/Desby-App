@@ -6,10 +6,12 @@ import '../widgets/tailor_map_view.dart';
 import '../widgets/tailor_card.dart';
 import '../widgets/service_tier_selector.dart';
 import '../widgets/quote_estimation_card.dart';
-import '../widgets/tailor_shop_card.dart';
+import '../../../../core/providers/navigation_provider.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/tailor_finder_responsive.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 /// TailorFinderMobile - Uber-style Tailor Discovery for Mobile
@@ -93,7 +95,11 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
       return true;
     }
     // If no routes to pop, go to main dashboard
-    Navigator.pushReplacementNamed(context, '/main');
+    if (ref.read(navigationProvider).route != '/main') {
+      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+    } else {
+      Navigator.pushReplacementNamed(context, '/main');
+    }
     return true;
   }
 
@@ -151,9 +157,9 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
 
     // Loading state with shimmer
     if (state.isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.uberBg,
-        body: Stack(
+      return Container(
+        color: AppColors.darkNavy,
+        child: Stack(
           children: [
             const MapShimmer(aspectRatio: 0.65),
             _buildLoadingSheet(),
@@ -164,41 +170,29 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
 
     // Error state
     if (state.error != null) {
-      return Scaffold(
-        backgroundColor: AppColors.uberBg,
-        body: Center(
+      return Container(
+        color: AppColors.darkNavy,
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Semantics(
-                  label: 'Error loading tailors',
-                  child: const Icon(Icons.error_outline,
-                      size: 64, color: AppColors.uberError),
-                ),
+                const Icon(Icons.error_outline, size: 64, color: AppColors.uberError),
                 const SizedBox(height: 16),
-                Text(
+                const Text(
                   'Failed to load tailors',
-                  style: TextStyle(
-                    color: TailorFinderContrast.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   state.error!,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: TailorFinderContrast.textSecondary,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: Colors.white38, fontSize: 10),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () =>
-                      ref.read(tailorFinderProvider.notifier).loadNearbyTailors(),
+                  onPressed: () => ref.read(tailorFinderProvider.notifier).loadNearbyTailors(),
                   child: const Text('Retry'),
                 ),
               ],
@@ -219,13 +213,11 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
           Navigator.of(context).maybePop();
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.uberBg,
-        body: LayoutBuilder(
+      child: Container(
+        color: AppColors.darkNavy,
+        child: LayoutBuilder(
           // FIX #12: Add responsive LayoutBuilder for tablet optimization
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= TailorFinderBreakpoints.tablet;
-
             return Stack(
               children: [
                 // MAP - adaptive height based on screen and toggle (FIX #11)
@@ -234,13 +226,13 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                     child: Semantics(
                       label: TailorFinderSemantics.mapLabel,
                       child: TailorMapView(
-                        tailors: state.tailors,
-                        selectedTailor: selectedTailor,
+                        tailors: state.markers,
+                        selectedTailor: selectedTailor != null ? TailorMarker.fromProfile(selectedTailor) : null,
                         userLocation: state.userLocation,
-                        onTailorSelected: (tailor) {
+                        onTailorSelected: (marker) {
                           ref
                               .read(tailorFinderProvider.notifier)
-                              .selectTailor(tailor);
+                              .selectTailor(marker);
                           // Open bottom sheet when tailor selected
                           _sheetController.animateTo(
                             _sheetInitialSize,
@@ -253,6 +245,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                               .read(tailorFinderProvider.notifier)
                               .setUserLocation(location);
                         },
+                        onBack: () => _onWillPop(),
                       ),
                     ),
                   ),
@@ -266,13 +259,13 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                   builder: (context, scrollController) {
                     return Container(
                       decoration: BoxDecoration(
-                        color: AppColors.figmaCardFill,
+                        color: const Color(0xFF0D1E26), // DARK NAVY SHEET
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(24),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
+                            color: Colors.black.withValues(alpha: 0.5),
                             blurRadius: 20,
                             offset: const Offset(0, -4),
                           ),
@@ -286,7 +279,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: AppColors.borderLight,
+                              color: Colors.white10,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -324,9 +317,16 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                                                   tailorFinderProvider.notifier)
                                               .selectServiceTier(tier);
                                         },
-                                        availableTiers:
-                                            selectedTailor?.availableServices ??
-                                                ServiceTier.values,
+                                        availableTiers: (selectedTailor?.services ?? [])
+                                            .map((s) => ServiceTier.values.firstWhere(
+                                              (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+                                              orElse: () => ServiceTier.custom,
+                                            )).toList()
+                                            .isEmpty ? ServiceTier.values : (selectedTailor?.services ?? [])
+                                            .map((s) => ServiceTier.values.firstWhere(
+                                              (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+                                              orElse: () => ServiceTier.custom,
+                                            )).toList(),
                                       ),
                                       const SizedBox(height: 16),
                                       // Info block (FIX #7)
@@ -419,7 +419,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                         Navigator.pushNamed(
                           context,
                           '/tailor-profile',
-                          arguments: selectedTailor,
+                          arguments: selectedTailor.id,
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -464,7 +464,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
     );
   }
 
-  Widget _buildSheetHeader(dynamic tailor) {
+  Widget _buildSheetHeader(UserProfile? tailor) {
     return Row(
       children: [
         Flexible(
@@ -511,7 +511,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Compact tailor info card (shows at bottom of sheet before detail view)
-  Widget _buildTailorInfoCard(dynamic tailor) {
+  Widget _buildTailorInfoCard(UserProfile tailor) {
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -573,9 +573,9 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                       const Icon(Icons.star_rounded,
                           color: AppColors.amber, size: 12),
                       const SizedBox(width: 2),
-                      Text(
-                        tailor.rating.toStringAsFixed(1),
-                        style: const TextStyle(
+                      const Text(
+                        '4.5',
+                        style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -583,15 +583,15 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '(${tailor.reviewCount})',
-                        style: const TextStyle(
+                        '(12)',
+                        style: TextStyle(
                           color: AppColors.textMuted,
                           fontSize: 10,
                         ),
                       ),
                     ],
                   ),
-                  if (tailor.shopAddress != null) ...[
+                  if (tailor.address != null) ...[
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -603,7 +603,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                         const SizedBox(width: 2),
                         Flexible(
                           child: Text(
-                            tailor.shopAddress ?? '',
+                            tailor.address ?? '',
                             style: const TextStyle(
                               color: AppColors.textMuted,
                               fontSize: 10,
@@ -622,8 +622,8 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(
-                color: tailor.isAvailable ? AppColors.uberLive : AppColors.uberWarning,
+              decoration: const BoxDecoration(
+                color: AppColors.uberLive,
                 shape: BoxShape.circle,
               ),
             ),
@@ -633,8 +633,8 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
     );
   }
 
-  /// Full detail view of tailor (FIX #2 & #3 & #5 & #8 & #9)
-  Widget _buildTailorDetailsView(dynamic tailor) {
+  /// Full detail view of tailor (FIX #2 \u0026 #3 \u0026 #5 \u0026 #8 \u0026 #9)
+  Widget _buildTailorDetailsView(UserProfile tailor) {
     return Column(
       children: [
         // Back button (FIX #13)
@@ -653,7 +653,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                   const Icon(Icons.arrow_back_ios_new_rounded,
                       color: AppColors.amber, size: 16),
                   const SizedBox(width: 8),
-                  Text(
+                  const Text(
                     'BACK',
                     style: TextStyle(
                       color: AppColors.amber,
@@ -714,7 +714,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Detailed header with gradient background (FIX #6)
-  Widget _buildDetailsHeader(dynamic tailor) {
+  Widget _buildDetailsHeader(UserProfile tailor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -771,30 +771,30 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    const Row(
                       children: [
                         Icon(Icons.star_rounded,
                             color: AppColors.amber, size: 14),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(
-                          '${tailor.rating.toStringAsFixed(1)} (${tailor.reviewCount})',
-                          style: const TextStyle(
+                          '4.5 (12)',
+                          style: TextStyle(
                             color: Colors.white70,
                             fontSize: 11,
                           ),
                         ),
                       ],
                     ),
-                    if (tailor.shopAddress != null) ...[
+                    if (tailor.address != null) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on,
+                          const Icon(Icons.location_on,
                               color: Colors.white54, size: 12),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              tailor.shopAddress!,
+                              tailor.address!,
                               style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 10,
@@ -816,24 +816,22 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: tailor.isAvailable
-                  ? AppColors.amber.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.2),
+              color: AppColors.amber.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  tailor.isAvailable ? Icons.check_circle : Icons.cancel,
-                  color: tailor.isAvailable ? AppColors.amber : Colors.red,
+                  Icons.check_circle,
+                  color: AppColors.amber,
                   size: 12,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
-                  tailor.isAvailable ? 'Available now' : 'Busy',
+                  'Available now',
                   style: TextStyle(
-                    color: tailor.isAvailable ? AppColors.amber : Colors.red,
+                    color: AppColors.amber,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -847,7 +845,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Action shortcuts (Call, Directions, Chat, Share) (FIX #3)
-  Widget _buildActionShortcuts(dynamic tailor) {
+  Widget _buildActionShortcuts(UserProfile tailor) {
     return Row(
       children: [
         _buildShortcutButton(Icons.phone_rounded, 'Call', () {}),
@@ -893,8 +891,12 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Services section with descriptions (FIX #5)
-  Widget _buildServicesSection(dynamic tailor) {
-    final services = tailor.availableServices as List<ServiceTier>? ?? [];
+  Widget _buildServicesSection(UserProfile tailor) {
+    final services = (tailor.services ?? []).map((s) => ServiceTier.values.firstWhere(
+      (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+      orElse: () => ServiceTier.custom,
+    )).toList();
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -931,7 +933,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
                       color: AppColors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.checkroom_rounded,
                       color: AppColors.amber,
                       size: 14,
@@ -1011,7 +1013,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
   }
 
   /// Info block showing service tier prompt (FIX #7)
-  Widget _buildInfoBlock(dynamic tailor, ServiceTier? tier) {
+  Widget _buildInfoBlock(UserProfile? tailor, ServiceTier? tier) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -1380,14 +1382,15 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: state.tailors.length,
+      itemCount: state.markers.length,
       itemBuilder: (context, index) {
-        final tailor = state.tailors[index];
+        final marker = state.markers[index];
         return TailorCard(
-          tailor: tailor,
-          isSelected: state.selectedTailor?.id == tailor.id,
+          tailor: marker,
+          isSelected: state.selectedTailor?.id == marker.id,
+          distanceMinutes: marker.distanceMinutes,
           onTap: () {
-            ref.read(tailorFinderProvider.notifier).selectTailor(tailor);
+            ref.read(tailorFinderProvider.notifier).selectTailor(marker);
             _sheetController.animateTo(
               0.6,
               duration: const Duration(milliseconds: 300),

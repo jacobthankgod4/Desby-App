@@ -27,6 +27,10 @@ def catch_all(path):
             "timestamp": datetime.utcnow().isoformat(),
         })
 
+    # Korra has no GET /api/v2/measurements endpoint — return empty list
+    if request.method == "GET" and path == "api/v2/measurements":
+        return jsonify({"measurements": []})
+
     dest = f"{KORRA_BASE_URL}/{path}"
 
     fwd = {}

@@ -10,9 +10,5 @@
       "src": "/api/(.*)",
       "dest": "backend/ai_measurement/service.py"
     }
-  ],
-  "env": {
-    "KORRA_API_URL": "@korra-api-url",
-    "KORRA_API_KEY": "@korra-api-key"
-  }
+  ]
 }

@@ -1,6 +1,5 @@
 node_modules/
 .dart_tool/
-build/
 .pub-cache/
 *.apk
 *.ipa
@@ -13,3 +12,4 @@ web/
 test/
 lib/
 backend/
+.DS_Store

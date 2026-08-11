@@ -15,8 +15,8 @@ web/
 test/
 lib/
 backend/
-.env
-.env.*
+/.env
+/.env.*
 .vscode/
 .idea/
 coverage/

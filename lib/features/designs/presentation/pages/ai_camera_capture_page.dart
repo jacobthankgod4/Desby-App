@@ -62,8 +62,8 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
         enableAudio: false,
       );
       await _cameraController!.initialize();
-      debugPrint('[CAMERA] Camera initialized, starting stream...');
-      if (!kIsWeb) {
+      debugPrint('[CAMERA] Camera initialized');
+      if (!kIsWeb && mounted) {
         await Future.delayed(const Duration(milliseconds: 500));
         try {
           await _cameraController!.startImageStream(_processCameraImage);
@@ -73,7 +73,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
         }
       }
       if (mounted) setState(() {});
-      _speakStepGuidance();
+      if (!kIsWeb) _speakStepGuidance();
     } catch (e, stack) {
       debugPrint('[CAMERA] Init error: $e');
       debugPrint('[CAMERA] Stack: $stack');
@@ -94,9 +94,14 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
   }
 
   Future<void> _initTts() async {
-    await _tts.setSpeechRate(0.5);
-    await _tts.setVolume(1.0);
-    await _tts.setPitch(1.0);
+    if (kIsWeb) return;
+    try {
+      await _tts.setSpeechRate(0.5);
+      await _tts.setVolume(1.0);
+      await _tts.setPitch(1.0);
+    } catch (e) {
+      debugPrint('[CAMERA] TTS init error: $e');
+    }
   }
 
   void _speakStepGuidance() {
@@ -307,7 +312,11 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
 
   @override
   void dispose() {
-    _cameraController?.stopImageStream();
+    if (!kIsWeb) {
+      try {
+        _cameraController?.stopImageStream();
+      } catch (_) {}
+    }
     _cameraController?.dispose();
     try {
       _poseDetector?.close();

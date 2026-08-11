@@ -1,11 +1,10 @@
 """
 Desby API Proxy — Thin relay to Korra AI
 ==========================================
-Forwards all /api/v2/* requests to korra.work.
-Passes request body through as-is.
 """
 
 import os
+import traceback
 from datetime import datetime
 
 import requests as http_requests
@@ -65,4 +64,5 @@ def _forward(target_url):
     except http_requests.Timeout:
         return jsonify({"error": "Korra API timeout"}), 504
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        tb = traceback.format_exc()
+        return jsonify({"error": str(e), "trace": tb}), 500

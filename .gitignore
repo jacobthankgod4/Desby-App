@@ -88,6 +88,16 @@ coverage/
 **/*apikey*
 **/*api_key*
 
+# Sensitive config files
+vimeo_config_summary.txt
+*vimeo*config*
+*credentials*
+
+# Node
+node_modules/
+package-lock.json
+package.json
+
 # Supabase / env
 .env*
 !.env.example

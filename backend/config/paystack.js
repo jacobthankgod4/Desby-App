@@ -4,8 +4,8 @@
 
 module.exports = {
   // API Keys - should be stored in environment variables
-  publicKey: process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_f20647b06319d6894f9476d22b4d8d8535ebbfa3',
-  secretKey: process.env.PAYSTACK_SECRET_KEY || 'sk_test_fa4f1f04a3b7fab51e63cf62ffac194e82d45a80',
+  publicKey: process.env.PAYSTACK_PUBLIC_KEY,
+  secretKey: process.env.PAYSTACK_SECRET_KEY,
 
   // API Configuration
   apiUrl: 'https://api.paystack.co',

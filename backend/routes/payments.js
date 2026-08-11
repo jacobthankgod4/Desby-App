@@ -3,8 +3,8 @@ const router = express.Router();
 const crypto = require('crypto');
 
 // Paystack Configuration
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_fa4f1f04a3b7fab51e63cf62ffac194e82d45a80';
-const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_f20647b06319d6894f9476d22b4d8d8535ebbfa3';
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
 const PAYSTACK_API_URL = 'https://api.paystack.co';
 
 // Mock payment store (in production, use a real database)

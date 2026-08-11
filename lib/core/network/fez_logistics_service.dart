@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../../config/environment.dart';
 
 class FezLogisticsService {
   final Dio _dio;
-  static const String _baseUrl = 'https://apisandbox.fezdelivery.co/v1';
-  static const String _secretKey = 'kl6NxZuveIz_2sZGkKq2TvhXjCwwR2HmqsX4GtHNIlkZPx23ZvaGg94GTNuBMO9C';
+  String get _baseUrl => Environment.current.fezLogisticsBaseUrl;
+  String get _secretKey => Environment.current.fezLogisticsSecretKey;
   
   String? _authToken;
 

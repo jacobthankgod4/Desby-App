@@ -1,18 +1,16 @@
 """
 Desby API Proxy — Thin relay to Korra AI
 ==========================================
-Forwards measurement requests to korra.work API.
+Forwards all /api/v2/* requests to korra.work.
 No local ML processing — all heavy lifting happens on Korra's servers.
 """
 
 import os
-import io
-import base64
-import json
+import re
 from datetime import datetime
 
-import requests
-from flask import Flask, request, jsonify
+import requests as http_requests
+from flask import Flask, request, jsonify, Response
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -21,11 +19,6 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 KORRA_BASE_URL = os.environ.get("KORRA_API_URL", "https://korra.work")
 KORRA_API_KEY = os.environ.get("KORRA_API_KEY", "")
 
-def korra_headers():
-    return {
-        "X-API-Key": KORRA_API_KEY,
-        "Content-Type": "application/json",
-    }
 
 @app.route("/", methods=["GET"])
 def health():
@@ -36,119 +29,115 @@ def health():
         "timestamp": datetime.utcnow().isoformat(),
     })
 
-@app.route("/api/measurements/extract", methods=["POST"])
-def extract_measurements():
-    """Proxy measurement extraction to Korra AI."""
+
+@app.route("/api/v2/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+def proxy_v2(path):
+    """Generic proxy: forward any /api/v2/* request to Korra AI."""
+    target_url = f"{KORRA_BASE_URL}/api/v2/{path}"
+
+    headers = {}
+    for key in request.headers:
+        if key.lower() not in ("host", "content-length", "transfer-encoding"):
+            headers[key] = request.headers[key]
+    if KORRA_API_KEY:
+        headers["X-API-Key"] = KORRA_API_KEY
+
     try:
-        files = {}
-        data = {}
+        if request.content_type and "multipart" in request.content_type:
+            files = {}
+            for key in request.files:
+                f = request.files[key]
+                files[key] = (f.filename, f.stream, f.content_type)
+            resp = http_requests.request(
+                method=request.method,
+                url=target_url,
+                files=files,
+                data=request.form,
+                headers=headers,
+                timeout=120,
+            )
+        elif request.data:
+            resp = http_requests.request(
+                method=request.method,
+                url=target_url,
+                data=request.data,
+                headers=headers,
+                timeout=60,
+            )
+        else:
+            resp = http_requests.request(
+                method=request.method,
+                url=target_url,
+                params=request.args,
+                headers=headers,
+                timeout=60,
+            )
 
-        if "front" in request.files:
-            front = request.files["front"]
-            files["front"] = (front.filename, front.stream, front.content_type)
+        excluded_headers = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+        resp_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded_headers}
 
-        if "side" in request.files:
-            side = request.files["side"]
-            files["side"] = (side.filename, side.stream, side.content_type)
+        return Response(resp.content, status=resp.status_code, headers=resp_headers)
 
-        data["height"] = request.form.get("height", "")
-        data["gender"] = request.form.get("gender", "male")
-
-        resp = requests.post(
-            f"{KORRA_BASE_URL}/api/v2/measurements/extract",
-            files=files,
-            data=data,
-            headers={"X-API-Key": KORRA_API_KEY},
-            timeout=120,
-        )
-
-        return jsonify(resp.json()), resp.status_code
-
-    except requests.Timeout:
+    except http_requests.Timeout:
         return jsonify({"error": "Korra API timeout"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/api/measurements/estimate", methods=["POST"])
-def estimate_measurements():
-    """Proxy height-based estimation to Korra AI."""
+
+@app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+def proxy_legacy(path):
+    """Legacy proxy: forward /api/* (no v2) to Korra /api/v2/*."""
+    if path.startswith("api/"):
+        korra_path = path.replace("api/", "api/v2/", 1)
+    else:
+        korra_path = f"api/v2/{path}"
+
+    target_url = f"{KORRA_BASE_URL}/{korra_path}"
+
+    headers = {}
+    for key in request.headers:
+        if key.lower() not in ("host", "content-length", "transfer-encoding"):
+            headers[key] = request.headers[key]
+    if KORRA_API_KEY:
+        headers["X-API-Key"] = KORRA_API_KEY
+
     try:
-        # Korra API expects form data, not JSON
-        if request.content_type and "json" in request.content_type:
-            payload = request.get_json(force=True)
-            form_data = {
-                "height": str(payload.get("height", "")),
-                "gender": payload.get("gender", "male"),
-            }
+        if request.content_type and "multipart" in request.content_type:
+            files = {}
+            for key in request.files:
+                f = request.files[key]
+                files[key] = (f.filename, f.stream, f.content_type)
+            resp = http_requests.request(
+                method=request.method,
+                url=target_url,
+                files=files,
+                data=request.form,
+                headers=headers,
+                timeout=120,
+            )
+        elif request.data:
+            resp = http_requests.request(
+                method=request.method,
+                url=target_url,
+                data=request.data,
+                headers=headers,
+                timeout=60,
+            )
         else:
-            form_data = {
-                "height": request.form.get("height", ""),
-                "gender": request.form.get("gender", "male"),
-            }
+            resp = http_requests.request(
+                method=request.method,
+                url=target_url,
+                params=request.args,
+                headers=headers,
+                timeout=60,
+            )
 
-        resp = requests.post(
-            f"{KORRA_BASE_URL}/api/v2/measurements/estimate",
-            data=form_data,
-            headers={"X-API-Key": KORRA_API_KEY},
-            timeout=30,
-        )
-        return jsonify(resp.json()), resp.status_code
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        excluded_headers = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+        resp_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded_headers}
 
-@app.route("/api/measurements", methods=["GET"])
-def list_measurements():
-    """Proxy list measurements from Korra AI."""
-    try:
-        resp = requests.get(
-            f"{KORRA_BASE_URL}/api/v2/measurements",
-            headers=korra_headers(),
-            timeout=15,
-        )
-        return jsonify(resp.json()), resp.status_code
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return Response(resp.content, status=resp.status_code, headers=resp_headers)
 
-@app.route("/api/measurements/<measurement_id>", methods=["GET"])
-def get_measurement(measurement_id):
-    """Proxy get measurement from Korra AI."""
-    try:
-        resp = requests.get(
-            f"{KORRA_BASE_URL}/api/v2/measurements/{measurement_id}",
-            headers=korra_headers(),
-            timeout=15,
-        )
-        return jsonify(resp.json()), resp.status_code
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/measurements/<measurement_id>/pdf", methods=["GET"])
-def download_pdf(measurement_id):
-    """Proxy PDF download from Korra AI."""
-    try:
-        resp = requests.get(
-            f"{KORRA_BASE_URL}/api/v2/measurements/{measurement_id}/pdf",
-            headers=korra_headers(),
-            timeout=30,
-        )
-        return resp.content, resp.status_code, {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": f'attachment; filename="measurement_{measurement_id}.pdf"',
-        }
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/keys/partner-provision", methods=["POST"])
-def provision_key():
-    """Proxy partner key provisioning to Korra AI."""
-    try:
-        payload = request.get_json(force=True)
-        resp = requests.post(
-            f"{KORRA_BASE_URL}/api/v2/keys/partner-provision",
-            json=payload,
-            headers=korra_headers(),
-            timeout=15,
-        )
-        return jsonify(resp.json()), resp.status_code
+    except http_requests.Timeout:
+        return jsonify({"error": "Korra API timeout"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500

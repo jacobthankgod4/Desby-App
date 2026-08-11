@@ -32,7 +32,7 @@ class FlutterwaveService {
       final Flutterwave flutterwave = Flutterwave(
         publicKey: _publicKey,
         currency: "NGN",
-        redirectUrl: "https://desby.app/payment-callback",
+        redirectUrl: dotenv.get('PAYMENT_REDIRECT_URL', fallback: 'https://desby.app/payment-callback'),
         txRef: txRef,
         amount: amount.toStringAsFixed(0),
         customer: customer,
@@ -40,7 +40,7 @@ class FlutterwaveService {
         customization: Customization(
           title: "Desby OS",
           description: "Payment for Order #$orderId",
-          logo: "https://aemumiyzowraoachzxtu.supabase.co/storage/v1/object/public/assets/logo.png",
+          logo: dotenv.get('APP_LOGO_URL', fallback: 'https://aemumiyzowraoachzxtu.supabase.co/storage/v1/object/public/assets/logo.png'),
         ),
         isTestMode: _publicKey.contains('TEST'),
       );

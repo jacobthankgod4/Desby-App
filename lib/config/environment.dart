@@ -78,6 +78,34 @@ class Environment {
   /// Database URL
   String get databaseUrl => _getEnv('DATABASE_URL') ?? '';
 
+  /// Fez Logistics Secret Key
+  String get fezLogisticsSecretKey => _getEnv('FEZ_LOGISTICS_SECRET_KEY') ?? '';
+
+  /// Fez Logistics Base URL
+  String get fezLogisticsBaseUrl =>
+      _getEnv('FEZ_LOGISTICS_BASE_URL') ?? 'https://apisandbox.fezdelivery.co/v1';
+
+  /// Vimeo Client ID
+  String get vimeoClientId => _getEnv('VIMEO_CLIENT_ID') ?? '';
+
+  /// Vimeo Client Secret
+  String get vimeoClientSecret => _getEnv('VIMEO_CLIENT_SECRET') ?? '';
+
+  /// Vimeo Personal Access Token
+  String get vimeoAccessToken => _getEnv('VIMEO_ACCESS_TOKEN') ?? '';
+
+  /// Vimeo Webhook Secret
+  String get vimeoWebhookSecret => _getEnv('VIMEO_WEBHOOK_SECRET') ?? '';
+
+  /// Payment Redirect URL
+  String get paymentRedirectUrl =>
+      _getEnv('PAYMENT_REDIRECT_URL') ?? 'https://desby.app/payment-callback';
+
+  /// App Logo URL
+  String get appLogoUrl =>
+      _getEnv('APP_LOGO_URL') ??
+      'https://aemumiyzowraoachzxtu.supabase.co/storage/v1/object/public/assets/logo.png';
+
   /// Feature Flags
   bool get enableAnalytics =>
       _getEnv('ENABLE_ANALYTICS') != 'false'; // Default true

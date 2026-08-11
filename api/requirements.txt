@@ -1,5 +1,1 @@
-# Desby API Proxy — Thin relay to Korra AI
-# No ML dependencies needed
 flask>=3.0.0
-werkzeug>=3.0.0
-requests>=2.31.0

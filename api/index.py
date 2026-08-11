@@ -1,79 +1,56 @@
 """
-Desby API Proxy — Thin relay to Korra AI
-==========================================
+Desby API Proxy — Korra AI relay
 """
 
 import os
-import json
 import traceback
 from datetime import datetime
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
+from urllib.error import HTTPError, URLError
 
-app = __import__("flask").Flask(__name__)
+from flask import Flask, request, jsonify, Response
+
+app = Flask(__name__)
 
 KORRA_BASE_URL = os.environ.get("KORRA_API_URL", "https://korra.work")
 KORRA_API_KEY = os.environ.get("KORRA_API_KEY", "")
 
 
-@app.route("/", methods=["GET", "POST"])
-def root():
-    from flask import request, jsonify, Response
-    if request.method == "GET":
-        return jsonify({
-            "status": "ok",
-            "service": "desby-api-proxy",
-            "korra_upstream": KORRA_BASE_URL,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
-
-    body = request.get_data()
+@app.route("/", methods=["GET"])
+def health():
     return jsonify({
-        "method": request.method,
-        "content_type": request.content_type,
-        "body_len": len(body),
-        "body_preview": body[:200].decode("utf-8", errors="replace"),
+        "status": "ok",
+        "service": "desby-api-proxy",
+        "timestamp": datetime.utcnow().isoformat(),
     })
 
 
-@app.route("/api/v2/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-def proxy_v2(path):
-    return _forward(f"{KORRA_BASE_URL}/api/v2/{path}")
+@app.route("/api/v2/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+def proxy_v2(subpath):
+    return _relay(f"{KORRA_BASE_URL}/api/v2/{subpath}")
 
 
-@app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-def proxy_legacy(path):
-    korra_path = path if path.startswith("api/") else f"api/v2/{path}"
-    return _forward(f"{KORRA_BASE_URL}/{korra_path}")
+@app.route("/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+def proxy_any(subpath):
+    return _relay(f"{KORRA_BASE_URL}/{subpath}")
 
 
-def _forward(target_url):
-    from flask import request, Response, jsonify
-
-    headers = {}
+def _relay(dest):
+    fwd = {"X-API-Key": KORRA_API_KEY} if KORRA_API_KEY else {}
     for k in request.headers:
-        if k.lower() not in ("host", "content-length", "transfer-encoding"):
-            headers[k] = request.headers[k]
-    if KORRA_API_KEY:
-        headers["X-API-Key"] = KORRA_API_KEY
-
+        kl = k.lower()
+        if kl not in ("host", "content-length", "transfer-encoding", "x-api-key"):
+            fwd[k] = request.headers[k]
     try:
         body = request.get_data()
-        req = Request(target_url, data=body if body else None, headers=headers, method=request.method)
-        with urlopen(req, timeout=120) as resp:
-            resp_body = resp.read()
-            resp_headers = {k: v for k, v in resp.headers.items()
-                            if k.lower() not in ("content-length", "transfer-encoding", "connection")}
-            return Response(resp_body, resp.status, resp_headers)
+        r = Request(dest, data=body or None, headers=fwd, method=request.method)
+        with urlopen(r, timeout=120) as resp:
+            data = resp.read()
+            return Response(data, resp.status, {
+                k: v for k, v in resp.getheaders()
+                if k.lower() not in ("content-length", "transfer-encoding")
+            })
     except HTTPError as e:
-        resp_body = e.read()
-        ct = "application/json"
-        for k, v in e.headers.items():
-            if k.lower() == "content-type":
-                ct = v
-        return Response(resp_body, e.code, {"Content-Type": ct})
-    except URLError as e:
-        return jsonify({"error": str(e.reason)}), 502
+        return Response(e.read(), e.code, {"Content-Type": "application/json"})
     except Exception as e:
-        tb = traceback.format_exc()
-        return jsonify({"error": str(e), "trace": tb}), 500
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500

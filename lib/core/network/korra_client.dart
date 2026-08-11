@@ -120,7 +120,7 @@ class KorraClient {
       );
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint('[KORRA] Health check failed: $e');
+      if (kDebugMode) debugPrint('[KORRA] Health check failed: $e');
       return false;
     }
   }
@@ -309,7 +309,9 @@ class KorraClient {
       }
       return [];
     } on DioException catch (e) {
-      debugPrint('[KORRA] List measurements failed: ${_dioError(e)}');
+      if (e.response?.statusCode != 404) {
+        debugPrint('[KORRA] List measurements failed: ${_dioError(e)}');
+      }
       return [];
     } catch (e) {
       debugPrint('[KORRA] List measurements error: $e');

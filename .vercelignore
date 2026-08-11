@@ -1,0 +1,15 @@
+node_modules/
+.dart_tool/
+build/
+.pub-cache/
+*.apk
+*.ipa
+android/
+ios/
+macos/
+windows/
+linux/
+web/
+test/
+lib/
+backend/

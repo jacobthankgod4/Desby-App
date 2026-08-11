@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -167,16 +168,6 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
           builder: (_) => AiCameraCapturePage(perspective: perspective),
         ),
       );
-
-      if (imageBytes == null) {
-        final XFile? picked = await _picker.pickImage(
-          source: ImageSource.camera,
-          maxWidth: 1024,
-          maxHeight: 1024,
-          imageQuality: 85,
-        );
-        if (picked != null) imageBytes = await picked.readAsBytes();
-      }
 
       if (imageBytes != null) {
         HapticFeedback.heavyImpact();

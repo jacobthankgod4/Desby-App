@@ -73,7 +73,15 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
         }
       }
       if (mounted) setState(() {});
-      if (!kIsWeb) _speakStepGuidance();
+      if (kIsWeb) {
+        setState(() {
+          _statusMessage = widget.perspective == 'front'
+              ? 'Stand facing the camera. Tap to capture.'
+              : 'Turn sideways to the camera. Tap to capture.';
+        });
+      } else {
+        _speakStepGuidance();
+      }
     } catch (e, stack) {
       debugPrint('[CAMERA] Init error: $e');
       debugPrint('[CAMERA] Stack: $stack');
@@ -263,6 +271,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
   }
 
   Future<void> _speakFeedback(String text, {bool force = false}) async {
+    if (kIsWeb) return;
     final now = DateTime.now();
     if (!force &&
         text == _lastSpokenText &&

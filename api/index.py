@@ -1,5 +1,6 @@
 """
 Desby API Proxy — Korra AI relay
+Single catch-all handler.
 """
 
 import os
@@ -7,7 +8,7 @@ import sys
 import traceback
 from datetime import datetime
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 
 from flask import Flask, request, jsonify, Response
 
@@ -17,48 +18,37 @@ KORRA_BASE_URL = os.environ.get("KORRA_API_URL", "https://korra.work")
 KORRA_API_KEY = os.environ.get("KORRA_API_KEY", "")
 
 
-@app.route("/", methods=["GET"])
-def health():
-    return jsonify({
-        "status": "ok",
-        "service": "desby-api-proxy",
-        "timestamp": datetime.utcnow().isoformat(),
-    })
+@app.route("/", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+def catch_all(path):
+    print(f"[PROXY] {request.method} /{path} -> {KORRA_BASE_URL}/api/v2/{path}", file=sys.stderr)
 
+    if not path:
+        return jsonify({
+            "status": "ok",
+            "service": "desby-api-proxy",
+            "timestamp": datetime.utcnow().isoformat(),
+        })
 
-@app.route("/api/v2/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-def proxy_v2(subpath):
-    return _relay(f"{KORRA_BASE_URL}/api/v2/{subpath}")
+    dest = f"{KORRA_BASE_URL}/api/v2/{path}"
 
+    fwd = {}
+    if KORRA_API_KEY:
+        fwd["X-API-Key"] = KORRA_API_KEY
 
-@app.route("/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-def proxy_any(subpath):
-    return _relay(f"{KORRA_BASE_URL}/{subpath}")
-
-
-def _relay(dest):
     try:
-        print(f"[PROXY] {request.method} {dest}", file=sys.stderr)
-
-        fwd = {}
-        if KORRA_API_KEY:
-            fwd["X-API-Key"] = KORRA_API_KEY
-
         body = request.get_data()
-        print(f"[PROXY] body_len={len(body)}", file=sys.stderr)
-
+        print(f"[PROXY] body={len(body)}b", file=sys.stderr)
         r = Request(dest, data=body if body else None, headers=fwd, method=request.method)
         with urlopen(r, timeout=120) as resp:
             data = resp.read()
-            print(f"[PROXY] upstream {resp.status}, {len(data)} bytes", file=sys.stderr)
-            return Response(data, resp.status, {
-                "Content-Type": resp.headers.get("Content-Type", "application/json"),
-            })
+            ct = resp.headers.get("Content-Type", "application/json")
+            print(f"[PROXY] ok {resp.status}", file=sys.stderr)
+            return Response(data, resp.status, {"Content-Type": ct})
     except HTTPError as e:
         data = e.read()
-        print(f"[PROXY] HTTPError {e.code}: {data[:200]}", file=sys.stderr)
+        print(f"[PROXY] http {e.code}", file=sys.stderr)
         return Response(data, e.code, {"Content-Type": "application/json"})
     except Exception as e:
-        tb = traceback.format_exc()
-        print(f"[PROXY] Error: {e}\n{tb}", file=sys.stderr)
-        return jsonify({"error": str(e)}), 500
+        print(f"[PROXY] err {e}", file=sys.stderr)
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500

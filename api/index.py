@@ -27,11 +27,19 @@ def catch_all(path):
             "timestamp": datetime.utcnow().isoformat(),
         })
 
-    dest = f"{KORRA_BASE_URL}/api/v2/{path}"
+    dest = f"{KORRA_BASE_URL}/{path}"
 
     fwd = {}
     if KORRA_API_KEY:
         fwd["X-API-Key"] = KORRA_API_KEY
+
+    ct = request.headers.get("Content-Type")
+    if ct:
+        fwd["Content-Type"] = ct
+
+    ac = request.headers.get("Accept")
+    if ac:
+        fwd["Accept"] = ac
 
     try:
         body = request.get_data()

@@ -107,3 +107,4 @@ macos/Runner/GoogleService-Info.plist
 macos/Runner/Resources/GoogleService-Info.plist
 node_modules/
 package.json
+.vercel

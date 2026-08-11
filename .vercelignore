@@ -1,8 +1,11 @@
+.git/
+.DS_Store
 node_modules/
 .dart_tool/
 .pub-cache/
-*.apk
-*.ipa
+build/
+.venv/
+venv/
 android/
 ios/
 macos/
@@ -12,4 +15,11 @@ web/
 test/
 lib/
 backend/
-.DS_Store
+.env
+.env.*
+.vscode/
+.idea/
+coverage/
+.artifacts/
+*.log
+*.sql

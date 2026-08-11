@@ -1,26 +1,25 @@
 """
 Desby API Proxy — Thin relay to Korra AI
 ==========================================
+Uses only Python stdlib (no pip dependencies needed).
 """
 
 import os
-import traceback
+import json
 from datetime import datetime
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
+from urllib.parse import urlencode
 
-import requests as http_requests
-from flask import Flask, request, jsonify, Response
-
-app = Flask(__name__)
+app = __import__("flask").Flask(__name__)
 
 KORRA_BASE_URL = os.environ.get("KORRA_API_URL", "https://korra.work")
 KORRA_API_KEY = os.environ.get("KORRA_API_KEY", "")
 
-SKIP_HEADERS = {"host", "content-length", "transfer-encoding"}
-
 
 @app.route("/", methods=["GET"])
 def health():
-    return jsonify({
+    return __import__("flask").jsonify({
         "status": "ok",
         "service": "desby-api-proxy",
         "korra_upstream": KORRA_BASE_URL,
@@ -40,27 +39,27 @@ def proxy_legacy(path):
 
 
 def _forward(target_url):
-    fwd_headers = {}
+    from flask import request, Response, jsonify
+
+    headers = {}
     for k in request.headers:
-        if k.lower() not in SKIP_HEADERS:
-            fwd_headers[k] = request.headers[k]
+        if k.lower() not in ("host", "content-length", "transfer-encoding"):
+            headers[k] = request.headers[k]
     if KORRA_API_KEY:
-        fwd_headers["X-API-Key"] = KORRA_API_KEY
+        headers["X-API-Key"] = KORRA_API_KEY
 
     try:
         body = request.get_data()
-        resp = http_requests.request(
-            method=request.method,
-            url=target_url,
-            data=body,
-            headers=fwd_headers,
-            timeout=120,
-        )
-        out_headers = {k: v for k, v in resp.headers.items()
-                       if k.lower() not in SKIP_HEADERS}
-        return Response(resp.content, resp.status_code, out_headers)
-    except http_requests.Timeout:
-        return jsonify({"error": "Korra API timeout"}), 504
+        req = Request(target_url, data=body, headers=headers, method=request.method)
+        with urlopen(req, timeout=120) as resp:
+            resp_body = resp.read()
+            resp_headers = {k: v for k, v in resp.headers.items()
+                            if k.lower() not in ("content-length", "transfer-encoding", "connection")}
+            return Response(resp_body, resp.status, resp_headers)
+    except HTTPError as e:
+        resp_body = e.read()
+        return Response(resp_body, e.code, {"Content-Type": "application/json"})
+    except URLError as e:
+        return jsonify({"error": str(e.reason)}), 502
     except Exception as e:
-        tb = traceback.format_exc()
-        return jsonify({"error": str(e), "trace": tb}), 500
+        return jsonify({"error": str(e)}), 500

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -27,8 +26,8 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   final BodyMeasurementService _service = BodyMeasurementService();
   final FlutterTts _tts = FlutterTts();
 
-  File? _frontImage;
-  File? _sideImage;
+  Uint8List? _frontImage;
+  Uint8List? _sideImage;
   double _heightCm = 170.0;
   String _gender = 'male';
   bool _isProcessing = false;
@@ -160,32 +159,32 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   }
   Future<void> _capturePhoto(String perspective) async {
     try {
-      File? photo;
+      Uint8List? imageBytes;
 
-      if (Platform.isAndroid || Platform.isIOS) {
-        photo = await Navigator.push<File>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AiCameraCapturePage(perspective: perspective),
-          ),
-        );
-      } else {
+      imageBytes = await Navigator.push<Uint8List>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AiCameraCapturePage(perspective: perspective),
+        ),
+      );
+
+      if (imageBytes == null) {
         final XFile? picked = await _picker.pickImage(
           source: ImageSource.camera,
           maxWidth: 1024,
           maxHeight: 1024,
           imageQuality: 85,
         );
-        if (picked != null) photo = File(picked.path);
+        if (picked != null) imageBytes = await picked.readAsBytes();
       }
 
-      if (photo != null) {
+      if (imageBytes != null) {
         HapticFeedback.heavyImpact();
         setState(() {
           if (perspective == 'front') {
-            _frontImage = photo;
+            _frontImage = imageBytes;
           } else {
-            _sideImage = photo;
+            _sideImage = imageBytes;
           }
         });
         await _speak('Photo captured successfully.');
@@ -230,8 +229,8 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
       BodyMeasurementResult result;
       if (_frontImage != null && _sideImage != null) {
         result = await _service.extractMeasurements(
-          frontImage: _frontImage!,
-          sideImage: _sideImage!,
+          frontImageBytes: _frontImage!,
+          sideImageBytes: _sideImage!,
           heightCm: _heightCm,
           gender: _gender,
         );
@@ -1273,7 +1272,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   // ---------------------------------------------------------------------------
 
   Widget _buildPhotoGuidance({
-    File? image,
+    Uint8List? image,
     required String label,
     required bool isFront,
   }) {
@@ -1296,7 +1295,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
             ? Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.file(image, fit: BoxFit.cover),
+                   Image.memory(image, fit: BoxFit.cover),
                   Positioned(
                     top: 12,
                     right: 12,

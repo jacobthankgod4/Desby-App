@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
-import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
@@ -26,7 +24,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
   bool _isProcessing = false;
   bool _isAligned = false;
   DateTime? _alignmentStartTime;
-  File? _capturedImage;
+  Uint8List? _capturedImageBytes;
   bool _isReviewing = false;
   String _statusMessage = 'Initializing camera...';
   Map<PoseLandmarkType, PoseLandmark> _currentLandmarks = {};
@@ -37,18 +35,14 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
   @override
   void initState() {
     super.initState();
-    _initPoseDetector();
+    if (!kIsWeb) {
+      _initPoseDetector();
+    }
     _initTts();
     _initCamera();
   }
 
   Future<void> _initCamera() async {
-    if (!Platform.isAndroid && !Platform.isIOS) {
-      if (mounted) {
-        setState(() => _statusMessage = 'Camera not available on this platform.');
-      }
-      return;
-    }
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
@@ -69,13 +63,14 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
       );
       await _cameraController!.initialize();
       debugPrint('[CAMERA] Camera initialized, starting stream...');
-      // Small delay to let camera fully warm up before streaming
-      await Future.delayed(const Duration(milliseconds: 500));
-      try {
-        await _cameraController!.startImageStream(_processCameraImage);
-        debugPrint('[CAMERA] Image stream started');
-      } catch (e) {
-        debugPrint('[CAMERA] startImageStream error: $e');
+      if (!kIsWeb) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        try {
+          await _cameraController!.startImageStream(_processCameraImage);
+          debugPrint('[CAMERA] Image stream started');
+        } catch (e) {
+          debugPrint('[CAMERA] startImageStream error: $e');
+        }
       }
       if (mounted) setState(() {});
       _speakStepGuidance();
@@ -115,11 +110,11 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
   }
 
   Future<void> _processCameraImage(CameraImage image) async {
-    if (_isProcessing || _isReviewing || _capturedImage != null) return;
+    if (_isProcessing || _isReviewing || _capturedImageBytes != null) return;
     _isProcessing = true;
 
     try {
-      final imageFormat = Platform.isIOS
+      final imageFormat = defaultTargetPlatform == TargetPlatform.iOS
           ? InputImageFormat.bgra8888
           : InputImageFormat.nv21;
 
@@ -281,17 +276,16 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
   }
 
   Future<void> _capturePhoto() async {
-    if (_isReviewing || _capturedImage != null) return;
+    if (_isReviewing || _capturedImageBytes != null) return;
 
     HapticFeedback.heavyImpact();
     await _speakFeedback('Captured.', force: true);
 
     try {
       final XFile file = await _cameraController!.takePicture();
-      // Resize to max 1024px (matching Korra's snapPhoto)
-      final resized = await _resizeImage(File(file.path), maxDim: 1024);
+      final bytes = await file.readAsBytes();
       setState(() {
-        _capturedImage = resized;
+        _capturedImageBytes = bytes;
         _isReviewing = true;
       });
     } catch (e) {
@@ -299,53 +293,16 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
     }
   }
 
-  Future<File> _resizeImage(File file, {int maxDim = 1024}) async {
-    final bytes = await file.readAsBytes();
-    final codec = await ui.instantiateImageCodec(bytes);
-    final frame = await codec.getNextFrame();
-    final image = frame.image;
-
-    int w = image.width;
-    int h = image.height;
-    if (w > h && w > maxDim) {
-      h = (h * maxDim) ~/ w;
-      w = maxDim;
-    } else if (h > maxDim) {
-      w = (w * maxDim) ~/ h;
-      h = maxDim;
-    }
-
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    canvas.drawImageRect(
-      image,
-      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-      Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
-      Paint()..filterQuality = FilterQuality.high,
-    );
-    final picture = recorder.endRecording();
-    final resizedImage = await picture.toImage(w, h);
-    final pngBytes =
-        await resizedImage.toByteData(format: ui.ImageByteFormat.png);
-
-    final resizedFile = File('${file.parent.path}/resized_${file.uri.pathSegments.last}');
-    await resizedFile.writeAsBytes(pngBytes!.buffer.asUint8List());
-
-    image.dispose();
-    resizedImage.dispose();
-    return resizedFile;
-  }
-
   void _retakePhoto() {
     setState(() {
       _isReviewing = false;
-      _capturedImage = null;
+      _capturedImageBytes = null;
       _alignmentStartTime = null;
     });
   }
 
   void _keepPhoto() {
-    Navigator.pop(context, _capturedImage);
+    Navigator.pop(context, _capturedImageBytes);
   }
 
   @override
@@ -466,14 +423,14 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
           ),
 
           // Review mode overlay
-          if (_isReviewing && _capturedImage != null)
+          if (_isReviewing && _capturedImageBytes != null)
             Positioned.fill(
               child: Container(
                 color: Colors.black,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.file(_capturedImage!, fit: BoxFit.cover),
+                    Image.memory(_capturedImageBytes!, fit: BoxFit.cover),
                     Positioned(
                       bottom: 40,
                       left: 24,

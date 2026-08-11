@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/environment.dart';
@@ -101,15 +99,15 @@ class BodyMeasurementService {
   ///
   /// Returns: Map of measurement names to values in cm
   Future<BodyMeasurementResult> extractMeasurements({
-    required File frontImage,
-    required File sideImage,
+    required Uint8List frontImageBytes,
+    required Uint8List sideImageBytes,
     required double heightCm,
     String gender = 'male',
   }) async {
     await _ensureApiKey();
     final korraResult = await _korra.extractMeasurements(
-      frontImage: frontImage,
-      sideImage: sideImage,
+      frontImageBytes: frontImageBytes,
+      sideImageBytes: sideImageBytes,
       heightCm: heightCm,
       gender: gender,
     );
@@ -132,13 +130,13 @@ class BodyMeasurementService {
   /// Uses single front photo for ±3-5cm accuracy.
   /// No side photo required — faster but less precise.
   Future<BodyMeasurementResult> extractSinglePhoto({
-    required File frontImage,
+    required Uint8List frontImageBytes,
     required double heightCm,
     String gender = 'male',
   }) async {
     await _ensureApiKey();
     final korraResult = await _korra.extractSinglePhoto(
-      frontImage: frontImage,
+      frontImageBytes: frontImageBytes,
       heightCm: heightCm,
       gender: gender,
     );

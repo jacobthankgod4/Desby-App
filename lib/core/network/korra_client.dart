@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../config/environment.dart';
@@ -134,19 +133,19 @@ class KorraClient {
   /// The extract endpoint is async — it returns a task_id.
   /// This method polls for completion (up to 5 minutes).
   Future<KorraMeasurementResult> extractMeasurements({
-    required File frontImage,
-    required File sideImage,
+    required Uint8List frontImageBytes,
+    required Uint8List sideImageBytes,
     required double heightCm,
     required String gender,
   }) async {
     try {
       final formData = FormData.fromMap({
-        'front': await MultipartFile.fromFile(
-          frontImage.path,
+        'front': MultipartFile.fromBytes(
+          frontImageBytes,
           filename: 'front.jpg',
         ),
-        'side': await MultipartFile.fromFile(
-          sideImage.path,
+        'side': MultipartFile.fromBytes(
+          sideImageBytes,
           filename: 'side.jpg',
         ),
         'height': heightCm.toString(),
@@ -184,14 +183,14 @@ class KorraClient {
   ///
   /// Same async polling as dual photo mode.
   Future<KorraMeasurementResult> extractSinglePhoto({
-    required File frontImage,
+    required Uint8List frontImageBytes,
     required double heightCm,
     required String gender,
   }) async {
     try {
       final formData = FormData.fromMap({
-        'front': await MultipartFile.fromFile(
-          frontImage.path,
+        'front': MultipartFile.fromBytes(
+          frontImageBytes,
           filename: 'front.jpg',
         ),
         'height': heightCm.toString(),

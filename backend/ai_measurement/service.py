@@ -73,11 +73,23 @@ def extract_measurements():
 def estimate_measurements():
     """Proxy height-based estimation to Korra AI."""
     try:
-        payload = request.get_json(force=True)
+        # Korra API expects form data, not JSON
+        if request.content_type and "json" in request.content_type:
+            payload = request.get_json(force=True)
+            form_data = {
+                "height": str(payload.get("height", "")),
+                "gender": payload.get("gender", "male"),
+            }
+        else:
+            form_data = {
+                "height": request.form.get("height", ""),
+                "gender": request.form.get("gender", "male"),
+            }
+
         resp = requests.post(
             f"{KORRA_BASE_URL}/api/v2/measurements/estimate",
-            json=payload,
-            headers=korra_headers(),
+            data=form_data,
+            headers={"X-API-Key": KORRA_API_KEY},
             timeout=30,
         )
         return jsonify(resp.json()), resp.status_code

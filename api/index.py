@@ -3,6 +3,7 @@ Desby API Proxy — Korra AI relay
 """
 
 import os
+import sys
 import traceback
 from datetime import datetime
 from urllib.request import Request, urlopen
@@ -36,21 +37,28 @@ def proxy_any(subpath):
 
 
 def _relay(dest):
-    fwd = {"X-API-Key": KORRA_API_KEY} if KORRA_API_KEY else {}
-    for k in request.headers:
-        kl = k.lower()
-        if kl not in ("host", "content-length", "transfer-encoding", "x-api-key"):
-            fwd[k] = request.headers[k]
     try:
+        print(f"[PROXY] {request.method} {dest}", file=sys.stderr)
+
+        fwd = {}
+        if KORRA_API_KEY:
+            fwd["X-API-Key"] = KORRA_API_KEY
+
         body = request.get_data()
-        r = Request(dest, data=body or None, headers=fwd, method=request.method)
+        print(f"[PROXY] body_len={len(body)}", file=sys.stderr)
+
+        r = Request(dest, data=body if body else None, headers=fwd, method=request.method)
         with urlopen(r, timeout=120) as resp:
             data = resp.read()
+            print(f"[PROXY] upstream {resp.status}, {len(data)} bytes", file=sys.stderr)
             return Response(data, resp.status, {
-                k: v for k, v in resp.getheaders()
-                if k.lower() not in ("content-length", "transfer-encoding")
+                "Content-Type": resp.headers.get("Content-Type", "application/json"),
             })
     except HTTPError as e:
-        return Response(e.read(), e.code, {"Content-Type": "application/json"})
+        data = e.read()
+        print(f"[PROXY] HTTPError {e.code}: {data[:200]}", file=sys.stderr)
+        return Response(data, e.code, {"Content-Type": "application/json"})
     except Exception as e:
-        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+        tb = traceback.format_exc()
+        print(f"[PROXY] Error: {e}\n{tb}", file=sys.stderr)
+        return jsonify({"error": str(e)}), 500

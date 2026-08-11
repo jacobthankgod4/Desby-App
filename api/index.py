@@ -1,15 +1,14 @@
 """
 Desby API Proxy — Thin relay to Korra AI
 ==========================================
-Uses only Python stdlib (no pip dependencies needed).
 """
 
 import os
 import json
+import traceback
 from datetime import datetime
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
-from urllib.parse import urlencode
 
 app = __import__("flask").Flask(__name__)
 
@@ -17,13 +16,23 @@ KORRA_BASE_URL = os.environ.get("KORRA_API_URL", "https://korra.work")
 KORRA_API_KEY = os.environ.get("KORRA_API_KEY", "")
 
 
-@app.route("/", methods=["GET"])
-def health():
-    return __import__("flask").jsonify({
-        "status": "ok",
-        "service": "desby-api-proxy",
-        "korra_upstream": KORRA_BASE_URL,
-        "timestamp": datetime.utcnow().isoformat(),
+@app.route("/", methods=["GET", "POST"])
+def root():
+    from flask import request, jsonify, Response
+    if request.method == "GET":
+        return jsonify({
+            "status": "ok",
+            "service": "desby-api-proxy",
+            "korra_upstream": KORRA_BASE_URL,
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+
+    body = request.get_data()
+    return jsonify({
+        "method": request.method,
+        "content_type": request.content_type,
+        "body_len": len(body),
+        "body_preview": body[:200].decode("utf-8", errors="replace"),
     })
 
 
@@ -50,7 +59,7 @@ def _forward(target_url):
 
     try:
         body = request.get_data()
-        req = Request(target_url, data=body, headers=headers, method=request.method)
+        req = Request(target_url, data=body if body else None, headers=headers, method=request.method)
         with urlopen(req, timeout=120) as resp:
             resp_body = resp.read()
             resp_headers = {k: v for k, v in resp.headers.items()
@@ -58,8 +67,13 @@ def _forward(target_url):
             return Response(resp_body, resp.status, resp_headers)
     except HTTPError as e:
         resp_body = e.read()
-        return Response(resp_body, e.code, {"Content-Type": "application/json"})
+        ct = "application/json"
+        for k, v in e.headers.items():
+            if k.lower() == "content-type":
+                ct = v
+        return Response(resp_body, e.code, {"Content-Type": ct})
     except URLError as e:
         return jsonify({"error": str(e.reason)}), 502
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        tb = traceback.format_exc()
+        return jsonify({"error": str(e), "trace": tb}), 500

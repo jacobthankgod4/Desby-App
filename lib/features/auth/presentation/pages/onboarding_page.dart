@@ -22,23 +22,23 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           const _OnboardingData(
             title: 'Precision in Every Stitch',
             description: 'The digital companion for master tailors. Manage your craftsmanship with atomic precision.',
-            image: 'assets/images/onboarding image1.png',
+            image: 'assets/images/onboarding_image1.webp',
           ),
           const _OnboardingData(
             title: 'Seamless Order Flow',
             description: 'From measurements to final fitting. Track every stage of your client\'s journey without missing a single detail.',
-            image: 'assets/images/onboarding image2.png',
+            image: 'assets/images/onboarding_image2.webp',
           ),
           const _OnboardingData(
             title: 'Design Your Empire',
             description: 'Your portfolio, your marketplace, your growth. Desby OS scales your fashion business.',
-            image: 'assets/images/onboarding image3.png',
+            image: 'assets/images/onboarding_image3.webp',
             zoomOut: true,
           ),
           const _OnboardingData(
             title: 'Connect & Collaborate',
             description: 'Join a network of elite designers. Share inspiration and grow your brand globally.',
-            image: 'assets/images/onboarding screens4.png',
+            image: 'assets/images/onboarding_screens4.webp',
           ),
         ];
       case UserType.apprentice:
@@ -56,7 +56,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           const _OnboardingData(
             title: 'Your Future Portfolio',
             description: 'Build a body of work that showcases your journey from beginner to master artisan.',
-            image: 'assets/images/onboarding image3.png',
+            image: 'assets/images/onboarding_image3.webp',
             zoomOut: true,
           ),
         ];
@@ -75,7 +75,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           const _OnboardingData(
             title: 'Grow Your Sales',
             description: 'Connect directly with high-volume buyers. Expand your reach beyond your physical shop.',
-            image: 'assets/images/onboarding image3.png',
+            image: 'assets/images/onboarding_image3.webp',
             zoomOut: true,
           ),
         ];
@@ -89,12 +89,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           const _OnboardingData(
             title: 'Track Your Fit',
             description: 'Monitor your garment creation in real-time. Know exactly when your masterpiece is ready.',
-            image: 'assets/images/onboarding image2.png',
+            image: 'assets/images/onboarding_image2.webp',
           ),
           const _OnboardingData(
             title: 'Style Inspiration',
             description: 'Browse thousands of unique designs and find the perfect match for your next occasion.',
-            image: 'assets/images/onboarding image1.png',
+            image: 'assets/images/onboarding_image1.webp',
           ),
         ];
     }
@@ -150,7 +150,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Image.asset('assets/images/logo.png', height: 80),
+                            Image.asset('assets/images/logo.webp', height: 80),
                             const SizedBox(height: 40),
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 500),

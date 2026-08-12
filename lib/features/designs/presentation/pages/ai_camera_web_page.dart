@@ -102,11 +102,18 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
     }
 
     try {
-      final result = await js_util.promiseToFuture(
-        js.context.callMethod('initPoseDetection', []),
-      );
-      if (result == true) {
-        _poseReady = true;
+      // Call the JS function — it's async but callMethod may not return Promise
+      js.context.callMethod('initPoseDetection', []);
+
+      // Poll __mpReady flag set by the JS module after initialization
+      for (var i = 0; i < 100; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        final ready = js.context['__mpReady'];
+        if (ready == true) break;
+      }
+
+      _poseReady = js.context['__mpReady'] == true;
+      if (_poseReady) {
         debugPrint('[MEDIAPIPE] Pose detection initialized');
         if (mounted) {
           setState(() {
@@ -116,13 +123,16 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
           });
           _startFrameLoop();
         }
+      } else {
+        debugPrint('[MEDIAPIPE] Init timeout — using manual capture');
+        if (mounted) {
+          setState(() => _statusMessage = 'Tap to capture when ready.');
+        }
       }
     } catch (e) {
       debugPrint('[MEDIAPIPE] Init error: $e');
       if (mounted) {
-        setState(() {
-          _statusMessage = 'Tap to capture when ready.';
-        });
+        setState(() => _statusMessage = 'Tap to capture when ready.');
       }
     }
   }

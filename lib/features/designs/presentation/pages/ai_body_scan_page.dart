@@ -13,6 +13,7 @@ import '../../../../core/services/body_measurement_service.dart';
 import '../../../../core/network/korra_client.dart';
 import '../../../../theme/colors.dart';
 import 'ai_camera_capture_page.dart';
+import 'ai_camera_web_page.dart';
 
 class AiBodyScanPage extends ConsumerStatefulWidget {
   const AiBodyScanPage({super.key});
@@ -162,11 +163,13 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
     try {
       Uint8List? imageBytes;
 
+      final cameraPage = kIsWeb
+          ? AiCameraWebPage(perspective: perspective)
+          : AiCameraCapturePage(perspective: perspective);
+
       imageBytes = await Navigator.push<Uint8List>(
         context,
-        MaterialPageRoute(
-          builder: (_) => AiCameraCapturePage(perspective: perspective),
-        ),
+        MaterialPageRoute(builder: (_) => cameraPage),
       );
 
       if (imageBytes != null) {

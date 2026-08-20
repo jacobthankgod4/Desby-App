@@ -24,7 +24,7 @@ final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async 
   final usecase = ref.watch(getNotificationsUsecaseProvider);
   final result = await usecase(user.id);
   return result.fold(
-    (failure) => throw failure,
+    (failure) => <AppNotification>[], // Gracefully return empty on failure
     (notifications) => notifications,
   );
 });
@@ -36,6 +36,12 @@ final unreadNotificationCountProvider = Provider<int>((ref) {
     loading: () => 0,
     error: (error, stack) => 0,
   );
+});
+
+final markAllAsReadProvider = FutureProvider.family<void, String>((ref, userId) async {
+  final repository = ref.watch(notificationRepositoryProvider);
+  await repository.markAllAsRead(userId);
+  ref.invalidate(notificationsProvider);
 });
 
 final notificationStreamProvider = StreamProvider<AppNotification>((ref) {

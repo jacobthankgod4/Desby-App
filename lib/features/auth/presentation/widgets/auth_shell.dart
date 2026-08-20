@@ -203,8 +203,8 @@ class _AuthShellState extends State<AuthShell> {
             height: double.infinity,
             color: AppColors.darkNavy,
             child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 440),
                   child: widget.child,

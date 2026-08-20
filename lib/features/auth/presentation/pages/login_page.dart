@@ -141,7 +141,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const AuthLogo(),
-        const SizedBox(height: 48),
+        const SizedBox(height: 32),
         Text(
           'Welcome Back',
           style: const TextStyle(
@@ -151,7 +151,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           'Sign in to your Desby account',
           style: TextStyle(
@@ -159,9 +159,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             color: Colors.white.withOpacity(0.5),
           ),
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 28),
         _buildLabel('EMAIL'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextFormField(
           controller: _emailController,
           enabled: !isLoading,
@@ -172,9 +172,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: validateEmail,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _buildLabel('PASSWORD'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextFormField(
           controller: _passwordController,
           enabled: !isLoading,
@@ -193,7 +193,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (_) => _handleLogin(),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -235,10 +235,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
           ],
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 48,
           child: ElevatedButton(
             onPressed: isLoading ? null : _handleLogin,
             style: ElevatedButton.styleFrom(
@@ -268,7 +268,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         Center(
           child: GestureDetector(
             onTap: () => Navigator.of(context).pushReplacementNamed('/register'),

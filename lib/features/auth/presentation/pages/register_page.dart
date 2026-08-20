@@ -223,7 +223,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const AuthLogo(),
-        const SizedBox(height: 40),
+        const SizedBox(height: 24),
         const Text(
           'Create Account',
           style: TextStyle(
@@ -233,7 +233,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           'Join the Desby OS fashion network',
           style: TextStyle(
@@ -241,9 +241,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             color: Colors.white.withOpacity(0.5),
           ),
         ),
-        const SizedBox(height: 36),
+        const SizedBox(height: 24),
         _buildLabel('FULL NAME'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextField(
           controller: _nameController,
           enabled: !isLoading,
@@ -251,9 +251,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           style: const TextStyle(color: Colors.white, fontSize: 14),
           decoration: _inputDecoration('Enter your full name'),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         _buildLabel('EMAIL'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextFormField(
           controller: _emailController,
           enabled: !isLoading,
@@ -263,9 +263,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: validateEmail,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         _buildLabel('I AM A...'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.05),
@@ -294,9 +294,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         _buildLabel('PASSWORD'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextFormField(
           controller: _passwordController,
           enabled: !isLoading,
@@ -315,9 +315,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: validatePassword,
         ),
-        // Password strength indicator
         if (_passwordController.text.isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
@@ -345,9 +344,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             ],
           ),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         _buildLabel('CONFIRM PASSWORD'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         TextField(
           controller: _confirmPasswordController,
           enabled: !isLoading,
@@ -364,7 +363,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         Row(
           children: [
             SizedBox(
@@ -416,10 +415,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             ),
           ],
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 48,
           child: ElevatedButton(
             onPressed: isLoading || !_isFormValid ? null : _handleRegister,
             style: ElevatedButton.styleFrom(

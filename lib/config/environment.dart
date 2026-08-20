@@ -30,6 +30,8 @@ class Environment {
       _getEnv('API_BASE_URL') ?? 'http://localhost:3000/api';
 
   /// Korra AI API Base URL (primary measurement/try-on service)
+  /// When set to empty string, Korra client uses absolute paths (/api/v2/...)
+  /// which is the correct behavior when the API is proxied on the same origin.
   String get korraApiBaseUrl =>
       _getEnv('KORRA_API_BASE_URL') ?? 'https://korra.work/api/v2';
 

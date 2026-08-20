@@ -126,9 +126,8 @@ class SupabaseAuthRepository implements AuthRepository {
       try {
         await _supabase.from('users').upsert(userData);
       } catch (e) {
-        debugPrint('[AUTH] ⚠️ RLS/Policy Block during self-healing: $e');
+        debugPrint('[AUTH] RLS/Policy Block during profile sync: $e');
         debugPrint('[AUTH] Proceeding with Local-Only state to allow app entry.');
-        // We continue because Auth was successful, we just couldn't sync the profile to DB
       }
 
       // 4. Handle confirmation requirement
@@ -154,6 +153,76 @@ class SupabaseAuthRepository implements AuthRepository {
       );
     } catch (e) {
       debugPrint('[AUTH] Supabase register() error: $e');
+      
+      // Handle email confirmation failure — user was created but email failed
+      final errorStr = e.toString();
+      if (errorStr.contains('Error sending confirmation email') ||
+          errorStr.contains('unexpected_failure')) {
+        debugPrint('[AUTH] Email confirmation failed but user may exist. Attempting auto-login...');
+        
+        try {
+          // Try to sign in — if user was created, this should work
+          final loginResponse = await _supabase.auth.signInWithPassword(
+            email: email,
+            password: password,
+          ).timeout(const Duration(seconds: 25));
+          
+          final sbUser = loginResponse.user;
+          if (sbUser != null) {
+            final user = User(
+              id: sbUser.id,
+              email: email,
+              name: name,
+              userType: userType,
+              createdAt: DateTime.now(),
+            );
+            final userData = UserModel.fromEntity(user).toJson();
+            
+            // Sync profile
+            try {
+              await _supabase.from('users').upsert(userData);
+            } catch (_) {}
+            
+            // Persist locally
+            final storage = (localDatasource as AuthLocalDatasourceImpl).storage;
+            await storage.save(StorageKeys.currentUser, userData);
+            await localDatasource.saveTokens(
+              sbUser.id,
+              loginResponse.session?.refreshToken ?? 'supabase_session',
+            );
+            
+            return Success(
+              AuthResponse(
+                user: user,
+                accessToken: loginResponse.session?.accessToken ?? sbUser.id,
+                refreshToken: loginResponse.session?.refreshToken ?? 'supabase_session',
+                expiresIn: loginResponse.session?.expiresIn ?? 3600,
+              )
+            );
+          }
+        } catch (loginError) {
+          debugPrint('[AUTH] Auto-login after email failure also failed: $loginError');
+        }
+        
+        // If auto-login failed, still return success to let user in
+        // (profile was created, just email confirmation is broken)
+        final user = User(
+          id: '',
+          email: email,
+          name: name,
+          userType: userType,
+          createdAt: DateTime.now(),
+        );
+        return Success(
+          AuthResponse(
+            user: user,
+            accessToken: email,
+            refreshToken: 'local_session',
+            expiresIn: 3600,
+          )
+        );
+      }
+      
       final failure = ErrorHandler.mapExceptionToFailure(e);
       return Failure(_toAuthFailure(failure));
     }

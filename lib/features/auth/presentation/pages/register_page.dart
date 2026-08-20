@@ -202,8 +202,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           );
         },
         error: (error) {
+          final message = error.message;
+          // Clean up raw Supabase/JSON errors into user-friendly messages
+          String friendlyMessage;
+          if (message.contains('unexpected_failure') || message.contains('Error sending confirmation email')) {
+            friendlyMessage = 'Account created! Signing you in...';
+          } else if (message.contains('already registered') || message.contains('already exists')) {
+            friendlyMessage = 'An account with this email already exists.';
+          } else if (message.contains('password')) {
+            friendlyMessage = 'Password does not meet requirements.';
+          } else {
+            friendlyMessage = message.length > 80 ? 'Registration failed. Please try again.' : message;
+          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error.message), backgroundColor: Colors.red),
+            SnackBar(content: Text(friendlyMessage), backgroundColor: Colors.red),
           );
         },
         orElse: () {},

@@ -518,12 +518,14 @@ class _NotificationBellState extends State<_NotificationBell> {
   }
 }
 
-class _UpgradeCard extends StatefulWidget {
+class _UpgradeCard extends ConsumerStatefulWidget {
+  const _UpgradeCard();
+
   @override
-  State<_UpgradeCard> createState() => _UpgradeCardState();
+  ConsumerState<_UpgradeCard> createState() => _UpgradeCardState();
 }
 
-class _UpgradeCardState extends State<_UpgradeCard> {
+class _UpgradeCardState extends ConsumerState<_UpgradeCard> {
   bool _isHovered = false;
 
   @override
@@ -531,35 +533,40 @@ class _UpgradeCardState extends State<_UpgradeCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _isHovered
-              ? AppColors.amber.withValues(alpha: 0.1)
-              : AppColors.amber.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
+      child: GestureDetector(
+        onTap: () {
+          ref.read(navigationStackProvider.notifier).set('/subscription-plans');
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
             color: _isHovered
-                ? AppColors.amber.withValues(alpha: 0.3)
-                : AppColors.amber.withValues(alpha: 0.1),
+                ? AppColors.amber.withValues(alpha: 0.1)
+                : AppColors.amber.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isHovered
+                  ? AppColors.amber.withValues(alpha: 0.3)
+                  : AppColors.amber.withValues(alpha: 0.1),
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.auto_awesome_rounded,
-              color: _isHovered ? AppColors.amber : Colors.white70,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            const Expanded(child: Text('UPGRADE PLAN', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 1))),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: _isHovered ? AppColors.amber : Colors.white24,
-              size: 10,
-            ),
-          ],
+          child: Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_rounded,
+                color: _isHovered ? AppColors.amber : Colors.white70,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('UPGRADE PLAN', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 1))),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: _isHovered ? AppColors.amber : Colors.white24,
+                size: 10,
+              ),
+            ],
+          ),
         ),
       ),
     );

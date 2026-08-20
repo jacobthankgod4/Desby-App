@@ -50,6 +50,7 @@ import 'package:desby_app/core/models/nav_item.dart';
 import 'package:desby_app/core/providers/navigation_provider.dart';
 import 'package:desby_app/core/providers/theme_provider.dart';
 import 'package:desby_app/theme/colors.dart';
+import '../../../payments/presentation/pages/subscription_plans_page.dart';
 
 class MainPage extends ConsumerStatefulWidget {
   const MainPage({super.key});
@@ -271,6 +272,7 @@ class _MainPageState extends ConsumerState<MainPage> {
       case '/merchant-wallet': return const MerchantWalletPage();
       case '/ai-body-scan': return const AiBodyScanPage();
       case '/designs': return const DesignGalleryPage();
+      case '/subscription-plans': return const SubscriptionPlansPage();
       default: return const TailorDashboard();
     }
   }

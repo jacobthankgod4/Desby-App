@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/services/body_measurement_service.dart';
@@ -34,7 +33,6 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   bool _isProcessing = false;
   String? _errorMessage;
   Map<String, double>? _measurements;
-  static const String _accuracyMode = 'dual';
   String _accuracyDescription = 'Professional accuracy (±1-3cm)';
   int _currentStep = 0;
   List<KorraMeasurementSummary> _scanHistory = [];
@@ -208,6 +206,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   }
 
   Future<void> _processMeasurements() async {
+    if (_isProcessing) return;
     setState(() {
       _isProcessing = true;
       _errorMessage = null;
@@ -266,6 +265,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
 
   Future<void> _saveMeasurements() async {
     HapticFeedback.selectionClick();
+    bool saved = false;
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null && _measurements != null) {
@@ -274,17 +274,26 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
           'measurements': _measurements,
           'gender': _gender,
           'height_cm': _heightCm,
-          'accuracy_mode': _accuracyMode,
+          'accuracy_mode': 'dual_photo',
           'accuracy': _accuracyDescription,
           'measurement_count': _measurements!.length,
         });
+        saved = true;
       }
     } catch (e) {
       debugPrint('[SCAN] Failed to persist scan: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save measurements: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
 
     if (mounted) {
-      Navigator.pop(context, _measurements);
+      Navigator.pop(context, saved ? _measurements : null);
     }
   }
 

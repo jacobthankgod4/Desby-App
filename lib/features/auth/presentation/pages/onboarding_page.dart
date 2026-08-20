@@ -107,7 +107,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final screens = _getScreens(userType);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: AppColors.darkNavy,
       body: Stack(
         children: [
           PageView.builder(
@@ -170,7 +170,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                 data.title,
                                 key: ValueKey<String>(data.title),
                                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Colors.white,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: -0.5,
                                 ),
@@ -184,7 +184,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                 data.description,
                                 key: ValueKey<String>(data.description),
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                   height: 1.6,
                                 ),
                                 textAlign: TextAlign.center,

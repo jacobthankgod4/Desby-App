@@ -15,9 +15,6 @@ class FlutterwaveService {
   String get _secretKey => dotenv.get('FLUTTERWAVE_SECRET_KEY', fallback: '');
   String get _redirectUrl => dotenv.get('PAYMENT_REDIRECT_URL', fallback: 'https://desby.app/payment-callback');
 
-  /// Initiates Flutterwave checkout.
-  /// Web: redirects to hosted checkout (no CORS).
-  /// Mobile: uses inline SDK.
   Future<void> checkout({
     required BuildContext context,
     required String email,
@@ -50,15 +47,13 @@ class FlutterwaveService {
         txRef: txRef,
         orderId: orderId,
         phone: phone,
-        subAccountCode: subAccountCode,
         onSuccess: onSuccess,
         onCancel: onCancel,
       );
     }
   }
 
-  /// Web checkout: Opens Flutterwave hosted checkout in a new tab.
-  /// After payment, user is redirected to callback URL.
+  /// Web: Initialize payment via Flutterwave API, then redirect to hosted checkout
   Future<void> _webCheckout({
     required String email,
     required String fullName,
@@ -68,38 +63,60 @@ class FlutterwaveService {
     required Function(String) onSuccess,
     required VoidCallback onCancel,
   }) async {
-    final params = {
-      'public_key': _publicKey,
-      'tx_ref': txRef,
-      'amount': amount.toStringAsFixed(0),
-      'currency': 'NGN',
-      'redirect_url': _redirectUrl,
-      'customer[email]': email,
-      'customer[name]': fullName,
-      'payment_options': 'card,banktransfer,ussd',
-      'customizations[title]': 'Desby OS',
-      'customizations[description]': 'Payment for Order #$orderId',
-    };
+    try {
+      // Step 1: Initialize payment via Flutterwave v3 API
+      final response = await http.post(
+        Uri.parse('https://api.flutterwave.com/v3/payments'),
+        headers: {
+          'Authorization': 'Bearer $_secretKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'tx_ref': txRef,
+          'amount': amount.toStringAsFixed(0),
+          'currency': 'NGN',
+          'redirect_url': _redirectUrl,
+          'customer': {
+            'email': email,
+            'name': fullName,
+          },
+          'payment_options': 'card,banktransfer,ussd',
+          'customizations': {
+            'title': 'Desby OS',
+            'description': 'Payment for Order #$orderId',
+          },
+        }),
+      );
 
-    final queryString = params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
+      final data = jsonDecode(response.body);
 
-    final checkoutUrl = Uri.parse('https://checkout.flutterwave.com/pay?$queryString');
-
-    if (await canLaunchUrl(checkoutUrl)) {
-      // Open in new tab — user completes payment there
-      await launchUrl(checkoutUrl, mode: LaunchMode.externalApplication);
-
-      // Notify caller that payment flow started
-      // Actual verification happens via redirect callback or webhook
-      onSuccess(txRef);
-    } else {
+      if (data['status'] == 'success' && data['data'] != null) {
+        final checkoutUrl = data['data']['link'];
+        if (checkoutUrl != null && checkoutUrl.toString().isNotEmpty) {
+          // Step 2: Redirect to Flutterwave hosted checkout
+          final uri = Uri.parse(checkoutUrl.toString());
+          if (await canLaunchUrl(uri)) {
+            // Open in same window — user completes payment, gets redirected back
+            await launchUrl(uri, mode: LaunchMode.inAppWebView);
+            onSuccess(txRef);
+          } else {
+            onCancel();
+          }
+        } else {
+          debugPrint('❌ [FLUTTERWAVE] No checkout link in response');
+          onCancel();
+        }
+      } else {
+        debugPrint('❌ [FLUTTERWAVE] Init failed: ${data['message']}');
+        onCancel();
+      }
+    } catch (e) {
+      debugPrint('❌ [FLUTTERWAVE] Web checkout error: $e');
       onCancel();
     }
   }
 
-  /// Mobile checkout: Uses flutterwave_standard inline SDK.
+  /// Mobile: Initialize payment and open in-app WebView
   Future<void> _mobileCheckout({
     required BuildContext context,
     required String email,
@@ -108,36 +125,49 @@ class FlutterwaveService {
     required String txRef,
     required String orderId,
     String? phone,
-    String? subAccountCode,
     required Function(String) onSuccess,
     required VoidCallback onCancel,
   }) async {
     try {
-      // Mobile uses the standard SDK (imported at package level)
-      // This is handled by the subscription page which imports flutterwave_standard
-      // For now, fall back to web-style redirect on mobile too
-      final params = {
-        'public_key': _publicKey,
-        'tx_ref': txRef,
-        'amount': amount.toStringAsFixed(0),
-        'currency': 'NGN',
-        'redirect_url': _redirectUrl,
-        'customer[email]': email,
-        'customer[name]': fullName,
-        'payment_options': 'card,banktransfer,ussd',
-        'customizations[title]': 'Desby OS',
-        'customizations[description]': 'Payment for Order #$orderId',
-      };
+      final response = await http.post(
+        Uri.parse('https://api.flutterwave.com/v3/payments'),
+        headers: {
+          'Authorization': 'Bearer $_secretKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'tx_ref': txRef,
+          'amount': amount.toStringAsFixed(0),
+          'currency': 'NGN',
+          'redirect_url': _redirectUrl,
+          'customer': {
+            'email': email,
+            'name': fullName,
+            if (phone != null) 'phone_number': phone,
+          },
+          'payment_options': 'card,banktransfer,ussd',
+          'customizations': {
+            'title': 'Desby OS',
+            'description': 'Payment for Order #$orderId',
+          },
+        }),
+      );
 
-      final queryString = params.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
+      final data = jsonDecode(response.body);
 
-      final checkoutUrl = Uri.parse('https://checkout.flutterwave.com/pay?$queryString');
-
-      if (await canLaunchUrl(checkoutUrl)) {
-        await launchUrl(checkoutUrl, mode: LaunchMode.inAppWebView);
-        onSuccess(txRef);
+      if (data['status'] == 'success' && data['data'] != null) {
+        final checkoutUrl = data['data']['link'];
+        if (checkoutUrl != null) {
+          final uri = Uri.parse(checkoutUrl.toString());
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.inAppWebView);
+            onSuccess(txRef);
+          } else {
+            onCancel();
+          }
+        } else {
+          onCancel();
+        }
       } else {
         onCancel();
       }
@@ -150,32 +180,23 @@ class FlutterwaveService {
   /// Verify a transaction with Flutterwave API
   Future<bool> verifyTransaction(String txRef) async {
     try {
-      final uri = Uri.parse('https://api.flutterwave.com/v3/transactions/verify?tx_ref=$txRef');
-      final response = await _httpGet(uri, headers: {
-        'Authorization': 'Bearer $_secretKey',
-        'Content-Type': 'application/json',
-      });
+      final response = await http.get(
+        Uri.parse('https://api.flutterwave.com/v3/transactions/verify?tx_ref=$txRef'),
+        headers: {
+          'Authorization': 'Bearer $_secretKey',
+          'Content-Type': 'application/json',
+        },
+      );
 
-      if (response != null && response['status'] == 'success') {
-        final data = response['data'];
-        return data['status'] == 'successful' && data['tx_ref'] == txRef;
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'success') {
+        final txData = data['data'];
+        return txData['status'] == 'successful' && txData['tx_ref'] == txRef;
       }
       return false;
     } catch (e) {
       debugPrint('❌ [FLUTTERWAVE] Verify error: $e');
       return false;
-    }
-  }
-
-  Future<Map<String, dynamic>?> _httpGet(Uri uri, {Map<String, String>? headers}) async {
-    try {
-      final response = await http.get(uri, headers: headers);
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      }
-      return null;
-    } catch (_) {
-      return null;
     }
   }
 }

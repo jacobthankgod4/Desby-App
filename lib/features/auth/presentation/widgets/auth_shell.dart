@@ -1,125 +1,213 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/colors.dart';
 
-/// Korra-style split-screen auth shell.
-/// Left side: visual panel with headline. Right side: form.
-/// On mobile: form only (side panel hidden).
-class AuthShell extends StatelessWidget {
+/// Hyper-modern split-screen auth shell with carousel.
+/// Left side: white carousel panel. Right side: dark green form panel.
+/// On mobile: form only.
+class AuthShell extends StatefulWidget {
   final String title;
   final String subtitle;
-  final String headline;
-  final String headlineAccent;
   final Widget child;
 
   const AuthShell({
     super.key,
     required this.title,
     required this.subtitle,
-    required this.headline,
-    required this.headlineAccent,
     required this.child,
   });
 
   @override
+  State<AuthShell> createState() => _AuthShellState();
+}
+
+class _AuthShellState extends State<AuthShell> {
+  late final PageController _pageController;
+  int _currentPage = 0;
+  Timer? _timer;
+
+  static const _slides = [
+    _CarouselSlide(
+      image: 'assets/images/remote-capturing.png',
+      headline: 'Your tailoring\nbusiness, powered\nby AI.',
+      accent: 'Manage orders, clients, and designs — all in one place.',
+    ),
+    _CarouselSlide(
+      image: 'assets/images/tailor.png',
+      headline: 'Where craftsmanship\nmeets innovation.',
+      accent: 'Precision tools for the modern artisan.',
+    ),
+    _CarouselSlide(
+      image: 'assets/images/lady-elegant-dress.png',
+      headline: 'Effortless elegance,\nperfectly fitted.',
+      accent: 'From concept to couture, every stitch tells a story.',
+    ),
+    _CarouselSlide(
+      image: 'assets/images/man-elegant-dress.png',
+      headline: 'Royal style,\nprecision tailored.',
+      accent: 'Command attention with garments made to measure.',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
+      final next = (_currentPage + 1) % _slides.length;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.darkNavy,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 900;
-
-          if (!isWide) {
-            return _buildMobileLayout(context);
+          if (constraints.maxWidth <= 900) {
+            return _buildMobileLayout();
           }
-          return _buildDesktopLayout(context);
+          return _buildDesktopLayout();
         },
       ),
     );
   }
 
-  Widget _buildDesktopLayout(BuildContext context) {
+  Widget _buildDesktopLayout() {
     return Row(
       children: [
-        // Left: Visual panel
+        // Left: Carousel panel (white background)
         Expanded(
           flex: 4,
           child: Container(
             height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0A1921),
-                  Color(0xFF102A35),
-                  Color(0xFF1B3022),
-                ],
-              ),
-            ),
+            color: Colors.white,
             child: Stack(
               children: [
-                // Decorative circles
-                Positioned(
-                  top: -80,
-                  left: -80,
-                  child: _decorativeCircle(200, AppColors.amber.withOpacity(0.08)),
+                // Carousel
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: _slides.length,
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemBuilder: (_, i) => _buildSlide(_slides[i]),
                 ),
+                // Bottom gradient overlay for text readability
                 Positioned(
-                  bottom: -120,
-                  right: -60,
-                  child: _decorativeCircle(300, AppColors.amber.withOpacity(0.05)),
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 260,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Color(0xCC0A1921),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
+                // Text content
                 Positioned(
-                  top: 200,
-                  right: 100,
-                  child: _decorativeCircle(120, AppColors.accent.withOpacity(0.06)),
+                  left: 48,
+                  right: 48,
+                  bottom: 48,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    child: Column(
+                      key: ValueKey(_currentPage),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _slides[_currentPage].headline,
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -1.2,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _slides[_currentPage].accent,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.amber,
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                // Content
-                Padding(
-                  padding: const EdgeInsets.all(64),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        headline,
-                        style: const TextStyle(
-                          fontSize: 44,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -1.5,
-                          height: 1.1,
+                // Page indicators
+                Positioned(
+                  left: 48,
+                  bottom: 24,
+                  child: Row(
+                    children: List.generate(
+                      _slides.length,
+                      (i) => GestureDetector(
+                        onTap: () => _pageController.animateToPage(
+                          i,
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOutCubic,
+                        ),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: _currentPage == i ? 32 : 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(right: 6),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: _currentPage == i
+                                ? AppColors.amber
+                                : Colors.white.withValues(alpha: 0.4),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        headlineAccent,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.amber,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         ),
-        // Right: Form panel
+        // Right: Form panel (dark green background)
         Expanded(
           flex: 5,
           child: Container(
             height: double.infinity,
-            color: Colors.black,
+            color: AppColors.darkNavy,
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 440),
-                  child: child,
+                  child: widget.child,
                 ),
               ),
             ),
@@ -129,16 +217,16 @@ class AuthShell extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context) {
+  Widget _buildMobileLayout() {
     return Container(
-      color: Colors.black,
+      color: AppColors.darkNavy,
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
-              child: child,
+              child: widget.child,
             ),
           ),
         ),
@@ -146,16 +234,36 @@ class AuthShell extends StatelessWidget {
     );
   }
 
-  Widget _decorativeCircle(double size, Color color) {
+  Widget _buildSlide(_CarouselSlide slide) {
     return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
+      color: Colors.white,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Image centered with padding
+          Padding(
+            padding: const EdgeInsets.all(40),
+            child: Image.asset(
+              slide.image,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _CarouselSlide {
+  final String image;
+  final String headline;
+  final String accent;
+
+  const _CarouselSlide({
+    required this.image,
+    required this.headline,
+    required this.accent,
+  });
 }
 
 /// Logo widget used in auth pages

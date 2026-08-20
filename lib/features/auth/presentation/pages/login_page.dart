@@ -112,8 +112,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return AuthShell(
       title: 'Sign In',
       subtitle: 'Welcome back to Desby OS',
-      headline: 'Your tailoring\nbusiness,\npowered by AI.',
-      headlineAccent: 'Manage orders, clients, and designs — all in one place.',
       child: _buildForm(isLoading),
     );
   }

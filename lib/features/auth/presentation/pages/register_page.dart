@@ -213,8 +213,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     return AuthShell(
       title: 'Sign Up',
       subtitle: 'Join the Desby fashion network',
-      headline: 'Start your\ntailoring journey\ntoday.',
-      headlineAccent: 'Create an account to manage clients, orders, and designs.',
       child: _buildForm(isLoading),
     );
   }

@@ -56,8 +56,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return AuthShell(
       title: 'Forgot Password',
       subtitle: 'Reset your password',
-      headline: 'Reset your\npassword.',
-      headlineAccent: 'We\'ll send you a link to get back into your account.',
       child: _emailSent ? _buildSuccessView() : _buildForm(),
     );
   }

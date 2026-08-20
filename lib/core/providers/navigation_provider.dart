@@ -98,31 +98,31 @@ String getPageTitle(String route) {
   if (route.startsWith('/checkout')) return 'Secure Checkout';
 
   switch (route) {
-    case '/main': return 'Command Center';
-    case '/orders': return 'Garment Pipeline';
-    case '/clients': return 'Client Database';
+    case '/main': return 'Dashboard';
+    case '/orders': return 'Orders';
+    case '/clients': return 'Clients';
     case '/unified-add-client': return 'Add Client';
-    case '/order-create': return 'New Manifest';
-    case '/marketplace': return 'Textile Market';
-    case '/shop-setup': return 'Atelier Config';
-    case '/pricing-setup': return 'Pricing Model';
-    case '/insights': return 'Business Intel';
-    case '/profile/settings': return 'System Settings';
-    case '/profile': return 'My Dossier';
-    case '/notifications': return 'Comm Center';
-    case '/tailor-discovery': return 'Find Designer';
-    case '/measurements-hub': return 'Fitting Hub';
-    case '/measurements-input': return 'Fitting Station';
-    case '/measurements-profile': return 'Digital Dossier';
+    case '/order-create': return 'New Order';
+    case '/marketplace': return 'Marketplace';
+    case '/shop-setup': return 'My Shop';
+    case '/pricing-setup': return 'Pricing';
+    case '/insights': return 'Insights';
+    case '/profile/settings': return 'Settings';
+    case '/profile': return 'My Profile';
+    case '/notifications': return 'Notifications';
+    case '/tailor-discovery': return 'Find Tailors';
+    case '/measurements-hub': return 'Measurements';
+    case '/measurements-input': return 'Body Measurements';
+    case '/measurements-profile': return 'Measurement Profile';
     case '/fabric-upload': return 'Upload Fabric';
-    case '/curriculum': return 'Academy Hub';
-    case '/tasks': return 'Mission Control';
-    case '/chats': return 'Encrypted Comms';
-    case '/reports': return 'Data Reports';
-    case '/ai-insights': return 'AI Intel';
-    case '/merchant-wallet': return 'Merchant Wallet';
-    case '/ai-body-scan': return 'Neural Scan';
-    case '/designs': return 'Visual Vault';
+    case '/curriculum': return 'Learning';
+    case '/tasks': return 'Tasks';
+    case '/chats': return 'Messages';
+    case '/reports': return 'Reports';
+    case '/ai-insights': return 'AI Insights';
+    case '/merchant-wallet': return 'Wallet';
+    case '/ai-body-scan': return 'Body Scan';
+    case '/designs': return 'Designs';
     default: return 'Desby OS';
   }
 }

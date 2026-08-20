@@ -84,7 +84,7 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
                   // Task Queue
                   AnimatedEntry(
                     index: 4,
-                    child: _buildSectionHeader('Critical Tasks', '/tasks'),
+                    child: _buildSectionHeader('My Tasks', '/tasks'),
                   ),
                   const SizedBox(height: 16),
                   AnimatedEntry(index: 5, child: _buildTasksManifest(ref, apprenticeship.id)),
@@ -94,7 +94,7 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
                   // Curriculum Sync
                   AnimatedEntry(
                     index: 6,
-                    child: _buildSectionHeader('Academy Modules', '/curriculum'),
+                    child: _buildSectionHeader('Learning Modules', '/curriculum'),
                   ),
                   const SizedBox(height: 16),
                   AnimatedEntry(index: 7, child: _buildCurriculumHUD(ref)),
@@ -133,9 +133,9 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
             child: const Icon(Icons.school_rounded, color: AppColors.amber, size: 48),
           ),
           const SizedBox(height: 24),
-          const Text('NO ACTIVE ACADEMY SESSION', style: TextStyle(color: Colors.white24, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
+          const Text('NO ACTIVE COURSE', style: TextStyle(color: Colors.white24, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
           const SizedBox(height: 8),
-          Text('Contact your mentor to enroll', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 11)),
+          Text('Contact your mentor to get started', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 11)),
         ],
       ),
     );
@@ -145,10 +145,10 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('ACADEMY DASHBOARD', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        const Text('ACADEMY', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
         const SizedBox(height: 4),
         Text(
-          'Mastery, ${name ?? 'Apprentice'}',
+          'Hello, ${name ?? 'Apprentice'}',
           style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
         ),
       ],

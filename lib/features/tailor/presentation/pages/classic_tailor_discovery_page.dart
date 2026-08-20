@@ -40,7 +40,7 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
       child: CustomScrollView(
         slivers: [
           _buildFilterHero(),
-          _buildSectionHeader('TOP ARCHITECTS'),
+          _buildSectionHeader('TOP TAILORS'),
           
           tailorsAsync.when(
             data: (tailors) => _buildTechnicalGrid(tailors),
@@ -61,7 +61,7 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('FIND YOUR ARCHITECT', style: TextStyle(color: AppColors.amber, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1.0)),
+            const Text('FIND YOUR TAILOR', style: TextStyle(color: AppColors.amber, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1.0)),
             const SizedBox(height: 24),
             
             Row(
@@ -177,7 +177,7 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
 
     if (filtered.isEmpty) {
       return const SliverToBoxAdapter(
-        child: Center(child: Padding(padding: EdgeInsets.all(80), child: Text('NO ARCHITECTS MATCHING CRITERIA', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)))),
+        child: Center(child: Padding(padding: EdgeInsets.all(80), child: Text('NO TAILORS MATCHING CRITERIA', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)))),
       );
     }
 

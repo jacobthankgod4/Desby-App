@@ -344,7 +344,7 @@ class _MainPageState extends ConsumerState<MainPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text('RAPID ACTIONS', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              const Text('QUICK ACTIONS', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 2)),
               const SizedBox(height: 24),
               GridView.count(
                 crossAxisCount: 3,
@@ -428,12 +428,12 @@ class _MainPageState extends ConsumerState<MainPage> {
                     padding: const EdgeInsets.all(16),
                     child: onboardingWidget,
                   ),
-                  _buildDrawerItem(ref, Icons.grid_view_rounded, 'Dashboard Home', '/main'),
+                  _buildDrawerItem(ref, Icons.grid_view_rounded, 'Dashboard', '/main'),
                   _buildDrawerItem(ref, Icons.person_outline_rounded, 'My Profile', '/profile', arguments: {'userId': user?.id}),
                   if (userType == 'tailor')
-                    _buildDrawerItem(ref, Icons.bar_chart_rounded, 'Business Insights', '/insights'),
-                  _buildDrawerItem(ref, Icons.settings_suggest_rounded, 'System Settings', '/profile/settings'),
-                  _buildDrawerItem(ref, Icons.notifications_none_rounded, 'Notification Center', '/notifications'),
+                    _buildDrawerItem(ref, Icons.bar_chart_rounded, 'Insights', '/insights'),
+                  _buildDrawerItem(ref, Icons.settings_suggest_rounded, 'Settings', '/profile/settings'),
+                  _buildDrawerItem(ref, Icons.notifications_none_rounded, 'Notifications', '/notifications'),
                 ],
               ),
             ),
@@ -442,7 +442,7 @@ class _MainPageState extends ConsumerState<MainPage> {
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 24),
             leading: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 22),
-            title: const Text('Terminate Session', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.2)),
+            title: const Text('Log Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.2)),
             onTap: () async {
               Navigator.pop(context);
               await ref.read(authStateProvider.notifier).logout();
@@ -599,7 +599,7 @@ class _MainPageState extends ConsumerState<MainPage> {
   }
 
   String _getAppBarTitle(String type) {
-    return 'DESBY OS';
+    return 'DESBY';
   }
 }
 

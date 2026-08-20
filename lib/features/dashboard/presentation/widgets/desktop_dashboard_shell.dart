@@ -280,7 +280,7 @@ class _DesktopDashboardShellState extends ConsumerState<DesktopDashboardShell> {
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(24, 12, 24, 12),
-            child: Text('TERMINAL MENU', style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            child: Text('MENU', style: TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2)),
           ),
           Expanded(
             child: ListView.builder(
@@ -316,7 +316,7 @@ class _DesktopDashboardShellState extends ConsumerState<DesktopDashboardShell> {
     return ListTile(
       onTap: () => _onLogout(context),
       leading: const Icon(Icons.power_settings_new_rounded, color: Colors.redAccent, size: 20),
-      title: const Text('TERMINATE', style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+      title: const Text('LOG OUT', style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
     );
   }
 
@@ -553,7 +553,7 @@ class _UpgradeCardState extends State<_UpgradeCard> {
               size: 20,
             ),
             const SizedBox(width: 12),
-            const Expanded(child: Text('UPGRADE SYSTEM', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 1))),
+            const Expanded(child: Text('UPGRADE PLAN', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 1))),
             Icon(
               Icons.arrow_forward_ios_rounded,
               color: _isHovered ? AppColors.amber : Colors.white24,

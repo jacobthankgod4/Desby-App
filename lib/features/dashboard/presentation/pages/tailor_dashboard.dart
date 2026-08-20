@@ -72,7 +72,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
 
               AnimatedEntry(
                 index: 5,
-                child: const Text('RAPID OPERATIONS', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                child: const Text('QUICK ACTIONS', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
               ),
               const SizedBox(height: 16),
               AnimatedEntry(index: 6, child: _buildOperationsGrid()),
@@ -81,7 +81,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
 
               AnimatedEntry(
                 index: 7,
-                child: _buildSectionHeader(context, 'Pipeline Handshakes', '/orders'),
+                child: _buildSectionHeader(context, 'Recent Orders', '/orders'),
               ),
               const SizedBox(height: 16),
               recentOrdersAsync.when(
@@ -98,7 +98,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
 
               AnimatedEntry(
                 index: 9,
-                child: _buildSectionHeader(context, 'Elite Clients', '/clients'),
+                child: _buildSectionHeader(context, 'Your Clients', '/clients'),
               ),
               const SizedBox(height: 16),
               recentClientsAsync.when(
@@ -120,7 +120,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('COMMAND CENTER v2.1', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const Text('DASHBOARD', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
             const SizedBox(height: 4),
             Text(
               'Welcome, ${name ?? 'Designer'}',
@@ -155,7 +155,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
           children: [
             const Icon(Icons.cloud_off_rounded, color: Colors.white10, size: 32),
             const SizedBox(height: 12),
-            const Text('DATA SYNC OFFLINE', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900)),
+            const Text('CONNECTION ERROR', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900)),
             const SizedBox(height: 4),
             Text(error, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.redAccent, fontSize: 8)),
           ],
@@ -209,7 +209,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
     if (orders.isEmpty) {
       return _buildEmptyState(
         icon: Icons.receipt_long_rounded,
-        title: 'NO PENDING MANIFESTS',
+        title: 'NO PENDING ORDERS',
         subtitle: 'Your pipeline is clear',
       );
     }
@@ -386,7 +386,7 @@ class _OrderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(order['clientName']?.toString().toUpperCase() ?? 'ANONYMOUS', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
-                    Text('MANIFEST #${order['id'].toString().substring(0, 8).toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    Text('ORDER #${order['id'].toString().substring(0, 8).toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
                   ],
                 ),
               ),

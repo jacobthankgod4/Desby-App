@@ -95,7 +95,7 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
               // Dispatch Command
               AnimatedEntry(
                 index: 5,
-                child: _buildSectionHeader('Logistics Radar', '/orders'),
+                child: _buildSectionHeader('Pending Shipments', '/orders'),
               ),
               const SizedBox(height: 16),
               AnimatedEntry(index: 6, child: _buildDispatchHUD(context, ref)),
@@ -105,7 +105,7 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
               // Inventory Velocity
               AnimatedEntry(
                 index: 7,
-                child: _buildSectionHeader('Stock Manifest', '/inventory'),
+                child: _buildSectionHeader('My Fabrics', '/inventory'),
               ),
               const SizedBox(height: 16),
               AnimatedEntry(index: 8, child: _buildRecentUploadsHUD()),
@@ -115,7 +115,7 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
               // Performance Analytics
               AnimatedEntry(
                 index: 9,
-                child: _buildSectionHeader('Material Popularity', '/inventory'),
+                child: _buildSectionHeader('Popularity', '/inventory'),
               ),
               const SizedBox(height: 16),
               AnimatedEntry(index: 10, child: _buildPerformanceHUD()),
@@ -134,20 +134,20 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('MERCHANT TERMINAL', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const Text('SELLER DASHBOARD', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
             _WalletButton(onTap: () => ref.pushShell('/merchant-wallet')),
           ],
         ),
         const SizedBox(height: 4),
         const Text(
-          'Marketplace Live',
+          'Marketplace',
           style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () => ref.pushShell('/fabric-upload'),
           icon: const Icon(Icons.add_photo_alternate_rounded, size: 18),
-          label: const Text('UPLOAD NEW MATERIAL', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+          label: const Text('UPLOAD NEW FABRIC', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.amber,
             foregroundColor: AppColors.darkNavy,
@@ -322,8 +322,8 @@ class _DispatchCardState extends State<_DispatchCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('PENDING DISPATCH', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-                      Text('Bespoke Silk #442 • Lagos', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                      Text('PENDING SHIPMENT', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                      Text('Silk Fabric #442 • Lagos', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -341,7 +341,7 @@ class _DispatchCardState extends State<_DispatchCard> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                child: const Text('SUMMON MERCHANT RIDER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+                child: const Text('CALL RIDER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
               ),
             ),
           ],

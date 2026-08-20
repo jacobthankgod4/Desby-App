@@ -84,7 +84,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
               // Active Garment Tracker
               AnimatedEntry(
                 index: 4,
-                child: _buildSectionHeader('In Production', '/orders'),
+                child: _buildSectionHeader('My Orders', '/orders'),
               ),
               const SizedBox(height: 16),
               ordersAsync.when(
@@ -98,7 +98,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
               // Style Inspo / Catalog
               AnimatedEntry(
                 index: 6,
-                child: _buildSectionHeader('Trending Silhouettes', '/marketplace'),
+                child: _buildSectionHeader('Browse Styles', '/marketplace'),
               ),
               const SizedBox(height: 16),
               AnimatedEntry(index: 7, child: _buildStyleCatalog()),
@@ -114,17 +114,17 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('ATELIER ACCESS', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        const Text('DASHBOARD', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
         const SizedBox(height: 4),
         Text(
-          'Elegance, ${name ?? 'Client'}',
+          'Welcome, ${name ?? 'Client'}',
           style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () => ref.pushShell('/tailor-discovery'),
-          icon: const Icon(Icons.architecture_rounded, size: 18),
-          label: const Text('COMMISSION A DESIGNER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+          icon: const Icon(Icons.search_rounded, size: 18),
+          label: const Text('FIND A TAILOR', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.amber,
             foregroundColor: AppColors.darkNavy,
@@ -147,8 +147,8 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
     if (orders.isEmpty) {
       return _buildEmptyState(
         icon: Icons.receipt_long_rounded,
-        title: 'NO ORDERS IN QUEUE',
-        subtitle: 'Commission a designer to start',
+        title: 'NO ORDERS YET',
+        subtitle: 'Find a tailor to get started',
       );
     }
     return ListView.separated(
@@ -336,7 +336,7 @@ class _OrderTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(type.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-                Text('PIPELINE: ${status.toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                Text('STATUS: ${status.toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
               ],
             ),
           ),

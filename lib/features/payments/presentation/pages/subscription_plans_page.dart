@@ -78,17 +78,9 @@ class _SubscriptionPlansPageState extends ConsumerState<SubscriptionPlansPage>
       fullName: user.name,
       amount: plan.amount,
       orderId: 'SUB_${user.id.substring(0, 8)}',
-      onSuccess: (txId) async {
-        final profile = ref.read(userProfileProvider(user.id)).value;
-        if (profile != null) {
-          final updatedProfile = profile.copyWith(
-            subscriptionPlanId: plan.id,
-            subscriptionExpiry: DateTime.now().add(const Duration(days: 30)),
-          );
-          await ref.read(updateProfileUsecaseProvider)(updatedProfile);
-          if (!mounted) return;
-          _showSuccessOverlay(plan.name);
-        }
+      onSuccess: (txRef) async {
+        // On web, show verifying state while we poll
+        if (mounted) _showVerifyingOverlay(plan, user, txRef);
       },
       onCancel: () {
         if (!mounted) return;
@@ -101,6 +93,51 @@ class _SubscriptionPlansPageState extends ConsumerState<SubscriptionPlansPage>
           ),
         );
       },
+    );
+  }
+
+  void _showVerifyingOverlay(SubscriptionPlan plan, dynamic user, String txRef) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'verifying',
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      transitionBuilder: (_, anim, __, ___) => FadeTransition(
+        opacity: anim,
+        child: _VerifyingOverlay(
+          txRef: txRef,
+          flutterwaveService: _flutterwaveService,
+          onVerified: () async {
+            // Payment verified — update profile
+            final profile = ref.read(userProfileProvider(user.id)).value;
+            if (profile != null) {
+              final updatedProfile = profile.copyWith(
+                subscriptionPlanId: plan.id,
+                subscriptionExpiry: DateTime.now().add(const Duration(days: 30)),
+              );
+              await ref.read(updateProfileUsecaseProvider)(updatedProfile);
+            }
+            if (mounted) {
+              Navigator.of(context).pop(); // dismiss verifying overlay
+              _showSuccessOverlay(plan.name);
+            }
+          },
+          onFailed: () {
+            if (mounted) {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Payment not confirmed. Please check your email for receipt.'),
+                  backgroundColor: Colors.orangeAccent,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              );
+            }
+          },
+        ),
+      ),
     );
   }
 
@@ -854,6 +891,149 @@ class _ComparisonSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── VERIFYING OVERLAY ───
+
+class _VerifyingOverlay extends StatefulWidget {
+  final String txRef;
+  final FlutterwaveService flutterwaveService;
+  final VoidCallback onVerified;
+  final VoidCallback onFailed;
+
+  const _VerifyingOverlay({
+    required this.txRef,
+    required this.flutterwaveService,
+    required this.onVerified,
+    required this.onFailed,
+  });
+
+  @override
+  State<_VerifyingOverlay> createState() => _VerifyingOverlayState();
+}
+
+class _VerifyingOverlayState extends State<_VerifyingOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  int _attempts = 0;
+  static const int _maxAttempts = 12; // 12 * 3s = 36s max
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+    _startVerification();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startVerification() async {
+    // Wait 3s for user to complete payment in new tab
+    await Future.delayed(const Duration(seconds: 3));
+    _pollVerification();
+  }
+
+  Future<void> _pollVerification() async {
+    if (!mounted || _attempts >= _maxAttempts) {
+      if (mounted) widget.onFailed();
+      return;
+    }
+
+    _attempts++;
+    final verified = await widget.flutterwaveService.verifyTransaction(widget.txRef);
+
+    if (!mounted) return;
+
+    if (verified) {
+      widget.onVerified();
+    } else {
+      // Poll every 3 seconds
+      await Future.delayed(const Duration(seconds: 3));
+      _pollVerification();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.85),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Pulsing ring
+            AnimatedBuilder(
+              animation: _pulseController,
+              builder: (_, __) {
+                final v = _pulseController.value;
+                return Container(
+                  width: 80 + v * 20,
+                  height: 80 + v * 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.amber.withValues(alpha: 0.3 - v * 0.2),
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppColors.amber.withValues(alpha: 0.15), AppColors.amber.withValues(alpha: 0.05)],
+                        ),
+                      ),
+                      child: const Icon(Icons.receipt_long_rounded, color: AppColors.amber, size: 28),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 28),
+            const Text('Verifying Payment', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 8),
+            Text(
+              'Confirming your transaction...',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            // Progress dots
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_maxAttempts, (i) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: 6, height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i < _attempts
+                      ? AppColors.amber
+                      : Colors.white.withValues(alpha: 0.1),
+                ),
+              )),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Complete payment in the other tab, then return here.',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 11),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: () => widget.onFailed(),
+              child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 12)),
+            ),
+          ],
+        ),
       ),
     );
   }

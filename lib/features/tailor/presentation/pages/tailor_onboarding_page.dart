@@ -135,13 +135,21 @@ class _TailorOnboardingPageState extends ConsumerState<TailorOnboardingPage> {
         createdAt: user.createdAt, updatedAt: DateTime.now(),
       );
 
-      await ref.read(updateProfileUsecaseProvider)(updatedProfile);
-      await localStorage.save(StorageKeys.tailorOnboardingComplete, true);
+      final result = await ref.read(updateProfileUsecaseProvider)(updatedProfile);
       
-      // Delay navigation slightly to let DOM state settle after unfocus
-      await Future.delayed(const Duration(milliseconds: 250));
-      
-      if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
+      // Only mark onboarding complete if profile save succeeded
+      result.fold(
+        (failure) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Save failed: ${failure.message}'), backgroundColor: Colors.redAccent),
+          );
+        },
+        (_) async {
+          await localStorage.save(StorageKeys.tailorOnboardingComplete, true);
+          await Future.delayed(const Duration(milliseconds: 250));
+          if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
+        },
+      );
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e'), backgroundColor: Colors.redAccent));
     } finally {

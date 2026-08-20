@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/auth_shell.dart';
 import '../providers/auth_provider.dart';
+import '../../../../core/constants/user_types.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../../core/storage/storage_keys.dart';
 import '../../../../core/utils/validators.dart';
@@ -92,8 +93,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     ref.listen(authStateProvider, (previous, next) {
       next.maybeMap(
-        authenticated: (_) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/main', (route) => false);
+        authenticated: (auth) {
+          final userType = auth.authResponse.user.userType;
+          final tailorDone = localStorage.get(StorageKeys.tailorOnboardingComplete, defaultValue: false);
+          final apprenticeDone = localStorage.get(StorageKeys.apprenticeOnboardingComplete, defaultValue: false);
+          final clientDone = localStorage.get(StorageKeys.clientOnboardingComplete, defaultValue: false);
+          final fabricSellerDone = localStorage.get(StorageKeys.fabricSellerOnboardingComplete, defaultValue: false);
+
+          String route;
+          if (userType == UserType.tailor.value && !tailorDone) {
+            route = '/tailor-onboarding';
+          } else if (userType == UserType.apprentice.value && !apprenticeDone) {
+            route = '/apprentice-onboarding';
+          } else if (userType == UserType.client.value && !clientDone) {
+            route = '/client-onboarding';
+          } else if (userType == UserType.fabricSeller.value && !fabricSellerDone) {
+            route = '/fabric-seller-onboarding';
+          } else {
+            route = '/main';
+          }
+          Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
         },
         error: (error) {
           ScaffoldMessenger.of(context).showSnackBar(

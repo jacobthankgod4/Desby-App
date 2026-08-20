@@ -128,15 +128,21 @@ void _finish() async {
       skillIds: _goals,
     );
 
-    await ref.read(apprenticeshipRepositoryProvider).createApprenticeship(apprenticeship);
+    final result = await ref.read(apprenticeshipRepositoryProvider).createApprenticeship(apprenticeship);
     
-    // Save onboarding completion status
-    await localStorage.save(StorageKeys.apprenticeOnboardingComplete, true);
-    
-    // Delay navigation slightly to let DOM state settle after unfocus
-    await Future.delayed(const Duration(milliseconds: 250));
-    
-    if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
+    // Only mark onboarding complete if apprenticeship creation succeeded
+    result.fold(
+      (failure) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Save failed: ${failure.message}'), backgroundColor: Colors.redAccent),
+        );
+      },
+      (_) async {
+        await localStorage.save(StorageKeys.apprenticeOnboardingComplete, true);
+        await Future.delayed(const Duration(milliseconds: 250));
+        if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
+      },
+    );
   }
 
   @override

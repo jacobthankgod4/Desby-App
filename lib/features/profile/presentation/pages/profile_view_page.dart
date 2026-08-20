@@ -259,7 +259,7 @@ class ProfileViewPage extends ConsumerWidget {
   Widget _buildLogoutButton(WidgetRef ref, BuildContext context) {
     return TextButton(
       onPressed: () async {
-        await Supabase.instance.client.auth.signOut();
+        await ref.read(authStateProvider.notifier).logout();
         if (context.mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       },
       child: const Text('TERMINATE SESSION', style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),

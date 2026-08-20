@@ -34,7 +34,7 @@ class _AuthShellState extends State<AuthShell> {
       accent: 'Manage orders, clients, and designs — all in one place.',
     ),
     _CarouselSlide(
-      image: 'assets/images/tailor.png',
+      image: 'assets/images/tailor-full.png',
       headline: 'Where craftsmanship\nmeets innovation.',
       accent: 'Precision tools for the modern artisan.',
     ),

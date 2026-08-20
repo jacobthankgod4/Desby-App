@@ -169,6 +169,15 @@ class SupabaseAuthRepository implements AuthRepository {
       await storage.delete(StorageKeys.currentUser);
       await localStorage.delete(StorageKeys.rememberedEmail);
 
+      // Clear ALL onboarding and session state to prevent session contamination
+      await localStorage.delete(StorageKeys.tailorOnboardingComplete);
+      await localStorage.delete(StorageKeys.apprenticeOnboardingComplete);
+      await localStorage.delete(StorageKeys.clientOnboardingComplete);
+      await localStorage.delete(StorageKeys.fabricSellerOnboardingComplete);
+      await localStorage.delete(StorageKeys.userType);
+      await localStorage.delete(StorageKeys.appFirstLaunch);
+      await localStorage.delete(StorageKeys.appOnboardingComplete);
+
       return const Success(null);
     } catch (e) {
       final failure = ErrorHandler.mapExceptionToFailure(e);

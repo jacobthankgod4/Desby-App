@@ -115,13 +115,21 @@ class _FabricSellerOnboardingPageState extends ConsumerState<FabricSellerOnboard
         createdAt: user.createdAt, updatedAt: DateTime.now(),
       );
 
-      await ref.read(updateProfileUsecaseProvider)(updatedProfile);
-      await localStorage.save(StorageKeys.fabricSellerOnboardingComplete, true);
+      final result = await ref.read(updateProfileUsecaseProvider)(updatedProfile);
       
-      // Delay navigation slightly to let DOM state settle after unfocus
-      await Future.delayed(const Duration(milliseconds: 250));
-      
-      if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
+      // Only mark onboarding complete if profile save succeeded
+      result.fold(
+        (failure) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Save failed: ${failure.message}'), backgroundColor: Colors.redAccent),
+          );
+        },
+        (_) async {
+          await localStorage.save(StorageKeys.fabricSellerOnboardingComplete, true);
+          await Future.delayed(const Duration(milliseconds: 250));
+          if (mounted) Navigator.of(context).pushReplacementNamed('/subscription-plans');
+        },
+      );
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save profile. Please try again.'), backgroundColor: Colors.redAccent));
     } finally {

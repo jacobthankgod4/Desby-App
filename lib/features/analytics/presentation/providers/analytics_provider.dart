@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/entities/analytics_event.dart';
 import '../../domain/services/analytics_service.dart';
 import '../../domain/usecases/get_dashboard_metrics_usecase.dart';
 import '../../domain/usecases/get_revenue_report_usecase.dart';

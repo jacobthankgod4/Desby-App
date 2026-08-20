@@ -44,11 +44,11 @@ class AnalyticsServiceImpl implements AnalyticsService {
       }).length;
 
       return [
-        BusinessMetric(name: 'Total Revenue', value: totalRevenue, unit: 'NGN'),
-        BusinessMetric(name: 'Total Orders', value: orders.length.toDouble()),
-        BusinessMetric(name: 'Completed Orders', value: completedOrders.toDouble()),
-        BusinessMetric(name: 'Total Clients', value: clients.length.toDouble()),
-        BusinessMetric(name: 'Orders This Month', value: thisMonthOrders.toDouble()),
+        BusinessMetric(label: 'Total Revenue', value: totalRevenue, trend: 'stable', changePercentage: 0),
+        BusinessMetric(label: 'Total Orders', value: orders.length.toDouble(), trend: 'stable', changePercentage: 0),
+        BusinessMetric(label: 'Completed Orders', value: completedOrders.toDouble(), trend: 'stable', changePercentage: 0),
+        BusinessMetric(label: 'Total Clients', value: clients.length.toDouble(), trend: 'stable', changePercentage: 0),
+        BusinessMetric(label: 'Orders This Month', value: thisMonthOrders.toDouble(), trend: 'stable', changePercentage: 0),
       ];
     } catch (e) {
       debugPrint('Error getting dashboard metrics: $e');

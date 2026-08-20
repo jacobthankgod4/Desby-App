@@ -326,18 +326,65 @@ class _MainPageState extends ConsumerState<MainPage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.darkNavy,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
               const Text('RAPID ACTIONS', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 2)),
-              const SizedBox(height: 32),
-              _QuickActionItem(icon: Icons.person_add_rounded, label: 'Add New Client', onTap: () { Navigator.pop(context); ref.pushShell('/unified-add-client'); }),
-              _QuickActionItem(icon: Icons.add_shopping_cart_rounded, label: 'Quick Order (Existing)', onTap: () { Navigator.pop(context); ref.pushShell('/order-create'); }),
-              _QuickActionItem(icon: Icons.school_rounded, label: 'Invite Apprentice', onTap: () { Navigator.pop(context); ref.pushShell('/apprentice-onboarding'); }),
+              const SizedBox(height: 24),
+              GridView.count(
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                children: [
+                  _QuickActionTile(
+                    icon: Icons.person_add_rounded,
+                    label: 'Add Client',
+                    onTap: () { Navigator.pop(context); ref.pushShell('/unified-add-client'); },
+                  ),
+                  _QuickActionTile(
+                    icon: Icons.add_shopping_cart_rounded,
+                    label: 'New Order',
+                    onTap: () { Navigator.pop(context); ref.pushShell('/order-create'); },
+                  ),
+                  _QuickActionTile(
+                    icon: Icons.school_rounded,
+                    label: 'Apprentice',
+                    onTap: () { Navigator.pop(context); ref.pushShell('/apprentice-onboarding'); },
+                  ),
+                  _QuickActionTile(
+                    icon: Icons.storefront_rounded,
+                    label: 'My Shop',
+                    onTap: () { Navigator.pop(context); ref.pushShell('/virtual-atelier'); },
+                  ),
+                  _QuickActionTile(
+                    icon: Icons.shopping_bag_rounded,
+                    label: 'Marketplace',
+                    onTap: () { Navigator.pop(context); ref.pushShell('/marketplace'); },
+                  ),
+                  _QuickActionTile(
+                    icon: Icons.insights_rounded,
+                    label: 'Insights',
+                    onTap: () { Navigator.pop(context); ref.pushShell('/insights'); },
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -556,35 +603,56 @@ class _MainPageState extends ConsumerState<MainPage> {
   }
 }
 
-class _QuickActionItem extends StatefulWidget {
+class _QuickActionTile extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _QuickActionItem({required this.icon, required this.label, required this.onTap});
+  const _QuickActionTile({required this.icon, required this.label, required this.onTap});
 
   @override
-  State<_QuickActionItem> createState() => _QuickActionItemState();
+  State<_QuickActionTile> createState() => _QuickActionTileState();
 }
 
-class _QuickActionItemState extends State<_QuickActionItem> {
+class _QuickActionTileState extends State<_QuickActionTile> {
   bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      scale: _isPressed ? 0.95 : 1.0,
-      duration: const Duration(milliseconds: 100),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onTap,
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Colors.white.withValues(alpha: 0.05), 
-            child: Icon(widget.icon, color: AppColors.amber, size: 20),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _isPressed
+                ? AppColors.amber.withValues(alpha: 0.1)
+                : Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isPressed
+                  ? AppColors.amber.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.06),
+            ),
           ),
-          title: Text(widget.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, color: AppColors.amber, size: 20),
+              ),
+              const SizedBox(height: 8),
+              Text(widget.label, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700, fontSize: 10)),
+            ],
+          ),
         ),
       ),
     );

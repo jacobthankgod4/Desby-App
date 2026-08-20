@@ -4,28 +4,41 @@ import '../widgets/luxury_stat_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../marketplace/presentation/providers/fabric_provider.dart';
 import '../../../../core/widgets/luxury_glass_card.dart';
+import '../../../../core/widgets/animated_entry.dart';
+import '../../../../core/widgets/dashboard_shimmer.dart';
 import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 
-class FabricSellerDashboard extends ConsumerWidget {
+class FabricSellerDashboard extends ConsumerStatefulWidget {
   const FabricSellerDashboard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FabricSellerDashboard> createState() => _FabricSellerDashboardState();
+}
+
+class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final statsAsync = ref.watch(merchantStatsProvider(user?.id ?? ''));
 
     return Scaffold(
       backgroundColor: AppColors.darkNavy,
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(merchantStatsProvider);
+        },
+        color: AppColors.amber,
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, ref),
-              const SizedBox(height: 32),
-              
-              // 1. COMMERCE HUD
+              AnimatedEntry(index: 0, child: _buildHeader(context, ref)),
+              const SizedBox(height: 24),
+
+              // Commerce HUD
               statsAsync.when(
                 data: (stats) => GridView.count(
                   crossAxisCount: 2,
@@ -35,67 +48,81 @@ class FabricSellerDashboard extends ConsumerWidget {
                   crossAxisSpacing: 12,
                   childAspectRatio: 1.5,
                   children: [
-                    LuxuryStatCard(
-                      title: 'Total GMV', 
-                      value: '₦${(stats['total_gmv'] as num).toInt()}', 
-                      icon: Icons.monetization_on_rounded, 
-                      color: Colors.greenAccent
+                    AnimatedEntry(
+                      index: 1,
+                      child: LuxuryStatCard(
+                        title: 'Total GMV',
+                        value: '₦${(stats['total_gmv'] as num).toInt()}',
+                        icon: Icons.monetization_on_rounded,
+                        color: Colors.greenAccent,
+                        trend: '+15%',
+                      ),
                     ),
-                    LuxuryStatCard(
-                      title: 'Orders', 
-                      value: '${stats['order_count']}', 
-                      icon: Icons.local_shipping_rounded, 
-                      color: Colors.orangeAccent
+                    AnimatedEntry(
+                      index: 2,
+                      child: LuxuryStatCard(
+                        title: 'Orders',
+                        value: '${stats['order_count']}',
+                        icon: Icons.local_shipping_rounded,
+                        color: Colors.orangeAccent,
+                      ),
                     ),
-                    LuxuryStatCard(
-                      title: 'Total SKU', 
-                      value: '${stats['sku_count']}', 
-                      icon: Icons.inventory_2_rounded, 
-                      color: AppColors.amber
+                    AnimatedEntry(
+                      index: 3,
+                      child: LuxuryStatCard(
+                        title: 'Total SKU',
+                        value: '${stats['sku_count']}',
+                        icon: Icons.inventory_2_rounded,
+                      ),
                     ),
-                    const LuxuryStatCard(
-                      title: 'Global Rank', 
-                      value: '#12', 
-                      icon: Icons.workspace_premium_rounded, 
-                      color: Colors.blueAccent
+                    AnimatedEntry(
+                      index: 4,
+                      child: LuxuryStatCard(
+                        title: 'Avg Rating',
+                        value: '4.8',
+                        icon: Icons.workspace_premium_rounded,
+                        color: Colors.blueAccent,
+                        trend: '+0.2',
+                      ),
                     ),
                   ],
                 ),
-                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-                error: (e, _) => const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.analytics_outlined, color: Colors.white24, size: 48),
-                      SizedBox(height: 12),
-                      Text('STATS UNAVAILABLE', style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                    ],
-                  ),
-                ),
+                loading: () => DashboardShimmer(statCount: 4, listCount: 2),
+                error: (e, _) => _buildErrorState(),
               ),
               const SizedBox(height: 32),
 
-              // 2. DISPATCH COMMAND
-              _buildSectionHeader('Logistics Radar', () {}),
+              // Dispatch Command
+              AnimatedEntry(
+                index: 5,
+                child: _buildSectionHeader('Logistics Radar', '/orders'),
+              ),
               const SizedBox(height: 16),
-              _buildDispatchHUD(context, ref),
-              
+              AnimatedEntry(index: 6, child: _buildDispatchHUD(context, ref)),
+
               const SizedBox(height: 32),
 
-              // 3. INVENTORY VELOCITY
-              _buildSectionHeader('Stock Manifest', () {}),
+              // Inventory Velocity
+              AnimatedEntry(
+                index: 7,
+                child: _buildSectionHeader('Stock Manifest', '/inventory'),
+              ),
               const SizedBox(height: 16),
-              _buildRecentUploadsHUD(),
-              
+              AnimatedEntry(index: 8, child: _buildRecentUploadsHUD()),
+
               const SizedBox(height: 32),
 
-              // 4. PERFORMANCE ANALYTICS
-              _buildSectionHeader('Material Popularity', () {}),
+              // Performance Analytics
+              AnimatedEntry(
+                index: 9,
+                child: _buildSectionHeader('Material Popularity', '/inventory'),
+              ),
               const SizedBox(height: 16),
-              _buildPerformanceHUD(),
+              AnimatedEntry(index: 10, child: _buildPerformanceHUD()),
               const SizedBox(height: 40),
             ],
           ),
+        ),
       ),
     );
   }
@@ -108,10 +135,7 @@ class FabricSellerDashboard extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('MERCHANT TERMINAL', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
-            IconButton(
-              onPressed: () => ref.pushShell('/merchant-wallet'),
-              icon: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.amber, size: 20),
-            ),
+            _WalletButton(onTap: () => ref.pushShell('/merchant-wallet')),
           ],
         ),
         const SizedBox(height: 4),
@@ -136,110 +160,293 @@ class FabricSellerDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDispatchHUD(BuildContext context, WidgetRef ref) {
-    return LuxuryGlassCard(
-      padding: const EdgeInsets.all(20),
+  Widget _buildErrorState() {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.emergency_share_rounded, color: Colors.orangeAccent, size: 20),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('PENDING DISPATCH', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-                    Text('Bespoke Silk #442 • Lagos', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () => _handleDispatch(context, ref),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.white10, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
-              child: const Text('SUMMON MERCHANT RIDER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.orangeAccent.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
+            child: const Icon(Icons.analytics_outlined, color: Colors.orangeAccent, size: 48),
           ),
+          const SizedBox(height: 12),
+          const Text('STATS UNAVAILABLE', style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          const SizedBox(height: 4),
+          Text('Pull down to retry', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 10)),
         ],
       ),
     );
   }
 
-  Future<void> _handleDispatch(BuildContext context, WidgetRef ref) async {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CALIBRATING LOGISTICS...'), backgroundColor: Colors.blueAccent));
+  Widget _buildDispatchHUD(BuildContext context, WidgetRef ref) {
+    return _DispatchCard(
+      onDispatch: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('CALIBRATING LOGISTICS...'), backgroundColor: Colors.blueAccent),
+        );
+      },
+    );
   }
 
   Widget _buildRecentUploadsHUD() {
+    final fabrics = [
+      ('GOLD DAMASK', '45 YD', Icons.texture_rounded),
+      ('PREMIUM SILK', '30 YD', Icons.water_drop_rounded),
+      ('EGYPTIAN COTTON', '60 YD', Icons.grass_rounded),
+      ('ITALIAN WOOL', '25 YD', Icons.wind_power_rounded),
+    ];
+
     return SizedBox(
       height: 160,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: 4,
+        itemCount: fabrics.length,
         separatorBuilder: (context, index) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
-          return Container(
-            width: 130,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.03),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.amber.withValues(alpha: 0.05),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    child: const Center(child: Icon(Icons.texture_rounded, color: AppColors.amber, size: 28)),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('GOLD DAMASK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9)),
-                      Text('45 YD REMAINING', style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
+          final (name, stock, icon) = fabrics[index];
+          return _FabricCard(name: name, stock: stock, icon: icon);
         },
       ),
     );
   }
 
   Widget _buildPerformanceHUD() {
-    return LuxuryGlassCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          _buildFabricItem('PREMIUM SILK', 0.85, Colors.blueAccent),
-          const SizedBox(height: 16),
-          _buildFabricItem('EGYPTIAN COTTON', 0.65, AppColors.amber),
-          const SizedBox(height: 16),
-          _buildFabricItem('ITALIAN WOOL', 0.40, Colors.purpleAccent),
-        ],
-      ),
+    return _PerformanceCard(
+      items: [
+        ('PREMIUM SILK', 0.85, Colors.blueAccent),
+        ('EGYPTIAN COTTON', 0.65, AppColors.amber),
+        ('ITALIAN WOOL', 0.40, Colors.purpleAccent),
+      ],
     );
   }
 
-  Widget _buildFabricItem(String name, double progress, Color color) {
+  Widget _buildSectionHeader(String title, String route) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
+        GestureDetector(
+          onTap: () => ref.setShell(route),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.amber.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text('MANAGE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WalletButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _WalletButton({required this.onTap});
+
+  @override
+  State<_WalletButton> createState() => _WalletButtonState();
+}
+
+class _WalletButtonState extends State<_WalletButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? AppColors.amber.withValues(alpha: 0.15)
+                : AppColors.amber.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.account_balance_wallet_rounded,
+            color: AppColors.amber,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DispatchCard extends StatefulWidget {
+  final VoidCallback onDispatch;
+  const _DispatchCard({required this.onDispatch});
+
+  @override
+  State<_DispatchCard> createState() => _DispatchCardState();
+}
+
+class _DispatchCardState extends State<_DispatchCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: LuxuryGlassCard(
+        padding: const EdgeInsets.all(20),
+        borderColor: _isHovered ? Colors.orangeAccent.withValues(alpha: 0.2) : null,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _isHovered
+                        ? Colors.orangeAccent.withValues(alpha: 0.15)
+                        : Colors.orangeAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.emergency_share_rounded, color: Colors.orangeAccent, size: 20),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('PENDING DISPATCH', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+                      Text('Bespoke Silk #442 • Lagos', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: widget.onDispatch,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isHovered ? Colors.white.withValues(alpha: 0.15) : Colors.white10,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('SUMMON MERCHANT RIDER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FabricCard extends StatefulWidget {
+  final String name;
+  final String stock;
+  final IconData icon;
+  const _FabricCard({required this.name, required this.stock, required this.icon});
+
+  @override
+  State<_FabricCard> createState() => _FabricCardState();
+}
+
+class _FabricCardState extends State<_FabricCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 1.03 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 130,
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.white.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _isHovered
+                  ? AppColors.amber.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _isHovered
+                        ? AppColors.amber.withValues(alpha: 0.1)
+                        : AppColors.amber.withValues(alpha: 0.05),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: Center(child: Icon(widget.icon, color: AppColors.amber, size: 28)),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9)),
+                    Text('${widget.stock} REMAINING', style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PerformanceCard extends StatelessWidget {
+  final List<(String, double, Color)> items;
+  const _PerformanceCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return LuxuryGlassCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: items.map((item) {
+          final (name, progress, color) = item;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _PerformanceItem(name: name, progress: progress, color: color),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _PerformanceItem extends StatelessWidget {
+  final String name;
+  final double progress;
+  final Color color;
+  const _PerformanceItem({required this.name, required this.progress, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -260,16 +467,6 @@ class FabricSellerDashboard extends ConsumerWidget {
             minHeight: 4,
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
-        GestureDetector(onTap: onSeeAll, child: const Text('MANAGE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1))),
       ],
     );
   }

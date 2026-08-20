@@ -6,6 +6,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../orders/domain/entities/order.dart';
 import '../../../orders/presentation/providers/logistics_provider.dart';
 import '../../../../core/widgets/luxury_glass_card.dart';
+import '../../../../core/widgets/animated_entry.dart';
+import '../../../../core/widgets/dashboard_shimmer.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/providers/navigation_provider.dart';
 
@@ -22,7 +24,6 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
     final currentUser = ref.watch(currentUserProvider);
     final userId = currentUser?.id ?? '';
 
-    // If no userId, we are likely in a transitional auth state - show loader
     if (userId.isEmpty) {
       return const Center(child: CircularProgressIndicator(color: AppColors.amber));
     }
@@ -46,11 +47,9 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. NEURAL WELCOME HUD
-              _buildHeader(currentUser?.name),
+              AnimatedEntry(index: 0, child: _buildHeader(currentUser?.name)),
               const SizedBox(height: 24),
-            
-              // 2. INDUSTRIALIZED STATS GRID
+
               statsAsync.when(
                 data: (stats) => GridView.count(
                   crossAxisCount: 2,
@@ -60,41 +59,51 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
                   crossAxisSpacing: 12,
                   childAspectRatio: 1.5,
                   children: [
-                    LuxuryStatCard(title: 'Active Orders', value: stats.pendingOrders.toString(), icon: Icons.description_rounded, trend: '+12%'),
-                    LuxuryStatCard(title: 'Net Revenue', value: '₦${stats.totalRevenue.toInt()}', icon: Icons.payments_rounded, color: Colors.greenAccent),
-                    LuxuryStatCard(title: 'Total Bookings', value: stats.totalClients.toString(), icon: Icons.handshake_rounded, color: Colors.blueAccent),
-                    LuxuryStatCard(title: 'Urgent Alerts', value: stats.urgentDeadlines.toString(), icon: Icons.bolt_rounded, color: Colors.redAccent),
+                    AnimatedEntry(index: 1, child: LuxuryStatCard(title: 'Active Orders', value: stats.pendingOrders.toString(), icon: Icons.description_rounded, trend: '+12%')),
+                    AnimatedEntry(index: 2, child: LuxuryStatCard(title: 'Net Revenue', value: '₦${stats.totalRevenue.toInt()}', icon: Icons.payments_rounded, color: Colors.greenAccent, trend: '+8%')),
+                    AnimatedEntry(index: 3, child: LuxuryStatCard(title: 'Total Bookings', value: stats.totalClients.toString(), icon: Icons.handshake_rounded, color: Colors.blueAccent)),
+                    AnimatedEntry(index: 4, child: LuxuryStatCard(title: 'Urgent Alerts', value: stats.urgentDeadlines.toString(), icon: Icons.bolt_rounded, color: Colors.redAccent, isPositiveTrend: false)),
                   ],
                 ),
-                loading: () => _buildStatsLoadingPlaceholder(),
+                loading: () => DashboardShimmer(statCount: 4, listCount: 2),
                 error: (error, _) => _buildStatsErrorPlaceholder(error.toString()),
               ),
               const SizedBox(height: 32),
 
-              // 3. RAPID OPERATION TILES
-              const Text('RAPID OPERATIONS', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              AnimatedEntry(
+                index: 5,
+                child: const Text('RAPID OPERATIONS', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+              ),
               const SizedBox(height: 16),
-              _buildOperationsGrid(),
-              
+              AnimatedEntry(index: 6, child: _buildOperationsGrid()),
+
               const SizedBox(height: 32),
 
-              // 4. PENDING BOOKING MANIFESTS
-              _buildSectionHeader(context, 'Pipeline Handshakes', '/orders'),
+              AnimatedEntry(
+                index: 7,
+                child: _buildSectionHeader(context, 'Pipeline Handshakes', '/orders'),
+              ),
               const SizedBox(height: 16),
               recentOrdersAsync.when(
-                data: (orders) => _buildOrdersManifest(orders),
-                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber, strokeWidth: 2)),
-                error: (err, _) => Center(child: Text('Manifest sync offline.', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 10))),
+                data: (orders) => AnimatedEntry(index: 8, child: _buildOrdersManifest(orders)),
+                loading: () => DashboardShimmer(listCount: 2),
+                error: (err, _) => _buildEmptyState(
+                  icon: Icons.cloud_off_rounded,
+                  title: 'SYNC OFFLINE',
+                  subtitle: 'Pull down to retry',
+                ),
               ),
-              
+
               const SizedBox(height: 32),
 
-              // 5. CLIENT PORTFOLIO
-              _buildSectionHeader(context, 'Elite Clients', '/clients'),
+              AnimatedEntry(
+                index: 9,
+                child: _buildSectionHeader(context, 'Elite Clients', '/clients'),
+              ),
               const SizedBox(height: 16),
               recentClientsAsync.when(
-                data: (clients) => _buildClientsStrip(clients),
-                loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+                data: (clients) => AnimatedEntry(index: 10, child: _buildClientsStrip(clients)),
+                loading: () => const SizedBox(height: 90, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.amber))),
                 error: (err, _) => const SizedBox(),
               ),
             ],
@@ -138,18 +147,6 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
     );
   }
 
-  Widget _buildStatsLoadingPlaceholder() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
-      children: List.generate(4, (index) => const LuxuryGlassCard(child: Center(child: CircularProgressIndicator(strokeWidth: 1, color: Colors.white10)))),
-    );
-  }
-
   Widget _buildStatsErrorPlaceholder(String error) {
     return LuxuryGlassCard(
       padding: const EdgeInsets.all(24),
@@ -185,25 +182,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
   }
 
   Widget _buildOpTile(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.amber, size: 20),
-            const SizedBox(height: 8),
-            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
-          ],
-        ),
-      ),
-    );
+    return _OpTile(icon: icon, label: label, onTap: onTap);
   }
 
   Widget _buildSectionHeader(BuildContext context, String title, String route) {
@@ -212,10 +191,15 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
       children: [
         Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
         GestureDetector(
-          onTap: () {
-            ref.setShell(route);
-          },
-          child: const Text('VIEW ALL', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+          onTap: () => ref.setShell(route),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.amber.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text('VIEW ALL', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+          ),
         ),
       ],
     );
@@ -223,12 +207,13 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
 
   Widget _buildOrdersManifest(List<dynamic> orders) {
     if (orders.isEmpty) {
-      return const LuxuryGlassCard(
-        padding: EdgeInsets.all(40),
-        child: Center(child: Text('NO PENDING MANIFESTS', style: TextStyle(color: Colors.white10, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2))),
+      return _buildEmptyState(
+        icon: Icons.receipt_long_rounded,
+        title: 'NO PENDING MANIFESTS',
+        subtitle: 'Your pipeline is clear',
       );
     }
-    
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -238,57 +223,35 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
         final order = orders[index];
         final status = order['status'] ?? 'pending';
         final isPending = status == 'pending';
-        
-        return LuxuryGlassCard(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.checkroom_rounded, color: AppColors.amber, size: 20),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(order['clientName']?.toString().toUpperCase() ?? 'ANONYMOUS', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
-                        Text('MANIFEST #${order['id'].toString().substring(0, 8).toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                      ],
-                    ),
-                  ),
-                  _StatusBadge(status: isPending ? OrderStatus.pending : OrderStatus.inProgress),
-                ],
-              ),
-              if (isPending) ...[
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _handleHandshake(order, false),
-                        style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                        child: const Text('REJECT', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _handleHandshake(order, true),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
-                        child: const Text('ACCEPT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
+
+        return _OrderCard(
+          order: order,
+          isPending: isPending,
+          onAccept: () => _handleHandshake(order, true),
+          onReject: () => _handleHandshake(order, false),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return LuxuryGlassCard(
+      padding: const EdgeInsets.all(40),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white10, size: 36),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(color: Colors.white10, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.15), fontSize: 10)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -302,7 +265,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
           id: order['id'],
           clientId: order['clientId'] ?? '',
           clientName: order['clientName'] ?? 'Unknown',
-          items: const [], 
+          items: const [],
           status: OrderStatus.bookingAccepted,
           totalAmount: (order['totalAmount'] as num?)?.toDouble() ?? 0.0,
           dueDate: DateTime.now(),
@@ -317,7 +280,13 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
   }
 
   Widget _buildClientsStrip(List<dynamic> clients) {
-    if (clients.isEmpty) return const SizedBox();
+    if (clients.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.people_rounded,
+        title: 'NO CLIENTS YET',
+        subtitle: 'Add your first client to get started',
+      );
+    }
     return SizedBox(
       height: 90,
       child: ListView.separated(
@@ -327,23 +296,183 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
         itemBuilder: (context, index) {
           final client = clients[index];
           final String name = client['name']?.toString() ?? 'T';
-          
-          return Column(
+
+          return _ClientAvatar(name: name);
+        },
+      ),
+    );
+  }
+}
+
+class _OpTile extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _OpTile({required this.icon, required this.label, required this.onTap});
+
+  @override
+  State<_OpTile> createState() => _OpTileState();
+}
+
+class _OpTileState extends State<_OpTile> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _isPressed
+                ? AppColors.amber.withValues(alpha: 0.08)
+                : Colors.white.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isPressed
+                  ? AppColors.amber.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, color: AppColors.amber, size: 22),
+              const SizedBox(height: 8),
+              Text(widget.label, style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderCard extends StatelessWidget {
+  final Map<String, dynamic> order;
+  final bool isPending;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+
+  const _OrderCard({
+    required this.order,
+    required this.isPending,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LuxuryGlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
             children: [
               Container(
-                width: 54, height: 54,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.amber.withValues(alpha: 0.2), width: 1.5),
-                  color: Colors.white.withValues(alpha: 0.03),
-                ),
-                child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 18))),
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.checkroom_rounded, color: AppColors.amber, size: 20),
               ),
-              const SizedBox(height: 8),
-              Text(name.split(' ').first.toUpperCase(), style: const TextStyle(fontSize: 8, color: Colors.white38, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(order['clientName']?.toString().toUpperCase() ?? 'ANONYMOUS', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                    Text('MANIFEST #${order['id'].toString().substring(0, 8).toUpperCase()}', style: const TextStyle(color: Colors.white24, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  ],
+                ),
+              ),
+              _StatusBadge(status: isPending ? OrderStatus.pending : OrderStatus.inProgress),
             ],
-          );
-        },
+          ),
+          if (isPending) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onReject,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: const Text('REJECT', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onAccept,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.amber,
+                      foregroundColor: AppColors.darkNavy,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: const Text('ACCEPT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ClientAvatar extends StatefulWidget {
+  final String name;
+  const _ClientAvatar({required this.name});
+
+  @override
+  State<_ClientAvatar> createState() => _ClientAvatarState();
+}
+
+class _ClientAvatarState extends State<_ClientAvatar> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 1.08 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 54, height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isHovered
+                      ? AppColors.amber
+                      : AppColors.amber.withValues(alpha: 0.2),
+                  width: _isHovered ? 2.0 : 1.5,
+                ),
+                color: _isHovered
+                    ? AppColors.amber.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.03),
+              ),
+              child: Center(child: Text(widget.name[0].toUpperCase(), style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 18))),
+            ),
+            const SizedBox(height: 8),
+            Text(widget.name.split(' ').first.toUpperCase(), style: const TextStyle(fontSize: 8, color: Colors.white38, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+          ],
+        ),
       ),
     );
   }

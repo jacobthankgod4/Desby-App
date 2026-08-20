@@ -10,7 +10,7 @@ class SubscriptionPlan {
   final bool isElite;
   final Color accentColor;
   final String buttonLabel;
-  final String userType; // Added to distinguish plans in Firestore
+  final String userType;
 
   const SubscriptionPlan({
     required this.id,
@@ -53,126 +53,161 @@ class SubscriptionPlan {
   }
 }
 
-// PlanRegistry acts as a local fallback when Firestore plans aren't available
-// The source of truth should be from the Repository, but this provides offline support
 class PlanRegistry {
   static List<SubscriptionPlan> getPlansForUserType(String userType) {
-    final plans = _allPlans.where((plan) => plan.userType == userType.toLowerCase()).toList();
-    return plans;
+    return _allPlans.where((plan) => plan.userType == userType.toLowerCase()).toList();
   }
 
-static final List<SubscriptionPlan> _allPlans = [
-    // TAILOR PLANS
+  static final List<SubscriptionPlan> _allPlans = [
+    // ── TAILOR PLANS ──
     const SubscriptionPlan(
-      id: 'tailor_basic',
+      id: 'tailor_starter',
       name: 'STARTER',
       price: 'FREE',
       amount: 0,
       features: [
         'Shop Profile',
-        'Manual Measurements',
         'Up to 10 Clients',
-        'Basic Booking'
+        'Basic Booking Manager',
+        'Manual Measurements',
+        'Gallery Portfolio (5 Items)',
+        'Basic Dashboard Stats',
+        'Direct Client Messaging',
+        'Order Tracking',
       ],
       userType: 'tailor',
     ),
     const SubscriptionPlan(
-      id: 'tailor_pro',
-      name: 'PRO',
-      price: '₦15,000/mo',
-      amount: 15000,
-      features: [
-        'Unlimited Clients',
-        'Analytics',
-        'Priority in Search',
-        'Digital Receipts'
-      ],
-      userType: 'tailor',
-    ),
-    const SubscriptionPlan(
-      id: 'tailor_elite',
-      name: 'BUSINESS',
-      price: '₦45,000/mo',
-      amount: 45000,
-      features: [
-        '3D Body Scanning',
-        'Auto Measurements',
-        'AI Design Help',
-        'Custom App'
-      ],
-      isElite: true,
-      buttonLabel: 'GO BUSINESS',
-      userType: 'tailor',
-    ),
-    // APPRENTICE PLANS
-    const SubscriptionPlan(
-      id: 'apprentice_standard',
-      name: 'STARTER',
-      price: 'FREE',
-      amount: 0,
-      features: [
-        'Connect with 1 Mentor',
-        'Basic Learning',
-        'Track Progress'
-      ],
-      userType: 'apprentice',
-    ),
-    const SubscriptionPlan(
-      id: 'apprentice_premium',
+      id: 'tailor_premium',
       name: 'PREMIUM',
-      price: '₦25,000/mo',
-      amount: 25000,
-      features: [
-        'Advanced Training',
-        'AI Pattern Help',
-        'Multiple Mentors',
-        'Certificate'
-      ],
+      price: '₦2,500/mo',
+      amount: 2500,
       isElite: true,
-      buttonLabel: 'UPGRADE NOW',
-      userType: 'apprentice',
+      buttonLabel: 'GO PREMIUM',
+      features: [
+        'EVERYTHING IN STARTER PLUS:',
+        'Unlimited Client Profiles',
+        'Priority in Search & Discovery',
+        'Verified Premium Badge',
+        'Advanced Analytics & Insights',
+        'AI Business Forecasting',
+        'Revenue Reports & PDF Export',
+        'Custom Digital Receipts',
+        'Apprentice Management (2 Seats)',
+        'Inventory Management System',
+        'Unlimited Gallery Items',
+        'Custom Dispatch & Logistics',
+        'Priority Support',
+      ],
+      userType: 'tailor',
     ),
-    // FABRIC SELLER PLANS
+
+    // ── CLIENT PLANS ──
     const SubscriptionPlan(
-      id: 'seller_basic',
+      id: 'client_starter',
       name: 'STARTER',
-      price: 'FREE',
-      amount: 0,
-      features: [
-        'Shop Listing',
-        'Up to 15 Items',
-        'Inventory Sync'
-      ],
-      userType: 'fabric_seller',
-    ),
-    const SubscriptionPlan(
-      id: 'seller_pro',
-      name: 'BUSINESS',
-      price: '₦30,000/mo',
-      amount: 30000,
-      features: [
-        'Verified Badge',
-        'Unlimited Items',
-        'Buyer Leads',
-        'Featured Shop'
-      ],
-      isElite: true,
-      buttonLabel: 'VERIFY SHOP',
-      userType: 'fabric_seller',
-    ),
-    // CLIENT PLANS (free - no subscription needed)
-    const SubscriptionPlan(
-      id: 'client_basic',
-      name: 'FREE',
       price: 'FREE',
       amount: 0,
       features: [
         'Browse Tailors',
         'Book Appointments',
         'Order Tracking',
-        'Messaging'
+        'Direct Messaging',
+        'Manual Measurement Entry',
+        '1 Active Order',
       ],
       userType: 'client',
+    ),
+    const SubscriptionPlan(
+      id: 'client_premium',
+      name: 'PREMIUM',
+      price: '₦2,500/mo',
+      amount: 2500,
+      isElite: true,
+      buttonLabel: 'GO PREMIUM',
+      features: [
+        'EVERYTHING IN STARTER PLUS:',
+        'AI Body Scanning',
+        'Virtual Try-On',
+        'Digital Closet',
+        'Advanced Measurement Profiles',
+        'Multiple Active Orders',
+        'Priority Booking & Support',
+        'Design Gallery Access',
+        'Order History & Reorder',
+      ],
+      userType: 'client',
+    ),
+
+    // ── APPRENTICE PLANS ──
+    const SubscriptionPlan(
+      id: 'apprentice_starter',
+      name: 'STARTER',
+      price: 'FREE',
+      amount: 0,
+      features: [
+        'Connect with 1 Mentor',
+        'Basic Learning Modules',
+        'Track Progress',
+        'Submit Tasks',
+        'Mentor Directory Access',
+      ],
+      userType: 'apprentice',
+    ),
+    const SubscriptionPlan(
+      id: 'apprentice_premium',
+      name: 'PREMIUM',
+      price: '₦2,500/mo',
+      amount: 2500,
+      isElite: true,
+      buttonLabel: 'GO PREMIUM',
+      features: [
+        'EVERYTHING IN STARTER PLUS:',
+        'Multiple Mentors',
+        'Advanced Training Modules',
+        'AI Pattern Assistance',
+        'Secure Video Lessons',
+        'Certificate of Completion',
+        'Priority Task Review',
+        'Portfolio Showcase',
+      ],
+      userType: 'apprentice',
+    ),
+
+    // ── FABRIC SELLER PLANS ──
+    const SubscriptionPlan(
+      id: 'seller_starter',
+      name: 'STARTER',
+      price: 'FREE',
+      amount: 0,
+      features: [
+        'Shop Listing',
+        'Up to 15 Fabric Items',
+        'Basic Inventory Sync',
+        'Browse Marketplace',
+        'Direct Buyer Messaging',
+      ],
+      userType: 'fabric_seller',
+    ),
+    const SubscriptionPlan(
+      id: 'seller_premium',
+      name: 'PREMIUM',
+      price: '₦2,500/mo',
+      amount: 2500,
+      isElite: true,
+      buttonLabel: 'VERIFY & UPGRADE',
+      features: [
+        'EVERYTHING IN STARTER PLUS:',
+        'Verified Seller Badge',
+        'Unlimited Fabric Listings',
+        'Buyer Lead Generation',
+        'Featured Shop Placement',
+        'Wholesale Pricing Tiers',
+        'Advanced Sales Analytics',
+        'Priority Support',
+        'Merchant Wallet & Payouts',
+      ],
+      userType: 'fabric_seller',
     ),
   ];
 }

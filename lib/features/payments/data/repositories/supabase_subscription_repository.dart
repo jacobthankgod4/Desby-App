@@ -20,69 +20,74 @@ class SupabaseSubscriptionRepository implements SubscriptionRepository {
           .toList();
 
       if (plans.isEmpty) {
-        // Fallback for demo if DB is empty
         return Success(_getFallbackPlans(userType));
       }
 
       return Success(plans);
     } catch (e) {
-      return Failure(UnknownFailure(message: 'Failed to fetch plans: $e'));
+      return Success(_getFallbackPlans(userType));
     }
   }
 
   List<SubscriptionPlan> _getFallbackPlans(String userType) {
-     final List<SubscriptionPlan> allPlans = [
-      // --- TAILOR PLANS ---
-      const SubscriptionPlan(
-        id: 'tailor_basic', name: 'ARTISAN', price: 'FREE', amount: 0,
-        features: [
-          'Professional Shop Profile',
-          'Digital Booking Manager',
-          'Up to 10 Client Profiles',
-          'Standard Delivery Support',
-          'Basic Business Analytics',
-          'Manual Measurement Entry',
-          'Gallery Portfolio (5 Items)',
-          'Direct Client Messaging',
-        ],
-        userType: 'tailor',
+    final allPlans = PlanRegistry.getPlansForUserType(userType);
+    if (allPlans.isNotEmpty) return allPlans;
+
+    // Ultimate fallback — should never be reached
+    return [
+      SubscriptionPlan(
+        id: '${userType}_starter',
+        name: 'STARTER',
+        price: 'FREE',
+        amount: 0,
+        features: ['Basic Access'],
+        userType: userType,
       ),
-      const SubscriptionPlan(
-        id: 'tailor_pro', name: 'PRO MASTER', price: '₦15,000/mo', amount: 15000,
-        features: [
-          'EVERYTHING IN ARTISAN PLUS:',
-          'Unlimited Client Profiles',
-          'Verified AMBER Badge',
-          'Priority Search Discovery',
-          'Advanced Revenue Forecasting',
-          'Custom Digital Receipts',
-          'Apprentice Management (2 Seats)',
-          'Automated Delivery Summoning',
-          'Inventory Management System',
-        ],
-        userType: 'tailor',
-      ),
-      const SubscriptionPlan(
-        id: 'tailor_elite', name: 'ELITE ATELIER', price: '₦45,000/mo', amount: 45000,
-        isElite: true, features: [
-          'EVERYTHING IN PRO MASTER PLUS:',
-          '3D BODY SCANNING INTELLIGENCE',
-          'Auto-Measurement Capture (Zero Error)',
-          'AI-Powered Design Assistant',
-          'Global Fabric Sourcing Leads',
-          'Premium White-Label Landing Page',
-          'Exclusive "Master Class" Access',
-          '24/7 Dedicated Concierge Support',
-          'Unlimited Staff & Team Seats',
-        ],
-        userType: 'tailor', buttonLabel: 'GO ELITE',
-      ),
-      // Add more as needed...
     ];
-    return allPlans.where((p) => p.userType == userType.toLowerCase()).toList();
   }
 
   Future<void> seedPlans() async {
-     // Implementation similar to Firebase if needed
+    // Seed plans to Supabase if table is empty
+    try {
+      final response = await _supabase.from('subscription_plans').select().limit(1);
+      if ((response as List).isNotEmpty) return;
+
+      final allPlans = [
+        // Tailor
+        const SubscriptionPlan(id: 'tailor_starter', name: 'STARTER', price: 'FREE', amount: 0,
+          features: ['Shop Profile','Up to 10 Clients','Basic Booking Manager','Manual Measurements','Gallery Portfolio (5 Items)','Basic Dashboard Stats','Direct Client Messaging','Order Tracking'],
+          userType: 'tailor'),
+        const SubscriptionPlan(id: 'tailor_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'GO PREMIUM',
+          features: ['EVERYTHING IN STARTER PLUS:','Unlimited Client Profiles','Priority in Search & Discovery','Verified Premium Badge','Advanced Analytics & Insights','AI Business Forecasting','Revenue Reports & PDF Export','Custom Digital Receipts','Apprentice Management (2 Seats)','Inventory Management System','Unlimited Gallery Items','Custom Dispatch & Logistics','Priority Support'],
+          userType: 'tailor'),
+        // Client
+        const SubscriptionPlan(id: 'client_starter', name: 'STARTER', price: 'FREE', amount: 0,
+          features: ['Browse Tailors','Book Appointments','Order Tracking','Direct Messaging','Manual Measurement Entry','1 Active Order'],
+          userType: 'client'),
+        const SubscriptionPlan(id: 'client_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'GO PREMIUM',
+          features: ['EVERYTHING IN STARTER PLUS:','AI Body Scanning','Virtual Try-On','Digital Closet','Advanced Measurement Profiles','Multiple Active Orders','Priority Booking & Support','Design Gallery Access','Order History & Reorder'],
+          userType: 'client'),
+        // Apprentice
+        const SubscriptionPlan(id: 'apprentice_starter', name: 'STARTER', price: 'FREE', amount: 0,
+          features: ['Connect with 1 Mentor','Basic Learning Modules','Track Progress','Submit Tasks','Mentor Directory Access'],
+          userType: 'apprentice'),
+        const SubscriptionPlan(id: 'apprentice_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'GO PREMIUM',
+          features: ['EVERYTHING IN STARTER PLUS:','Multiple Mentors','Advanced Training Modules','AI Pattern Assistance','Secure Video Lessons','Certificate of Completion','Priority Task Review','Portfolio Showcase'],
+          userType: 'apprentice'),
+        // Fabric Seller
+        const SubscriptionPlan(id: 'seller_starter', name: 'STARTER', price: 'FREE', amount: 0,
+          features: ['Shop Listing','Up to 15 Fabric Items','Basic Inventory Sync','Browse Marketplace','Direct Buyer Messaging'],
+          userType: 'fabric_seller'),
+        const SubscriptionPlan(id: 'seller_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'VERIFY & UPGRADE',
+          features: ['EVERYTHING IN STARTER PLUS:','Verified Seller Badge','Unlimited Fabric Listings','Buyer Lead Generation','Featured Shop Placement','Wholesale Pricing Tiers','Advanced Sales Analytics','Priority Support','Merchant Wallet & Payouts'],
+          userType: 'fabric_seller'),
+      ];
+
+      for (final plan in allPlans) {
+        await _supabase.from('subscription_plans').upsert(plan.toMap());
+      }
+    } catch (_) {
+      // Silently fail — fallback plans will be used
+    }
   }
 }

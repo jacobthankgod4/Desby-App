@@ -65,6 +65,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
           .getUserMedia({'video': true});
 
       _video!.srcObject = stream;
+      _video!.style.pointerEvents = 'none';
       await _video!.play();
 
       if (mounted) setState(() => _cameraReady = true);
@@ -358,7 +359,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
         fit: StackFit.expand,
         children: [
           // Video preview
-          Positioned.fill(child: IgnorePointer(child: HtmlElementView(viewType: _viewType))),
+          Positioned.fill(child: HtmlElementView(viewType: _viewType)),
 
           // Skeleton overlay (same as mobile Korra)
           if (!_isReviewing && _landmarks.length >= 33)

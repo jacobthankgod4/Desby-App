@@ -91,7 +91,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(
-          onPressed: () => ref.read(navigationProvider.notifier).state = const NavigationState('/tailor-discovery'),
+          onPressed: () => ref.pushShell('/tailor-discovery'),
           icon: const Icon(Icons.architecture_rounded, size: 18),
           label: const Text('COMMISSION A DESIGNER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
           style: ElevatedButton.styleFrom(
@@ -108,7 +108,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
 
   Widget _buildFittingStationCard() {
     return InkWell(
-      onTap: () => ref.read(navigationProvider.notifier).state = const NavigationState('/measurements-hub'),
+      onTap: () => ref.pushShell('/measurements-hub'),
       borderRadius: BorderRadius.circular(28),
       child: Container(
         height: 180,
@@ -264,7 +264,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
       children: [
         Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
         GestureDetector(
-          onTap: () => ref.read(navigationProvider.notifier).state = NavigationState(route),
+          onTap: () => ref.setShell(route),
           child: const Text('EXPLORE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
         ),
       ],

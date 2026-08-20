@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/tailor_finder_responsive.dart';
 import '../../../../theme/colors.dart';
-import '../../../profile/presentation/providers/profile_provider.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import 'tailor_finder_desktop.dart';
 import 'tailor_finder_mobile.dart';
 import 'classic_tailor_discovery_page.dart';

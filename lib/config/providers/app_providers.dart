@@ -1,31 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 
 import '../../core/logging/logger.dart';
-import '../../core/network/dio_client.dart';
-import '../../config/environment.dart';
 import '../../core/storage/local_storage.dart';
 import '../../core/storage/secure_storage.dart';
 
 /// Core Application Providers
 /// These providers are the foundation for dependency injection
-
-/// Dio HTTP Client Provider
-final dioProvider = Provider<Dio>((ref) {
-  logger.debug('Initializing Dio HTTP client');
-  try {
-    return dioClient.dio;
-  } catch (e) {
-    logger.warning('Failed to initialize Dio, using default', error: e);
-    // Use Environment.apiBaseUrl when dioClient is not available.
-    return Dio(BaseOptions(
-      baseUrl: Environment.current.apiBaseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      sendTimeout: const Duration(seconds: 30),
-    ));
-  }
-});
 
 /// Logger Provider
 final loggerProvider = Provider<AppLogger>((ref) {

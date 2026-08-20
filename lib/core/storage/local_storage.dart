@@ -89,6 +89,21 @@ Future<void> saveAuthValue(String key, dynamic value) async {
   Future<void> save(String key, dynamic value) => saveAuthValue(key, value);
   dynamic get(String key, {dynamic defaultValue}) => getAuthValue(key, defaultValue: defaultValue);
   Future<void> delete(String key) => deleteAuthValue(key);
+
+  Future<void> saveCache(String key, dynamic value) async {
+    if (!_initialized) return;
+    await _cacheBox.put(key, value);
+  }
+
+  dynamic getCache(String key, {dynamic defaultValue}) {
+    if (!_initialized) return defaultValue;
+    return _cacheBox.get(key, defaultValue: defaultValue);
+  }
+
+  Future<void> deleteCache(String key) async {
+    if (!_initialized) return;
+    await _cacheBox.delete(key);
+  }
 }
 
 final localStorage = LocalStorageService();

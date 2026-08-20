@@ -52,7 +52,7 @@ class DioClient {
       LoggingInterceptor(),
       AuthInterceptor(),
       ErrorInterceptor(),
-      RetryInterceptor(),
+      RetryInterceptor(_dio),
     ]);
   }
 

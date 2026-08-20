@@ -218,13 +218,11 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         await localStorage.save(StorageKeys.appFirstLaunch, true);
         await localStorage.save(StorageKeys.userType, authResponse.user.userType);
         
-        await localStorage.save(StorageKeys.rememberMe, rememberMe);
+        await localStorage.saveAuthValue(StorageKeys.rememberMe, rememberMe);
         if (rememberMe) {
-          await localStorage.save(StorageKeys.rememberedEmail, email);
-          await localStorage.save(StorageKeys.rememberedPassword, password);
+          await localStorage.saveAuthValue(StorageKeys.rememberedEmail, email);
         } else {
-          await localStorage.delete(StorageKeys.rememberedEmail);
-          await localStorage.delete(StorageKeys.rememberedPassword);
+          await localStorage.deleteAuthValue(StorageKeys.rememberedEmail);
         }
 
         state = AuthState.authenticated(authResponse);

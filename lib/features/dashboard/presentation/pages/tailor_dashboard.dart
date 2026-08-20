@@ -176,10 +176,10 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
       crossAxisSpacing: 12,
       childAspectRatio: 1.0,
       children: [
-        _buildOpTile(Icons.person_add_rounded, 'CLIENT', () => ref.read(navigationProvider.notifier).state = const NavigationState('/unified-add-client')),
-        _buildOpTile(Icons.add_shopping_cart_rounded, 'ORDER', () => ref.read(navigationProvider.notifier).state = const NavigationState('/order-create')),
-        _buildOpTile(Icons.storefront_rounded, 'SHOP', () => ref.read(navigationProvider.notifier).state = const NavigationState('/virtual-atelier')),
-        _buildOpTile(Icons.bar_chart_rounded, 'HUB', () => ref.read(navigationProvider.notifier).state = const NavigationState('/insights')),
+        _buildOpTile(Icons.person_add_rounded, 'CLIENT', () => ref.setShell('/unified-add-client')),
+        _buildOpTile(Icons.add_shopping_cart_rounded, 'ORDER', () => ref.setShell('/order-create')),
+        _buildOpTile(Icons.storefront_rounded, 'SHOP', () => ref.setShell('/virtual-atelier')),
+        _buildOpTile(Icons.bar_chart_rounded, 'HUB', () => ref.setShell('/insights')),
       ],
     );
   }
@@ -213,7 +213,7 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
         Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
         GestureDetector(
           onTap: () {
-            ref.read(navigationProvider.notifier).state = NavigationState(route);
+            ref.setShell(route);
           },
           child: const Text('VIEW ALL', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
         ),

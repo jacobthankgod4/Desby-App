@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
@@ -92,10 +91,10 @@ class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
           ),
         );
         
-        if (ref.read(navigationProvider).route != '/main') {
-          ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+        if (ref.canPopShell) {
+          ref.popShell();
         } else {
-          Navigator.maybePop(context);
+          ref.setShell('/main');
         }
       }
     } catch (e) {
@@ -122,10 +121,10 @@ class _PricingSetupPageState extends ConsumerState<PricingSetupPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
           onPressed: () {
-            if (ref.read(navigationProvider).route != '/main') {
-              ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+            if (ref.canPopShell) {
+              ref.popShell();
             } else {
-              Navigator.maybePop(context);
+              ref.setShell('/main');
             }
           },
         ),

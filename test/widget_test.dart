@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:desby_app/main.dart';
-
 void main() {
   testWidgets('Counter increments smoke test', (tester) async {
     // In this repo, DesbyApp wires Firebase and Riverpod auth listeners.

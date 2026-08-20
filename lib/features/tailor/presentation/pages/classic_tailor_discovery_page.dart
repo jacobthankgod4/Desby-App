@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/nigeria_lga_data.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/domain/entities/user_profile.dart';
 import '../providers/active_tailor_provider.dart';
 import '../providers/tailor_finder_provider.dart';
@@ -207,7 +207,7 @@ class _ClassicTailorDiscoveryPageState extends ConsumerState<ClassicTailorDiscov
     return InkWell(
       onTap: () {
         ref.read(activeTailorProvider.notifier).state = tailor.toJson();
-        Navigator.pushNamed(context, '/tailor-profile', arguments: tailor.toJson());
+        ref.pushShell('/tailor-profile', {'tailorId': tailor.id});
       },
       borderRadius: BorderRadius.circular(24),
       child: Container(

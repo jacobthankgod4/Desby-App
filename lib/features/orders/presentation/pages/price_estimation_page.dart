@@ -5,7 +5,6 @@ import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/order.dart';
 import '../providers/order_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 
 class PriceEstimationPage extends ConsumerStatefulWidget {
   final Map<String, dynamic> tailor;
@@ -48,7 +47,7 @@ class _PriceEstimationPageState extends ConsumerState<PriceEstimationPage> {
         },
         (_) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('BOOKING SENT TO MASTER!'), backgroundColor: Colors.greenAccent));
-          ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+          ref.setShell('/main');
           Navigator.of(context).popUntil((route) => route.isFirst);
         },
       );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/service_tier.dart';
 import '../providers/tailor_finder_provider.dart';
 import '../../../../theme/colors.dart';
 

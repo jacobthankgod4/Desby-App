@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../config/providers/app_providers.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../core/logging/logger.dart';
+import '../logging/logger.dart';
+import 'dio_client.dart';
 
 
 

@@ -38,10 +38,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             StorageKeys.rememberedEmail,
             defaultValue: '',
           );
-          _passwordController.text = localStorage.get(
-            StorageKeys.rememberedPassword,
-            defaultValue: '',
-          );
         });
       }
     });

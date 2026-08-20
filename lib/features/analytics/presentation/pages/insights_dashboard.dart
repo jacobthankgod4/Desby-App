@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:math';
 
-import '../../../../theme/colors.dart';
 import '../../../../core/providers/navigation_provider.dart';
+import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/repositories/analytics_service_impl.dart';
 
@@ -149,13 +149,11 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
               Icons.auto_awesome_rounded,
               color: AppColors.amber,
             ),
-            onPressed: () => ref.read(navigationProvider.notifier).state =
-                const NavigationState('/ai-insights'),
+            onPressed: () => ref.pushShell('/ai-insights'),
           ),
           IconButton(
             icon: const Icon(Icons.description_outlined, color: Colors.white38),
-            onPressed: () => ref.read(navigationProvider.notifier).state =
-                const NavigationState('/reports'),
+            onPressed: () => ref.pushShell('/reports'),
           ),
         ],
       ),
@@ -716,7 +714,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        ref.read(navigationProvider.notifier).state = NavigationState(route);
+        ref.setShell(route);
       },
       child: AnimatedBuilder(
         animation: _pulseController,

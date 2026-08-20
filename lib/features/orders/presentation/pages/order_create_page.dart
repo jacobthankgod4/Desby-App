@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/navigation_provider.dart';
 import '../../../clients/presentation/providers/client_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 
 class OrderCreatePage extends ConsumerStatefulWidget {
@@ -78,10 +77,10 @@ class _OrderCreatePageState extends ConsumerState<OrderCreatePage> {
               height: 64,
               child: ElevatedButton(
                 onPressed: _selectedClientId == null ? null : () {
-                  if (ref.read(navigationProvider).route != '/main') {
-                    ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+                  if (ref.canPopShell) {
+                    ref.popShell();
                   } else {
-                    Navigator.maybePop(context);
+                    ref.setShell('/main');
                   }
                 },
                 style: ElevatedButton.styleFrom(

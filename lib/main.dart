@@ -172,7 +172,7 @@ class DesbyApp extends ConsumerWidget {
             builder: (context, ref, child) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (ref.read(navigationProvider).route != '/main') {
-                   ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+                   ref.read(navigationStackProvider.notifier).set('/main');
                 }
               });
               return const MainPage();

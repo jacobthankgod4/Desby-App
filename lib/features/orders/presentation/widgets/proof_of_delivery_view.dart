@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../../../../theme/colors.dart';
 
 class ProofOfDeliveryView extends StatelessWidget {
   final String base64Image;

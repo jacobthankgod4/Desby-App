@@ -3,67 +3,90 @@ import '../../domain/entities/apprenticeship.dart';
 import '../../domain/entities/apprentice_task.dart';
 import '../../domain/entities/apprentice_module.dart';
 import '../../domain/repositories/apprenticeship_repository.dart';
+import '../../domain/usecases/get_tailor_apprenticeships_usecase.dart';
+import '../../domain/usecases/get_apprentice_apprenticeship_usecase.dart';
+import '../../domain/usecases/get_apprentice_tasks_usecase.dart';
+import '../../domain/usecases/get_curriculum_usecase.dart';
+import '../../domain/usecases/get_module_lessons_usecase.dart';
+import '../../domain/usecases/get_lesson_detail_usecase.dart';
 import '../../data/repositories/supabase_apprenticeship_repository.dart';
 
-// Repository Provider
 final apprenticeshipRepositoryProvider = Provider<ApprenticeshipRepository>((ref) {
   return SupabaseApprenticeshipRepository();
 });
 
-// Apprenticeships for a Tailor
+final getTailorApprenticeshipsUsecaseProvider = Provider<GetTailorApprenticeshipsUsecase>((ref) {
+  return GetTailorApprenticeshipsUsecase(ref.watch(apprenticeshipRepositoryProvider));
+});
+
+final getApprenticeApprenticeshipUsecaseProvider = Provider<GetApprenticeApprenticeshipUsecase>((ref) {
+  return GetApprenticeApprenticeshipUsecase(ref.watch(apprenticeshipRepositoryProvider));
+});
+
+final getApprenticeTasksUsecaseProvider = Provider<GetApprenticeTasksUsecase>((ref) {
+  return GetApprenticeTasksUsecase(ref.watch(apprenticeshipRepositoryProvider));
+});
+
+final getCurriculumUsecaseProvider = Provider<GetCurriculumUsecase>((ref) {
+  return GetCurriculumUsecase(ref.watch(apprenticeshipRepositoryProvider));
+});
+
+final getModuleLessonsUsecaseProvider = Provider<GetModuleLessonsUsecase>((ref) {
+  return GetModuleLessonsUsecase(ref.watch(apprenticeshipRepositoryProvider));
+});
+
+final getLessonDetailUsecaseProvider = Provider<GetLessonDetailUsecase>((ref) {
+  return GetLessonDetailUsecase(ref.watch(apprenticeshipRepositoryProvider));
+});
+
 final tailorApprenticeshipsProvider = FutureProvider.family<List<Apprenticeship>, String>((ref, tailorId) async {
-  final repository = ref.watch(apprenticeshipRepositoryProvider);
-  final result = await repository.getApprenticeships(tailorId);
+  final usecase = ref.watch(getTailorApprenticeshipsUsecaseProvider);
+  final result = await usecase(tailorId);
   return result.fold(
     (failure) => throw failure,
     (apprenticeships) => apprenticeships,
   );
 });
 
-// Single Apprenticeship for an Apprentice
 final apprenticeApprenticeshipProvider = FutureProvider.family<Apprenticeship?, String>((ref, apprenticeId) async {
-  final repository = ref.watch(apprenticeshipRepositoryProvider);
-  final result = await repository.getApprenticeship(apprenticeId);
+  final usecase = ref.watch(getApprenticeApprenticeshipUsecaseProvider);
+  final result = await usecase(apprenticeId);
   return result.fold(
     (failure) => throw failure,
     (apprenticeship) => apprenticeship,
   );
 });
 
-// Tasks for an Apprenticeship
 final apprenticeshipTasksProvider = FutureProvider.family<List<ApprenticeTask>, String>((ref, apprenticeshipId) async {
-  final repository = ref.watch(apprenticeshipRepositoryProvider);
-  final result = await repository.getApprenticeTasks(apprenticeshipId);
+  final usecase = ref.watch(getApprenticeTasksUsecaseProvider);
+  final result = await usecase(apprenticeshipId);
   return result.fold(
     (failure) => throw failure,
     (tasks) => tasks,
   );
 });
 
-// Curriculum Provider
 final curriculumProvider = FutureProvider<List<ApprenticeModule>>((ref) async {
-  final repository = ref.watch(apprenticeshipRepositoryProvider);
-  final result = await repository.getCurriculum();
+  final usecase = ref.watch(getCurriculumUsecaseProvider);
+  final result = await usecase();
   return result.fold(
     (failure) => throw failure,
     (modules) => modules,
   );
 });
 
-// Lessons Provider
 final moduleLessonsProvider = FutureProvider.family<List<ApprenticeLesson>, String>((ref, moduleId) async {
-  final repository = ref.watch(apprenticeshipRepositoryProvider);
-  final result = await repository.getLessons(moduleId);
+  final usecase = ref.watch(getModuleLessonsUsecaseProvider);
+  final result = await usecase(moduleId);
   return result.fold(
     (failure) => throw failure,
     (lessons) => lessons,
   );
 });
 
-// Single Lesson Detail Provider
 final lessonDetailProvider = FutureProvider.family<ApprenticeLesson, String>((ref, lessonId) async {
-  final repository = ref.watch(apprenticeshipRepositoryProvider);
-  final result = await repository.getLessonById(lessonId);
+  final usecase = ref.watch(getLessonDetailUsecaseProvider);
+  final result = await usecase(lessonId);
   return result.fold(
     (failure) => throw failure,
     (lesson) => lesson,

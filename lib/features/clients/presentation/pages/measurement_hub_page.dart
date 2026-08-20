@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../../../core/network/korra_client.dart';
 import '../../../../core/services/body_measurement_service.dart';
 
@@ -169,7 +169,7 @@ class _MeasurementHubPageState extends ConsumerState<MeasurementHubPage> {
                   color: _isKorraAvailable ? Colors.blueAccent : Colors.white24,
                   isFullWidth: false,
                   onTap: () async {
-                    await Navigator.pushNamed(context, '/ai-body-scan');
+                    ref.read(navigationStackProvider.notifier).push('/ai-body-scan');
                     _loadKorraData(); // Refresh after scan
                   },
                 ),
@@ -181,8 +181,7 @@ class _MeasurementHubPageState extends ConsumerState<MeasurementHubPage> {
                   icon: Icons.architecture_rounded,
                   color: AppColors.amber,
                   isFullWidth: false,
-                  onTap: () => ref.read(navigationProvider.notifier).state =
-                      const NavigationState('/tailor-discovery'),
+                  onTap: () => ref.pushShell('/tailor-discovery'),
                 ),
               ]),
             ),
@@ -202,7 +201,7 @@ class _MeasurementHubPageState extends ConsumerState<MeasurementHubPage> {
                   color: Colors.purpleAccent,
                   isFullWidth: true,
                   onTap: () =>
-                      Navigator.pushNamed(context, '/measurements-input'),
+                      ref.pushShell('/measurements-input'),
                 ),
                 const SizedBox(height: 16),
                 _VisualBentoCard(
@@ -213,7 +212,7 @@ class _MeasurementHubPageState extends ConsumerState<MeasurementHubPage> {
                   color: Colors.white24,
                   isFullWidth: true,
                   onTap: () =>
-                      Navigator.pushNamed(context, '/measurements-profile'),
+                      ref.pushShell('/measurements-profile'),
                 ),
               ]),
             ),
@@ -342,7 +341,7 @@ class _MeasurementHubPageState extends ConsumerState<MeasurementHubPage> {
 
   Widget _buildQuickEstimateCard(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/ai-body-scan'),
+      onTap: () => ref.pushShell('/ai-body-scan'),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(

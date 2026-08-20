@@ -61,7 +61,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage> with SingleTicker
       ),
       floatingActionButton: Consumer(
         builder: (context, ref, child) => FloatingActionButton.extended(
-          onPressed: () => ref.read(navigationProvider.notifier).state = const NavigationState('/order-create'),
+          onPressed: () => ref.pushShell('/order-create'),
           backgroundColor: AppColors.amber,
           icon: const Icon(Icons.add_rounded, color: AppColors.darkNavy),
           label: const Text('NEW ORDER', style: TextStyle(color: AppColors.darkNavy, fontWeight: FontWeight.w900, letterSpacing: 1)),
@@ -120,7 +120,7 @@ class _OrderCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Consumer(
         builder: (context, ref, child) => InkWell(
-          onTap: () => ref.read(navigationProvider.notifier).state = NavigationState('/order-detail', {'orderId': order.id}),
+          onTap: () => ref.pushShell('/order-detail', {'orderId': order.id}),
           child: Column(
             children: [
               Row(

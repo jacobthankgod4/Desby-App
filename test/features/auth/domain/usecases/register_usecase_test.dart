@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:desby_app/core/error/failures.dart';
 import 'package:desby_app/features/auth/domain/entities/auth_response.dart';
 import 'package:desby_app/features/auth/domain/entities/user.dart';
 import 'package:desby_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:desby_app/features/auth/domain/usecases/register_usecase.dart';
 
-class MockAuthRepository extends Mock implements AuthRepository {}
+@GenerateMocks([AuthRepository])
+import 'register_usecase_test.mocks.dart';
 
 void main() {
   late RegisterUsecase usecase;
@@ -15,6 +17,7 @@ void main() {
   setUp(() {
     mockRepository = MockAuthRepository();
     usecase = RegisterUsecase(mockRepository);
+    provideDummy<Result<AuthResponse>>(Failure(ServerFailure(message: 'dummy')));
   });
 
   group('RegisterUsecase', () {
@@ -34,7 +37,6 @@ void main() {
     );
 
     test('should return AuthResponse when registration is successful', () async {
-      // Arrange
       when(mockRepository.register(
         'test@example.com',
         'password',
@@ -42,7 +44,6 @@ void main() {
         'tailor',
       )).thenAnswer((_) async => Success(tAuthResponse));
 
-      // Act
       final result = await usecase(
         'test@example.com',
         'password',
@@ -50,7 +51,6 @@ void main() {
         'tailor',
       );
 
-      // Assert
       expect(result, isA<Success>());
       verify(mockRepository.register(
         'test@example.com',
@@ -61,7 +61,6 @@ void main() {
     });
 
     test('should return Failure when registration fails', () async {
-      // Arrange
       final tFailure = ServerFailure(message: 'Registration failed');
       when(mockRepository.register(
         'test@example.com',
@@ -70,7 +69,6 @@ void main() {
         'tailor',
       )).thenAnswer((_) async => Failure(tFailure));
 
-      // Act
       final result = await usecase(
         'test@example.com',
         'password',
@@ -78,7 +76,6 @@ void main() {
         'tailor',
       );
 
-      // Assert
       expect(result, isA<Failure>());
       result.fold(
         (failure) => expect(failure.message, 'Registration failed'),

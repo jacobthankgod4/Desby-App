@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../orders/presentation/providers/order_provider.dart';
 import '../../../orders/domain/entities/order.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/widgets/error_state_widget.dart';
 import '../../../../theme/colors.dart';
 

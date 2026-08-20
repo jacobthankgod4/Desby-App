@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 
 class TailorAvailabilityPage extends ConsumerWidget {
@@ -43,7 +44,7 @@ class TailorAvailabilityPage extends ConsumerWidget {
             secondActionLabel: 'Book Appointment',
             secondActionIcon: Icons.calendar_today_rounded,
             onAction: () {},
-            onSecondAction: () => Navigator.pushNamed(context, '/booking-cart', arguments: tailor),
+            onSecondAction: () => ref.pushShell('/booking-cart', tailor),
           ),
         ],
       ),

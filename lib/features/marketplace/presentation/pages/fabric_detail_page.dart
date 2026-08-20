@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/fabric.dart';
 import '../providers/fabric_provider.dart';
@@ -723,7 +724,7 @@ Future<void> _addToCart(Fabric fabric) async {
     result.fold(
       (failure) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connection Failed: $failure'))),
       (conversation) {
-        Navigator.pushNamed(context, '/chat-detail', arguments: {
+        ref.pushShell('/chat-detail', {
           'conversationId': conversation.id,
           'peerId': sellerId,
         });

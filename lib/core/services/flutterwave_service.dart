@@ -16,6 +16,7 @@ class FlutterwaveService {
     required String fullName,
     required double amount,
     required String orderId,
+    String? phone,
     String? subAccountCode,
     required Function(String) onSuccess,
     required VoidCallback onCancel,
@@ -26,7 +27,7 @@ class FlutterwaveService {
       final Customer customer = Customer(
         name: fullName,
         email: email,
-        phoneNumber: "0000000000",
+        phoneNumber: phone ?? '',
       );
 
       final Flutterwave flutterwave = Flutterwave(

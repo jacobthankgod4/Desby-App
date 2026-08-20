@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/fabric_provider.dart';
@@ -36,7 +37,7 @@ class SellerInventoryPage extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/fabric-upload'),
+        onPressed: () => ref.pushShell('/fabric-upload'),
         backgroundColor: AppColors.amber,
         child: const Icon(Icons.add_rounded, color: AppColors.darkNavy),
       ),

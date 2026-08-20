@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/profile_provider.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../../../core/widgets/luxury_glass_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 
 class ProfileViewPage extends ConsumerWidget {
   final String userId;
@@ -44,7 +44,7 @@ class ProfileViewPage extends ConsumerWidget {
               if (isOwnProfile)
                 IconButton(
                   icon: const Icon(Icons.settings_suggest_rounded, color: Colors.white24, size: 20),
-                  onPressed: () => ref.read(navigationProvider.notifier).state = const NavigationState('/profile/settings'),
+                  onPressed: () => ref.pushShell('/profile/settings'),
                 ),
             ],
           ),
@@ -64,7 +64,7 @@ class ProfileViewPage extends ConsumerWidget {
           const SizedBox(height: 32),
 
           // CONTEXTUAL ACTIONS (If not own profile)
-          if (!isOwnProfile) _buildContextualActions(context, profile, currentUserType),
+          if (!isOwnProfile) _buildContextualActions(context, profile, currentUserType, ref),
           if (!isOwnProfile) const SizedBox(height: 24),
           
           LuxuryGlassCard(
@@ -92,7 +92,7 @@ class ProfileViewPage extends ConsumerWidget {
               width: double.infinity,
               height: 54,
               child: OutlinedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/profile/edit', arguments: userId),
+                onPressed: () => ref.pushShell('/profile/edit', {'userId': userId}),
                 icon: const Icon(Icons.edit_note_rounded, size: 18),
                 label: const Text('MODIFY DOSSIER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5)),
                 style: OutlinedButton.styleFrom(
@@ -111,13 +111,13 @@ class ProfileViewPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildContextualActions(BuildContext context, UserProfile target, String? viewerType) {
+  Widget _buildContextualActions(BuildContext context, UserProfile target, String? viewerType, WidgetRef ref) {
     return Row(
       children: [
         if (target.userType == 'tailor' && viewerType == 'client')
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/tailor-profile', arguments: target.id),
+              onPressed: () => ref.pushShell('/tailor-profile', {'tailorId': target.id}),
               icon: const Icon(Icons.architecture_rounded, size: 18),
               label: const Text('BOOK NOW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
               style: ElevatedButton.styleFrom(

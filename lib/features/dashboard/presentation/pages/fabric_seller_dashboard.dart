@@ -4,6 +4,7 @@ import '../widgets/luxury_stat_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../marketplace/presentation/providers/fabric_provider.dart';
 import '../../../../core/widgets/luxury_glass_card.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 
 class FabricSellerDashboard extends ConsumerWidget {
@@ -21,7 +22,7 @@ class FabricSellerDashboard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context),
+              _buildHeader(context, ref),
               const SizedBox(height: 32),
               
               // 1. COMMERCE HUD
@@ -99,7 +100,7 @@ class FabricSellerDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -108,7 +109,7 @@ class FabricSellerDashboard extends ConsumerWidget {
           children: [
             const Text('MERCHANT TERMINAL', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
             IconButton(
-              onPressed: () => Navigator.pushNamed(context, '/merchant-wallet'),
+              onPressed: () => ref.pushShell('/merchant-wallet'),
               icon: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.amber, size: 20),
             ),
           ],
@@ -120,7 +121,7 @@ class FabricSellerDashboard extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(
-          onPressed: () => Navigator.pushNamed(context, '/fabric-upload'),
+          onPressed: () => ref.pushShell('/fabric-upload'),
           icon: const Icon(Icons.add_photo_alternate_rounded, size: 18),
           label: const Text('UPLOAD NEW MATERIAL', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
           style: ElevatedButton.styleFrom(

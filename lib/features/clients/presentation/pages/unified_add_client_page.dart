@@ -4,13 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/utils/async_handler.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../domain/entities/client.dart';
 import '../providers/client_provider.dart';
 import '../../../orders/domain/entities/order.dart';
 import '../../../orders/presentation/providers/order_provider.dart';
 import '../../../designs/presentation/widgets/guided_crop_widget.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 // ignore: depend_on_referenced_packages
 import 'package:o3d/o3d.dart';
 
@@ -249,7 +247,7 @@ class _UnifiedAddClientPageState extends ConsumerState<UnifiedAddClientPage> wit
       ref.invalidate(clientsProvider(null));
       
       if (ref.read(navigationProvider).route != '/main') {
-        ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+        ref.setShell('/main');
       } else {
         Navigator.maybePop(context);
       }

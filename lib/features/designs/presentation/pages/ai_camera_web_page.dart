@@ -4,7 +4,6 @@ import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:ui_web' as ui_web;
 
@@ -85,52 +84,33 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
   }
 
   Future<void> _initPoseDetection() async {
-    // Wait for the JS module to expose initPoseDetection
-    for (var i = 0; i < 50; i++) {
-      if (js.context['initPoseDetection'] != null) break;
-      await Future.delayed(const Duration(milliseconds: 100));
+    debugPrint('[MEDIAPIPE] Waiting for pose detection to initialize...');
+    if (mounted) {
+      setState(() {
+        _statusMessage = 'Loading pose detection...';
+      });
     }
 
-    if (js.context['initPoseDetection'] == null) {
-      debugPrint('[MEDIAPIPE] initPoseDetection not found, using manual capture');
+    // JS module self-initializes MediaPipe on load — just poll __mpReady
+    for (var i = 0; i < 300; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      final ready = js.context['__mpReady'];
+      if (ready == true) break;
+    }
+
+    _poseReady = js.context['__mpReady'] == true;
+    if (_poseReady) {
+      debugPrint('[MEDIAPIPE] Pose detection initialized');
       if (mounted) {
         setState(() {
-          _statusMessage = 'Tap to capture when ready.';
+          _statusMessage = widget.perspective == 'front'
+              ? 'Stand facing the camera. Spread arms in A-shape.'
+              : 'Turn sideways. Show full profile.';
         });
+        _startFrameLoop();
       }
-      return;
-    }
-
-    try {
-      // Call the JS function — it's async but callMethod may not return Promise
-      js.context.callMethod('initPoseDetection', []);
-
-      // Poll __mpReady flag set by the JS module after initialization
-      for (var i = 0; i < 100; i++) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        final ready = js.context['__mpReady'];
-        if (ready == true) break;
-      }
-
-      _poseReady = js.context['__mpReady'] == true;
-      if (_poseReady) {
-        debugPrint('[MEDIAPIPE] Pose detection initialized');
-        if (mounted) {
-          setState(() {
-            _statusMessage = widget.perspective == 'front'
-                ? 'Stand facing the camera. Spread arms in A-shape.'
-                : 'Turn sideways. Show full profile.';
-          });
-          _startFrameLoop();
-        }
-      } else {
-        debugPrint('[MEDIAPIPE] Init timeout — using manual capture');
-        if (mounted) {
-          setState(() => _statusMessage = 'Tap to capture when ready.');
-        }
-      }
-    } catch (e) {
-      debugPrint('[MEDIAPIPE] Init error: $e');
+    } else {
+      debugPrint('[MEDIAPIPE] Init timeout — using manual capture');
       if (mounted) {
         setState(() => _statusMessage = 'Tap to capture when ready.');
       }
@@ -146,11 +126,10 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
 
   void _processFrame() {
     try {
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final results = js.context.callMethod('detectPose', [timestamp]);
+      final raw = js.context.callMethod('detectPose', []);
+      if (raw == null) return;
 
-      if (results == null) return;
-
+      final results = js_util.dartify(raw);
       final landmarksList = results as List?;
       if (landmarksList == null || landmarksList.isEmpty) {
         if (mounted && !_isReviewing && _capturedImageBytes == null) {
@@ -179,7 +158,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
         });
       }
     } catch (e) {
-      // Silently continue on frame errors
+      debugPrint('[MEDIAPIPE] Frame error: $e');
     }
   }
 
@@ -379,7 +358,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
         fit: StackFit.expand,
         children: [
           // Video preview
-          Positioned.fill(child: HtmlElementView(viewType: _viewType)),
+          Positioned.fill(child: IgnorePointer(child: HtmlElementView(viewType: _viewType))),
 
           // Skeleton overlay (same as mobile Korra)
           if (!_isReviewing && _landmarks.length >= 33)

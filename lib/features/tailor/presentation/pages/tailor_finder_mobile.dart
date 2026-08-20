@@ -7,7 +7,6 @@ import '../widgets/tailor_card.dart';
 import '../widgets/service_tier_selector.dart';
 import '../widgets/quote_estimation_card.dart';
 import '../../../../core/providers/navigation_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/tailor_finder_responsive.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -96,7 +95,7 @@ class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
     }
     // If no routes to pop, go to main dashboard
     if (ref.read(navigationProvider).route != '/main') {
-      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+      ref.setShell('/main');
     } else {
       Navigator.pushReplacementNamed(context, '/main');
     }

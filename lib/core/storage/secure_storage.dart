@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../logging/logger.dart';
@@ -135,7 +137,7 @@ class SecureStorageService {
     try {
       await _storage.write(
         key: StorageKeys.userCredentials,
-        value: '$email:$password',
+        value: jsonEncode({'email': email, 'password': password}),
       );
       logger.debug('Credentials saved securely');
     } catch (e, stackTrace) {
@@ -155,12 +157,10 @@ class SecureStorageService {
           await _storage.read(key: StorageKeys.userCredentials);
       if (credentials == null) return null;
 
-      final parts = credentials.split(':');
-      if (parts.length != 2) return null;
-
+      final decoded = jsonDecode(credentials) as Map<String, dynamic>;
       return {
-        'email': parts[0],
-        'password': parts[1],
+        'email': decoded['email'] as String,
+        'password': decoded['password'] as String,
       };
     } catch (e, stackTrace) {
       logger.error(

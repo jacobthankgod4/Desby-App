@@ -1,15 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 import 'package:desby_app/core/error/failures.dart';
 import 'package:desby_app/features/auth/domain/entities/auth_response.dart';
 import 'package:desby_app/features/auth/domain/entities/user.dart';
 import 'package:desby_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:desby_app/features/auth/domain/usecases/login_usecase.dart';
 
-class MockAuthRepository extends Mock implements AuthRepository {}
-
-
-
+@GenerateMocks([AuthRepository])
+import 'login_usecase_test.mocks.dart';
 
 void main() {
   late LoginUsecase usecase;
@@ -18,6 +17,7 @@ void main() {
   setUp(() {
     mockRepository = MockAuthRepository();
     usecase = LoginUsecase(mockRepository);
+    provideDummy<Result<AuthResponse>>(Failure(ServerFailure(message: 'dummy')));
   });
 
   group('LoginUsecase', () {
@@ -37,15 +37,11 @@ void main() {
     );
 
     test('should return AuthResponse when login is successful', () async {
-      // Arrange
       when(mockRepository.login('test@example.com', 'password'))
           .thenAnswer((_) async => Success(tAuthResponse));
 
-      // Act
       final result = await usecase('test@example.com', 'password');
 
-
-      // Assert
       expect(result, isA<Success>());
       result.fold(
         (failure) => fail('Should not return failure'),
@@ -59,15 +55,12 @@ void main() {
     });
 
     test('should return Failure when login fails', () async {
-      // Arrange
       final tFailure = ServerFailure(message: 'Login failed');
       when(mockRepository.login('test@example.com', 'password'))
           .thenAnswer((_) async => Failure(tFailure));
 
-      // Act
       final result = await usecase('test@example.com', 'password');
 
-      // Assert
       expect(result, isA<Failure>());
       result.fold(
         (failure) => expect(failure.message, 'Login failed'),

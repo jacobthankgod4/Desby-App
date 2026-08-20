@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/order.dart';
-import 'uber_logistics_provider.dart';
 import 'logistics_provider.dart';
-import '../widgets/dispatch_logistics_module.dart';
 
 final smartDispatchProvider = StateNotifierProvider<SmartDispatchNotifier, AsyncValue<String>>((ref) {
   return SmartDispatchNotifier(ref);

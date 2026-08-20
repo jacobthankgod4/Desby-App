@@ -19,7 +19,7 @@ class TailorServices {
     {'id': '3', 'name': 'Native Wear', 'description': 'Traditional African wear including Agbada, Dashiki, native dresses, and more.'},
     {'id': '4', 'name': 'Alterations', 'description': 'Expert alterations to fit your existing clothes perfectly.'},
     {'id': '5', 'name': 'Bridal & Groom Wear', 'description': 'Beautiful wedding attire for the big day. Bridesmaids dresses and groom suits.'},
-    {'id': '6', 'name': 'Corporate Attire', 'description': 'Professional办公 attire including work shirts, trousers, and office wear.'},
+    {'id': '6', 'name': 'Corporate Attire', 'description': 'Professional office attire including work shirts, trousers, and office wear.'},
     {'id': '7', 'name': 'Shirts & Trousers', 'description': 'Custom shirts and trousers made to your measurements and style preferences.'},
     {'id': '8', 'name': 'Fabrics & Sales', 'description': 'Quality fabrics available for sale. We help you find the perfect material for your project.'},
   ];

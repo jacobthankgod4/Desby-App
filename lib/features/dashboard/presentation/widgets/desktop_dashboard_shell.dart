@@ -105,8 +105,8 @@ class _DesktopDashboardShellState extends ConsumerState<DesktopDashboardShell> {
     }
     
     if (item.route != null) {
-      // Use navigationProvider for consistent shell context
-      ref.read(navigationProvider.notifier).state = NavigationState(item.route!);
+      // Use navigationStackProvider for consistent shell context
+      ref.read(navigationStackProvider.notifier).set(item.route!);
     }
   }
 
@@ -173,6 +173,7 @@ class _DesktopDashboardShellState extends ConsumerState<DesktopDashboardShell> {
     final navState = ref.watch(navigationProvider);
     final currentRoute = navState.route;
     final bool isSubPage = currentRoute != '/main';
+    final navStack = ref.read(navigationStackProvider.notifier);
 
     return Container(
       height: 70,
@@ -184,16 +185,10 @@ class _DesktopDashboardShellState extends ConsumerState<DesktopDashboardShell> {
             IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
               onPressed: () {
-                final navNotifier = ref.read(navigationProvider.notifier);
-                // Simple heuristic for back navigation within shell
-                if (currentRoute.contains('-detail') || currentRoute == '/unified-add-client' || currentRoute == '/order-create') {
-                   // Go back to the parent list or dashboard
-                   if (currentRoute.startsWith('/chat')) navNotifier.state = const NavigationState('/chats');
-                   else if (currentRoute.startsWith('/client')) navNotifier.state = const NavigationState('/clients');
-                   else if (currentRoute.startsWith('/order')) navNotifier.state = const NavigationState('/orders');
-                   else navNotifier.state = const NavigationState('/main');
+                if (navStack.canPop) {
+                  navStack.pop();
                 } else {
-                  navNotifier.state = const NavigationState('/main');
+                  navStack.set('/main');
                 }
               },
             ),
@@ -201,9 +196,7 @@ class _DesktopDashboardShellState extends ConsumerState<DesktopDashboardShell> {
           Text(widget.pageTitle.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2)),
           const Spacer(),
           GestureDetector(
-            onTap: () {
-              ref.read(navigationProvider.notifier).state = const NavigationState('/profile');
-            },
+            onTap: () => navStack.push('/profile'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
@@ -217,9 +210,7 @@ class _DesktopDashboardShellState extends ConsumerState<DesktopDashboardShell> {
             ),
           ),
           const SizedBox(width: 16),
-          IconButton(onPressed: widget.onNotificationTap ?? () {
-            ref.read(navigationProvider.notifier).state = const NavigationState('/notifications');
-          }, icon: const Icon(Icons.notifications_none_rounded, color: Colors.white38, size: 22)),
+          IconButton(onPressed: widget.onNotificationTap ?? () => navStack.push('/notifications'), icon: const Icon(Icons.notifications_none_rounded, color: Colors.white38, size: 22)),
         ],
       ),
     );

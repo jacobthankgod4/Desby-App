@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/colors.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../domain/entities/fabric.dart';
 
-class FabricCardGrid extends StatelessWidget {
+class FabricCardGrid extends ConsumerWidget {
   final bool isGridView;
   final List<Fabric> fabrics;
   const FabricCardGrid({super.key, required this.isGridView, required this.fabrics});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (fabrics.isEmpty) {
       return const Center(child: Text('EMPTY CATALOG', style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 32)));
     }
@@ -38,20 +40,17 @@ class FabricCardGrid extends StatelessWidget {
   }
 }
 
-class _FabricTallCard extends StatelessWidget {
+class _FabricTallCard extends ConsumerWidget {
   final Fabric fabric;
   const _FabricTallCard({required this.fabric});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(
-          context,
+        ref.pushShell(
           '/fabric-details',
-          arguments: {
-            'fabricId': fabric.id,
-          },
+          {'fabricId': fabric.id},
         );
       },
       child: Container(
@@ -126,20 +125,17 @@ class _FabricTallCard extends StatelessWidget {
   }
 }
 
-class _FabricListTile extends StatelessWidget {
+class _FabricListTile extends ConsumerWidget {
   final Fabric fabric;
   const _FabricListTile({required this.fabric});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(
-          context,
+        ref.pushShell(
           '/fabric-details',
-          arguments: {
-            'fabricId': fabric.id,
-          },
+          {'fabricId': fabric.id},
         );
       },
       child: Container(

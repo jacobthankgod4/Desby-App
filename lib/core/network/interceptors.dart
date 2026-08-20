@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 
 import '../error/exceptions.dart';
 import '../logging/logger.dart';
+import '../storage/secure_storage.dart';
 
 /// Logging Interceptor
 class LoggingInterceptor extends Interceptor {
@@ -45,18 +46,40 @@ class LoggingInterceptor extends Interceptor {
 /// Injects access token in all requests
 /// Handles token refresh on 401 responses
 class AuthInterceptor extends Interceptor {
+  bool _isRefreshing = false;
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // Token is already set in DioClient if available
     handler.next(options);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    // Handle 401 Unauthorized
-    if (err.response?.statusCode == 401) {
-      logger.warning('Unauthorized - Token may be expired');
-      // Token refresh logic will be implemented in Phase 4
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    if (err.response?.statusCode == 401 && !_isRefreshing) {
+      _isRefreshing = true;
+      try {
+        final refreshToken = await secureStorage.getRefreshToken();
+        if (refreshToken != null) {
+          final dio = Dio();
+          final response = await dio.post(
+            'https://api.supabase.com/v1/auth/token',
+            data: {'grant_type': 'refresh_token', 'refresh_token': refreshToken},
+            options: Options(headers: {'Content-Type': 'application/json'}),
+          );
+          if (response.statusCode == 200) {
+            final data = response.data;
+            await secureStorage.saveAccessToken(data['access_token'] as String);
+            await secureStorage.saveRefreshToken(data['refresh_token'] as String);
+            logger.info('Token refreshed successfully via AuthInterceptor');
+            _isRefreshing = false;
+            handler.resolve(err.response!);
+            return;
+          }
+        }
+      } catch (e) {
+        logger.warning('Token refresh failed in AuthInterceptor', error: e);
+      }
+      _isRefreshing = false;
     }
     handler.next(err);
   }
@@ -185,7 +208,10 @@ class RetryInterceptor extends Interceptor {
   static const int _maxRetries = 3;
   static const Duration _initialDelay = Duration(milliseconds: 100);
 
+  final Dio _dio;
   final Map<String, int> _retryCount = {};
+
+  RetryInterceptor(this._dio);
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
@@ -255,8 +281,7 @@ class RetryInterceptor extends Interceptor {
       validateStatus: requestOptions.validateStatus,
     );
 
-    final dio = Dio();
-    return dio.request<dynamic>(
+    return _dio.request<dynamic>(
       requestOptions.path,
       data: requestOptions.data,
       queryParameters: requestOptions.queryParameters,

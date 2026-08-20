@@ -121,7 +121,7 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
         phone: _phoneController.text, 
         address: _addressController.text,
         state: _selectedState ?? '', 
-        country: _selectedCountry ?? 'Nigeria', 
+        country: _selectedCountry ?? 'Nigeria',
         lga: _selectedLga ?? '',
         createdAt: user.createdAt, 
         updatedAt: DateTime.now(),
@@ -142,7 +142,7 @@ class _ClientOnboardingPageState extends ConsumerState<ClientOnboardingPage> {
       await localStorage.save(StorageKeys.clientOnboardingComplete, true);
       
       // 3. Reset Navigation Provider to Dashboard
-      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+      ref.setShell('/main');
       
       // 4. Delay navigation slightly to let DOM state settle after unfocus
       await Future.delayed(const Duration(milliseconds: 300));

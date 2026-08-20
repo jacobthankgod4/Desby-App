@@ -1,9 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/constants/user_types.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/error_handler.dart';
+import '../../../../core/storage/local_storage.dart';
 import '../../../../core/storage/storage_keys.dart';
 import '../../domain/entities/auth_response.dart';
 import '../../domain/entities/user.dart';
@@ -167,6 +167,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
       final storage = (localDatasource as AuthLocalDatasourceImpl).storage;
       await storage.delete(StorageKeys.currentUser);
+      await localStorage.delete(StorageKeys.rememberedEmail);
 
       return const Success(null);
     } catch (e) {

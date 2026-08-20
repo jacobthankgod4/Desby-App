@@ -18,7 +18,6 @@ class MaterialUploadStation extends StatefulWidget {
 }
 
 class _MaterialUploadStationState extends State<MaterialUploadStation> {
-  XFile? _selectedXFile;
   Uint8List? _webImageBytes;
   final ImagePicker _picker = ImagePicker();
 
@@ -34,7 +33,6 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
         final bytes = await pickedFile.readAsBytes();
         
         setState(() {
-          _selectedXFile = pickedFile;
           _webImageBytes = bytes;
         });
         widget.onImagePicked(pickedFile);
@@ -174,7 +172,6 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
           onPressed: () {
             setState(() {
               _webImageBytes = null;
-              _selectedXFile = null;
             });
             widget.onImagePicked(null);
           },

@@ -24,7 +24,6 @@ class AiBodyScanPage extends ConsumerStatefulWidget {
 
 class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
     with TickerProviderStateMixin {
-  final ImagePicker _picker = ImagePicker();
   final BodyMeasurementService _service = BodyMeasurementService();
   final FlutterTts _tts = FlutterTts();
 

@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../widgets/material_upload_station.dart';
 import '../widgets/dispatch_logistics_module.dart';
@@ -65,7 +65,7 @@ class _BookingCartPageState extends ConsumerState<BookingCartPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Step 4: Verify Precision Measurements.'), backgroundColor: Colors.orangeAccent));
       return;
     }
-    Navigator.pushNamed(context, '/price-estimation', arguments: widget.tailor);
+    ref.pushShell('/price-estimation', widget.tailor);
   }
 
   void _scrollTo(GlobalKey key) {
@@ -159,9 +159,8 @@ class _BookingCartPageState extends ConsumerState<BookingCartPage> {
                       subtitle: 'Verify digital profile alignment', 
                       isCompleted: _isStep4Done,
                       onTap: () {
-                        Navigator.pushNamed(context, '/measurements-input').then((_) {
-                          setState(() => _measurementsCompleted = true);
-                        });
+                        ref.pushShell('/measurements-input');
+                        setState(() => _measurementsCompleted = true);
                       },
                     ),
                     const SizedBox(height: 12),
@@ -169,7 +168,7 @@ class _BookingCartPageState extends ConsumerState<BookingCartPage> {
                       title: 'PRICE ESTIMATION', 
                       subtitle: 'Architecture & Cost breakdown', 
                       isCompleted: false,
-                      onTap: () => Navigator.pushNamed(context, '/price-estimation', arguments: widget.tailor),
+                      onTap: () => ref.pushShell('/price-estimation', widget.tailor),
                     ),
                     const SizedBox(height: 120),
                   ],

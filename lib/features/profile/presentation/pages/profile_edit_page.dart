@@ -181,10 +181,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
           onPressed: () {
-            if (ref.read(navigationProvider).route != '/main') {
-              ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+            if (ref.canPopShell) {
+              ref.popShell();
             } else {
-              Navigator.maybePop(context);
+              ref.setShell('/main');
             }
           },
         ),
@@ -700,10 +700,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
             ),
           );
           
-          if (ref.read(navigationProvider.notifier).state.route != '/main') {
-            ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+          if (ref.canPopShell) {
+            ref.popShell();
           } else {
-            Navigator.maybePop(context);
+            ref.setShell('/main');
           }
         },
       );

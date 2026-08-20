@@ -8,28 +8,42 @@ import '../widgets/desktop_dashboard_shell.dart';
 import '../../../../features/orders/presentation/pages/order_list_page.dart';
 import '../../../../features/orders/presentation/pages/order_detail_page.dart';
 import '../../../../features/orders/presentation/pages/order_create_page.dart';
+import '../../../../features/orders/presentation/pages/booking_cart_page.dart';
+import '../../../../features/orders/presentation/pages/delivery_setup_page.dart';
+import '../../../../features/orders/presentation/pages/price_estimation_page.dart';
+import '../../../../features/orders/presentation/pages/delivery_tracking_page.dart';
 import '../../../../features/marketplace/presentation/pages/fabric_catalog_page.dart';
 import '../../../../features/marketplace/presentation/pages/fabric_upload_page.dart';
 import '../../../../features/marketplace/presentation/pages/fabric_detail_page.dart';
+import '../../../../features/marketplace/presentation/pages/merchant_wallet_page.dart';
 import '../../../../features/tailor/presentation/pages/virtual_atelier_page.dart';
 import '../../../../features/tailor/presentation/pages/shop_setup_page.dart';
 import '../../../../features/tailor/presentation/pages/pricing_setup_page.dart';
 import '../../../../features/tailor/presentation/pages/tailor_discovery_page.dart';
+import '../../../../features/tailor/presentation/pages/tailor_profile_page.dart';
+import '../../../../features/tailor/presentation/pages/tailor_availability_page.dart';
+import '../../../../features/tailor/presentation/pages/product_details_page.dart';
 import '../../../../features/clients/presentation/pages/client_list_page.dart';
 import '../../../../features/clients/presentation/pages/client_detail_page.dart';
 import '../../../../features/clients/presentation/pages/unified_add_client_page.dart';
 import '../../../../features/clients/presentation/pages/measurement_hub_page.dart';
 import '../../../../features/clients/presentation/pages/measurement_profile_page.dart';
 import '../../../../features/designs/presentation/pages/measurement_input_page.dart';
+import '../../../../features/designs/presentation/pages/ai_body_scan_page.dart';
+import '../../../../features/designs/presentation/pages/design_gallery_page.dart';
 import '../../../../features/apprenticeship/presentation/pages/apprentice_learning_page.dart';
 import '../../../../features/profile/presentation/pages/profile_view_page.dart';
+import '../../../../features/profile/presentation/pages/profile_edit_page.dart';
 import '../../../../features/profile/presentation/pages/settings_page.dart';
 import '../../../../features/profile/presentation/providers/profile_provider.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/profile/domain/entities/user_profile.dart';
 import '../../../../features/notifications/presentation/pages/notification_center_page.dart';
 import '../../../../features/analytics/presentation/pages/insights_dashboard.dart';
+import '../../../../features/analytics/presentation/pages/reports_page.dart';
+import '../../../../features/analytics/presentation/pages/ai_insights_page.dart';
 import '../../../../features/marketplace/presentation/pages/seller_inventory_page.dart';
+import '../../../../features/payments/presentation/pages/checkout_page.dart';
 import 'package:desby_app/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:desby_app/features/chat/presentation/pages/chat_detail_page.dart';
 import 'package:desby_app/core/models/nav_item.dart';
@@ -55,6 +69,7 @@ class _MainPageState extends ConsumerState<MainPage> {
     final navState = ref.watch(navigationProvider);
     final selectedRoute = navState.route;
     final navArguments = navState.arguments;
+    final navStack = ref.read(navigationStackProvider.notifier);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -68,7 +83,7 @@ class _MainPageState extends ConsumerState<MainPage> {
             pageTitle: getPageTitle(selectedRoute),
             selectedIndex: _getSelectedIndexForRoute(userType, selectedRoute),
             onIndexChanged: (index, route) {
-              ref.read(navigationProvider.notifier).state = NavigationState(route);
+              navStack.set(route);
             },
             child: child,
           );
@@ -95,7 +110,7 @@ class _MainPageState extends ConsumerState<MainPage> {
             currentIndex: currentIndex,
             onTap: (index) {
               final route = _getRouteForMobileIndex(userType, index);
-              ref.read(navigationProvider.notifier).state = NavigationState(route);
+              navStack.set(route);
             },
             type: BottomNavigationBarType.fixed,
             selectedItemColor: AppColors.amber,
@@ -213,6 +228,7 @@ class _MainPageState extends ConsumerState<MainPage> {
       case '/insights': return const InsightsDashboard();
       case '/profile/settings': return const SettingsPage();
       case '/profile': return ProfileViewPage(userId: userId);
+      case '/profile/edit': return ProfileEditPage(userId: userId);
       case '/notifications': return const NotificationCenterPage();
       case '/tailor-discovery': return const TailorDiscoveryPage();
       case '/measurements-hub': return const MeasurementHubPage();
@@ -231,6 +247,30 @@ class _MainPageState extends ConsumerState<MainPage> {
           peerId: arguments?['peerId'],
           orderId: arguments?['orderId'],
         );
+      case '/tailor-profile':
+        return TailorProfilePage(tailorId: arguments?['tailorId'] ?? '');
+      case '/tailor-availability':
+        return TailorAvailabilityPage(tailor: arguments ?? {});
+      case '/booking-cart':
+        return BookingCartPage(tailor: arguments ?? {});
+      case '/delivery-setup':
+        return DeliverySetupPage(tailor: arguments ?? {});
+      case '/price-estimation':
+        return PriceEstimationPage(tailor: arguments ?? {});
+      case '/delivery-tracking':
+        return DeliveryTrackingPage(fezOrderNo: arguments?['fezOrderNo'] ?? '');
+      case '/product-details':
+        return ProductDetailsPage(product: arguments?['product']);
+      case '/checkout':
+        return CheckoutPage(
+          amount: arguments?['amount'] ?? 0.0,
+          orderId: arguments?['orderId'] ?? '',
+        );
+      case '/reports': return const ReportsPage();
+      case '/ai-insights': return const AIInsightsPage();
+      case '/merchant-wallet': return const MerchantWalletPage();
+      case '/ai-body-scan': return const AiBodyScanPage();
+      case '/designs': return const DesignGalleryPage();
       default: return const TailorDashboard();
     }
   }
@@ -250,7 +290,7 @@ class _MainPageState extends ConsumerState<MainPage> {
       case 3:
         return FloatingActionButton.extended(
           heroTag: 'enroll_fab',
-          onPressed: () => Navigator.pushNamed(context, '/apprentice-onboarding'),
+          onPressed: () => ref.pushShell('/apprentice-onboarding'),
           label: const Text('Enroll Apprentice', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
           icon: const Icon(Icons.school_rounded, size: 20),
           backgroundColor: AppColors.amber,
@@ -295,9 +335,9 @@ class _MainPageState extends ConsumerState<MainPage> {
             children: [
               const Text('RAPID ACTIONS', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 2)),
               const SizedBox(height: 32),
-              _QuickActionItem(icon: Icons.person_add_rounded, label: 'Add New Client', onTap: () { Navigator.pop(context); Navigator.pushNamed(context, '/unified-add-client'); }),
-              _QuickActionItem(icon: Icons.add_shopping_cart_rounded, label: 'Quick Order (Existing)', onTap: () { Navigator.pop(context); Navigator.pushNamed(context, '/order-create'); }),
-              _QuickActionItem(icon: Icons.school_rounded, label: 'Invite Apprentice', onTap: () { Navigator.pop(context); Navigator.pushNamed(context, '/apprentice-onboarding'); }),
+              _QuickActionItem(icon: Icons.person_add_rounded, label: 'Add New Client', onTap: () { Navigator.pop(context); ref.pushShell('/unified-add-client'); }),
+              _QuickActionItem(icon: Icons.add_shopping_cart_rounded, label: 'Quick Order (Existing)', onTap: () { Navigator.pop(context); ref.pushShell('/order-create'); }),
+              _QuickActionItem(icon: Icons.school_rounded, label: 'Invite Apprentice', onTap: () { Navigator.pop(context); ref.pushShell('/apprentice-onboarding'); }),
               const SizedBox(height: 16),
             ],
           ),
@@ -317,15 +357,15 @@ class _MainPageState extends ConsumerState<MainPage> {
       onboardingWidget = profileAsync.when(
         data: (profile) {
           if (profile == null) {
-            return _buildOnboardingAlert(context, userType);
+            return _buildOnboardingAlert(context, ref, userType);
           }
-          return _checkProfileCompleteness(context, profile, userType);
+          return _checkProfileCompleteness(context, ref, profile, userType);
         },
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-        error: (e, st) => _buildOnboardingAlert(context, userType),
+        error: (e, st) => _buildOnboardingAlert(context, ref, userType),
       );
     } else {
-      onboardingWidget = _buildOnboardingAlert(context, userType);
+      onboardingWidget = _buildOnboardingAlert(context, ref, userType);
     }
 
     return Drawer(
@@ -341,12 +381,12 @@ class _MainPageState extends ConsumerState<MainPage> {
                     padding: const EdgeInsets.all(16),
                     child: onboardingWidget,
                   ),
-                  _buildDrawerItem(Icons.grid_view_rounded, 'Dashboard Home', '/main'),
-                  _buildDrawerItem(Icons.person_outline_rounded, 'My Profile', '/profile', arguments: user?.id),
+                  _buildDrawerItem(ref, Icons.grid_view_rounded, 'Dashboard Home', '/main'),
+                  _buildDrawerItem(ref, Icons.person_outline_rounded, 'My Profile', '/profile', arguments: {'userId': user?.id}),
                   if (userType == 'tailor')
-                    _buildDrawerItem(Icons.bar_chart_rounded, 'Business Insights', '/insights'),
-                  _buildDrawerItem(Icons.settings_suggest_rounded, 'System Settings', '/profile/settings'),
-                  _buildDrawerItem(Icons.notifications_none_rounded, 'Notification Center', '/notifications'),
+                    _buildDrawerItem(ref, Icons.bar_chart_rounded, 'Business Insights', '/insights'),
+                  _buildDrawerItem(ref, Icons.settings_suggest_rounded, 'System Settings', '/profile/settings'),
+                  _buildDrawerItem(ref, Icons.notifications_none_rounded, 'Notification Center', '/notifications'),
                 ],
               ),
             ),
@@ -409,11 +449,11 @@ class _MainPageState extends ConsumerState<MainPage> {
     );
   }
 
-  Widget _buildOnboardingAlert(BuildContext context, String type) {
+  Widget _buildOnboardingAlert(BuildContext context, WidgetRef ref, String type) {
     return InkWell(
       onTap: () {
         Navigator.pop(context);
-        Navigator.pushNamed(context, '/$type-onboarding');
+        ref.pushShell('/$type-onboarding');
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -441,24 +481,24 @@ class _MainPageState extends ConsumerState<MainPage> {
     );
   }
 
-  Widget _checkProfileCompleteness(BuildContext context, UserProfile profile, String userType) {
+  Widget _checkProfileCompleteness(BuildContext context, WidgetRef ref, UserProfile profile, String userType) {
     final bool isComplete = (userType == 'tailor') 
         ? (profile.services != null && profile.services!.isNotEmpty) ||
           (profile.availableFabrics != null && profile.availableFabrics!.isNotEmpty)
         : profile.name.isNotEmpty && profile.name != 'New User';
 
     if (isComplete) {
-      return _buildUpgradeCard(context);
+      return _buildUpgradeCard(context, ref);
     } else {
-      return _buildOnboardingAlert(context, userType);
+      return _buildOnboardingAlert(context, ref, userType);
     }
   }
 
-  Widget _buildUpgradeCard(BuildContext context) {
+  Widget _buildUpgradeCard(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: () {
         Navigator.pop(context);
-        Navigator.pushNamed(context, '/subscription-plans');
+        ref.pushShell('/subscription-plans');
       },
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -498,7 +538,7 @@ class _MainPageState extends ConsumerState<MainPage> {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, String route, {Object? arguments, Color? color}) {
+  Widget _buildDrawerItem(WidgetRef ref, IconData icon, String title, String route, {Object? arguments, Color? color}) {
     final itemColor = color ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -506,10 +546,7 @@ class _MainPageState extends ConsumerState<MainPage> {
       title: Text(title, style: TextStyle(color: itemColor, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.2)),
       onTap: () {
         Navigator.pop(context);
-        final currentRoute = ModalRoute.of(context)?.settings.name;
-        if (currentRoute != route) {
-          Navigator.pushNamed(context, route, arguments: arguments);
-        }
+        ref.pushShell(route, arguments as Map<String, dynamic>?);
       },
     );
   }

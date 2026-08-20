@@ -6,7 +6,6 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../profile/domain/entities/user_profile.dart';
-import '../../../../core/providers/navigation_provider.dart';
 
 class ShopSetupPage extends ConsumerStatefulWidget {
   const ShopSetupPage({super.key});
@@ -118,10 +117,10 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
             const SnackBar(content: Text('Atelier configuration updated successfully!'), backgroundColor: Colors.green),
           );
           
-          if (ref.read(navigationProvider).route != '/main') {
-            ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+          if (ref.canPopShell) {
+            ref.popShell();
           } else {
-            Navigator.maybePop(context);
+            ref.setShell('/main');
           }
         }
       }
@@ -149,10 +148,10 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
           onPressed: () {
-            if (ref.read(navigationProvider).route != '/main') {
-              ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+            if (ref.canPopShell) {
+              ref.popShell();
             } else {
-              Navigator.maybePop(context);
+              ref.setShell('/main');
             }
           },
         ),

@@ -106,7 +106,7 @@ class _ClientLuxuryCard extends StatelessWidget {
       child: Consumer(
         builder: (context, ref, child) => InkWell(
           onTap: () {
-            ref.read(navigationProvider.notifier).state = NavigationState(
+            ref.pushShell(
               '/client-detail',
               {'clientId': client.id},
             );

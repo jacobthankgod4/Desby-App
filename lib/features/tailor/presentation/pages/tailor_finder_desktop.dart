@@ -10,7 +10,6 @@ import '../../../../core/widgets/tailor_finder_responsive.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import 'package:desby_app/features/profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 
 /// TailorFinderDesktop - Uber-style Tailor Discovery Page
 /// Responsive: adapts to 600px+ screens (mobile, tablet, desktop)
@@ -176,7 +175,7 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
         },
         onBack: () {
           if (ref.read(navigationProvider).route != '/main') {
-            ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+            ref.setShell('/main');
           } else {
             Navigator.of(context).maybePop();
           }

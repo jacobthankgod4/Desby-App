@@ -58,11 +58,10 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
           onPressed: () {
-            final navState = ref.read(navigationProvider);
-            if (navState.route == '/chat-detail') {
-              ref.read(navigationProvider.notifier).state = const NavigationState('/chats');
+            if (ref.canPopShell) {
+              ref.popShell();
             } else {
-              Navigator.pop(context);
+              ref.setShell('/chats');
             }
           },
         ),

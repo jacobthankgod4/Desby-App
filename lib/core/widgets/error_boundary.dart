@@ -93,15 +93,10 @@ class ErrorWidgetBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final oldBuilder = ErrorWidget.builder;
     ErrorWidget.builder = (details) {
       onError(details);
       return const SizedBox.shrink();
     };
-    
-    // We must restore the builder after build
-    // But since this is a widget, it's tricky.
-    // Better to use a more local approach.
 
     return child;
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/navigation_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/utils/async_handler.dart';
 import '../../../../core/utils/measurement_mapper.dart';
@@ -277,7 +276,7 @@ class _MeasurementInputPageState extends ConsumerState<MeasurementInputPage> wit
     );
     
     if (ref.read(navigationProvider).route != '/main') {
-      ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+      ref.setShell('/main');
     } else {
       Navigator.maybePop(context);
     }
@@ -794,6 +793,5 @@ Widget _buildStylePreferencesStep() {
   }
 
   static const List<String> _occasions = ['Casual', 'Corporate', 'Wedding', 'Cultural Event', 'Party', 'Resort', 'Funeral', 'Business Meeting'];
-  static const List<String> _colors = ['Black', 'White', 'Navy', 'Brown', 'Green', 'Red', 'Blue', 'Beige', 'Grey', 'Gold', 'Silver', 'Multi'];
   static const List<String> _fabrics = ['Cotton', 'Linen', 'Silk', 'Wool', 'Chiffon', 'Lace', 'Ankara', 'Aso Oke', 'George', 'Denim', 'Velvet'];
 }

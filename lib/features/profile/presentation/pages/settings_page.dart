@@ -25,7 +25,7 @@ class SettingsPage extends ConsumerWidget {
                 icon: Icons.person_outline_rounded,
                 title: 'Profile Details',
                 subtitle: 'Manage your professional identity',
-                onTap: () => Navigator.pushNamed(context, '/profile/edit', arguments: user?.id),
+                onTap: () => ref.pushShell('/profile/edit', {'userId': user?.id}),
               ),
               _buildSettingsTile(
                 icon: Icons.security_rounded,
@@ -66,7 +66,7 @@ class SettingsPage extends ConsumerWidget {
                   icon: Icons.storefront_rounded,
                   title: 'Designer Shop Setup',
                   subtitle: 'Manage your digital storefront',
-                  onTap: () => Navigator.pushNamed(context, '/shop-setup'),
+                  onTap: () => ref.pushShell('/shop-setup'),
                 ),
                 _buildSettingsTile(
                   icon: Icons.school_rounded,
@@ -124,12 +124,12 @@ class SettingsPage extends ConsumerWidget {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
               onPressed: () {
-                if (ref.read(navigationProvider).route != '/main') {
-                  ref.read(navigationProvider.notifier).state = const NavigationState('/main');
-                } else {
-                  Navigator.maybePop(context);
-                }
-              },
+            if (ref.canPopShell) {
+              ref.popShell();
+            } else {
+              ref.setShell('/main');
+            }
+          },
             ),
           ),
           body: content,

@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../features/notifications/domain/entities/notification.dart';
+import '../logging/logger.dart';
 
 enum RealtimeEventType {
   newMessage,
@@ -28,9 +31,10 @@ abstract class RealtimeService {
 }
 
 class RealtimeServiceImpl implements RealtimeService {
-  final StreamController<RealtimeEvent> _eventController = StreamController<RealtimeEvent>.broadcast();
+  final StreamController<RealtimeEvent> _eventController =
+      StreamController<RealtimeEvent>.broadcast();
   bool _isConnected = false;
-  Timer? _realtimeTimer;
+  RealtimeChannel? _channel;
 
   @override
   Stream<RealtimeEvent> get eventStream => _eventController.stream;
@@ -41,39 +45,76 @@ class RealtimeServiceImpl implements RealtimeService {
   @override
   Future<void> connect(String userId) async {
     if (_isConnected) return;
-    
-    // Simulate connection delay
-    await Future.delayed(const Duration(seconds: 1));
-    _isConnected = true;
-    
-    // Start realtime event generation for demonstration
-    _startRealtimeEvents();
+
+    try {
+      final supabase = Supabase.instance.client;
+
+      _channel = supabase.channel('user_$userId');
+
+      _channel!
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
+            callback: (payload) {
+              logger.debug('Realtime notification received');
+              final data = payload.newRecord;
+              _eventController.add(RealtimeEvent(
+                type: RealtimeEventType.newNotification,
+                data: AppNotification(
+                  id: data['id'] as String? ?? '',
+                  title: data['title'] as String? ?? '',
+                  body: data['body'] as String? ?? '',
+                  type: NotificationType.values.firstWhere(
+                    (e) => e.name == data['type'],
+                    orElse: () => NotificationType.system,
+                  ),
+                  timestamp: DateTime.now(),
+                ),
+                timestamp: DateTime.now(),
+              ));
+            },
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'orders',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
+            callback: (payload) {
+              logger.debug('Realtime order update received');
+              _eventController.add(RealtimeEvent(
+                type: RealtimeEventType.orderStatusChanged,
+                data: payload.newRecord,
+                timestamp: DateTime.now(),
+              ));
+            },
+          )
+          .subscribe();
+
+      _isConnected = true;
+      logger.info('Realtime connected for user: $userId');
+    } catch (e) {
+      logger.error('Realtime connection failed', error: e);
+      _isConnected = false;
+    }
   }
 
   @override
   Future<void> disconnect() async {
-    _realtimeTimer?.cancel();
+    if (_channel != null) {
+      await Supabase.instance.client.removeChannel(_channel!);
+      _channel = null;
+    }
     _isConnected = false;
-  }
-
-  void _startRealtimeEvents() {
-    _realtimeTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (!_isConnected) return;
-
-      // Randomly emit a firebase event
-      final event = RealtimeEvent(
-        type: RealtimeEventType.newNotification,
-        data: AppNotification(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          title: 'Real-time Update',
-          body: 'This is a live notification from the system.',
-          type: NotificationType.system,
-          timestamp: DateTime.now(),
-        ),
-        timestamp: DateTime.now(),
-      );
-      
-      _eventController.add(event);
-    });
+    logger.info('Realtime disconnected');
   }
 }

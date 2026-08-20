@@ -8,7 +8,7 @@
 
   <!-- Performance: Preload critical resources -->
   <link rel="preload" href="main.dart.js" as="script">
-  <link rel="preload" href="logo.webp" as="image">
+  <link rel="preload" href="logo.png" as="image">
 
   <!-- iOS meta tags & icons -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
@@ -18,7 +18,7 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/webp" href="logo.webp"/>
+  <link rel="icon" type="image/png" href="logo.png"/>
 
   <title>Desby OS</title>
   <link rel="manifest" href="manifest.json">
@@ -38,15 +38,19 @@
     let _poseLandmarker = null;
 
     window.__mpReady = false;
+    window.__mpInitPromise = null;
 
-    window.initPoseDetection = async function() {
+    // Start init immediately when module loads
+    (async function() {
+      console.log("[MEDIAPIPE] Module loaded, starting init...");
       try {
         const vision = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
         );
+        console.log("[MEDIAPIPE] WASM resolved, loading model...");
         _poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
           baseOptions: {
-            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task",
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task",
             delegate: "GPU"
           },
           runningMode: "VIDEO",
@@ -56,17 +60,18 @@
           minTrackingConfidence: 0.5
         });
         window.__mpReady = true;
-        return true;
+        console.log("[MEDIAPIPE] Pose detection ready!");
       } catch (e) {
         console.error("[MEDIAPIPE] Init failed:", e);
-        return false;
       }
-    };
+    })();
 
     window.detectPose = function(timestamp) {
       if (!_poseLandmarker || !window.__cameraVideo) return null;
+      if (window.__cameraVideo.readyState < 2) return null;
       try {
-        const r = _poseLandmarker.detectForVideo(window.__cameraVideo, timestamp);
+        const ts = performance.now();
+        const r = _poseLandmarker.detectForVideo(window.__cameraVideo, ts);
         if (r && r.landmarks && r.landmarks.length > 0) {
           return r.landmarks[0].map(function(lm) {
             return { x: lm.x, y: lm.y, z: lm.z, visibility: lm.visibility || 0 };
@@ -143,7 +148,7 @@
 <body>
   <div id="app-shell" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
     <div class="logo-container">
-      <img src="logo.webp" alt="Desby OS" class="logo" width="120" height="120">
+      <img src="logo.png" alt="Desby OS" class="logo" width="120" height="120">
     </div>
     <div id="status">Initializing Engine</div>
   </div>

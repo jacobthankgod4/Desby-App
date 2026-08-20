@@ -63,7 +63,7 @@ class _ConversationTile extends ConsumerWidget {
     return peerProfile.when(
       data: (profile) => ListTile(
         onTap: () {
-          ref.read(navigationProvider.notifier).state = NavigationState(
+          ref.pushShell(
             '/chat-detail',
             {
               'conversationId': conversation.id,

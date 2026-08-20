@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/order_provider.dart';
 import '../../domain/entities/order.dart';
 import '../../../chat/presentation/pages/chat_detail_page.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/luxury_glass_card.dart';
 
@@ -52,7 +53,7 @@ class OrderDetailPage extends ConsumerWidget {
               const SizedBox(height: 20),
               _buildStatusHUD(context, order, ref),
               const SizedBox(height: 32),
-              _buildClientDossier(context, order),
+              _buildClientDossier(context, order, ref),
               const SizedBox(height: 32),
               _buildGarmentList(context, order),
               const SizedBox(height: 32),
@@ -108,7 +109,7 @@ class OrderDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildClientDossier(BuildContext context, OrderEntity order) {
+  Widget _buildClientDossier(BuildContext context, OrderEntity order, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -117,7 +118,7 @@ class OrderDetailPage extends ConsumerWidget {
         LuxuryGlassCard(
           padding: const EdgeInsets.all(16),
           child: InkWell(
-            onTap: () => Navigator.pushNamed(context, '/client-detail', arguments: order.clientId),
+            onTap: () => ref.pushShell('/client-detail', {'clientId': order.clientId}),
             child: Row(
               children: [
                 Container(

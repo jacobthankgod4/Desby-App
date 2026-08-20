@@ -28,12 +28,58 @@ class AnalyticsServiceImpl implements AnalyticsService {
 
   @override
   Future<List<BusinessMetric>> getDashboardMetrics(String userId) async {
-    return []; // Implementation simplified
+    try {
+      final ordersResponse = await _supabase.from('orders').select('total_amount, status, created_at').eq('tailor_id', userId);
+      final clientsResponse = await _supabase.from('clients').select('id, created_at').eq('tailor_id', userId);
+
+      final List<dynamic> orders = ordersResponse;
+      final List<dynamic> clients = clientsResponse;
+
+      final totalRevenue = orders.fold(0.0, (sum, o) => sum + (o['total_amount'] as num).toDouble());
+      final completedOrders = orders.where((o) => o['status'] == 'completed' || o['status'] == 'delivered').length;
+      final now = DateTime.now();
+      final thisMonthOrders = orders.where((o) {
+        final date = DateTime.parse(o['created_at'] as String);
+        return date.year == now.year && date.month == now.month;
+      }).length;
+
+      return [
+        BusinessMetric(name: 'Total Revenue', value: totalRevenue, unit: 'NGN'),
+        BusinessMetric(name: 'Total Orders', value: orders.length.toDouble()),
+        BusinessMetric(name: 'Completed Orders', value: completedOrders.toDouble()),
+        BusinessMetric(name: 'Total Clients', value: clients.length.toDouble()),
+        BusinessMetric(name: 'Orders This Month', value: thisMonthOrders.toDouble()),
+      ];
+    } catch (e) {
+      debugPrint('Error getting dashboard metrics: $e');
+      return [];
+    }
   }
 
   @override
   Future<Map<String, dynamic>> getRevenueReport(String userId, DateTime start, DateTime end) async {
-    return {}; // Implementation simplified
+    try {
+      final response = await _supabase
+          .from('orders')
+          .select('total_amount, status, created_at')
+          .eq('tailor_id', userId)
+          .gte('created_at', start.toIso8601String())
+          .lte('created_at', end.toIso8601String());
+
+      final List<dynamic> orders = response;
+      final totalRevenue = orders.fold(0.0, (sum, o) => sum + (o['total_amount'] as num).toDouble());
+      final completedOrders = orders.where((o) => o['status'] == 'completed' || o['status'] == 'delivered').length;
+
+      return {
+        'totalRevenue': totalRevenue,
+        'totalOrders': orders.length,
+        'completedOrders': completedOrders,
+        'period': {'start': start.toIso8601String(), 'end': end.toIso8601String()},
+      };
+    } catch (e) {
+      debugPrint('Error getting revenue report: $e');
+      return {};
+    }
   }
 
   @override

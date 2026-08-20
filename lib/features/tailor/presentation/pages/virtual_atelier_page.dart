@@ -5,7 +5,6 @@ import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shop_provider.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../domain/entities/shop_product.dart';
 
 class VirtualAtelierPage extends ConsumerStatefulWidget {
@@ -36,7 +35,7 @@ class _VirtualAtelierPageState extends ConsumerState<VirtualAtelierPage> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
           onPressed: () {
             if (ref.read(navigationProvider).route != '/main') {
-              ref.read(navigationProvider.notifier).state = const NavigationState('/main');
+              ref.setShell('/main');
             } else {
               Navigator.of(context).maybePop();
             }
@@ -110,7 +109,7 @@ class _VirtualAtelierPageState extends ConsumerState<VirtualAtelierPage> {
               Text(name.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
               IconButton(
                 icon: const Icon(Icons.edit_note_rounded, color: AppColors.amber, size: 20),
-                onPressed: () => Navigator.pushNamed(context, '/shop-setup'),
+                onPressed: () => ref.pushShell('/shop-setup'),
               ),
             ],
           ),

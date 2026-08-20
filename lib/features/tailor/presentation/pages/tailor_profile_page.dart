@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shop_provider.dart';
-import 'product_details_page.dart';
 
 class TailorProfilePage extends ConsumerWidget {
   final String tailorId;
@@ -102,7 +102,7 @@ class TailorProfilePage extends ConsumerWidget {
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           itemCount: products.length,
-                          itemBuilder: (context, index) => _buildShopProductCard(context, products[index]),
+                          itemBuilder: (context, index) => _buildShopProductCard(context, products[index], ref),
                         ),
                       ),
                   loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
@@ -143,7 +143,7 @@ class TailorProfilePage extends ConsumerWidget {
                       children: [
                         _buildGlassLink('AVAILABLE FABRICS', () {}),
                         const SizedBox(height: 12),
-                        _buildGlassLink('MEASUREMENT STATION', () => Navigator.pushNamed(context, '/measurements-input')),
+                        _buildGlassLink('MEASUREMENT STATION', () => ref.pushShell('/measurements-input')),
                       ],
                     ),
                   ),
@@ -157,7 +157,7 @@ class TailorProfilePage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
         error: (err, _) => Center(child: Text('Fatal Sync Error: $err', style: const TextStyle(color: Colors.redAccent))),
       ),
-      bottomSheet: _buildBottomAction(context),
+      bottomSheet: _buildBottomAction(context, ref),
     );
   }
 
@@ -233,13 +233,13 @@ class TailorProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildShopProductCard(BuildContext context, dynamic product) {
+  Widget _buildShopProductCard(BuildContext context, dynamic product, WidgetRef ref) {
     final String name = product.name;
     final String price = '₦${product.price.toInt()}';
     final String? image = product.imageUrls.isNotEmpty ? product.imageUrls.first : null;
 
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/product-details', arguments: product),
+      onTap: () => ref.pushShell('/product-details', {'product': product}),
       child: Container(
         width: 160,
         margin: const EdgeInsets.only(right: 16),
@@ -331,7 +331,7 @@ class TailorProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildBottomAction(BuildContext context) {
+  Widget _buildBottomAction(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(24),
       color: AppColors.darkNavy,
@@ -340,7 +340,7 @@ class TailorProfilePage extends ConsumerWidget {
           width: double.infinity,
           height: 60,
           child: ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/booking-cart', arguments: tailorId),
+            onPressed: () => ref.pushShell('/booking-cart', {'tailorId': tailorId}),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.amber,
               foregroundColor: AppColors.darkNavy,

@@ -223,12 +223,19 @@ class KorraClient {
   }
 
   /// Poll task status until completed/failed (max 5 minutes)
+  ///
+  /// Uses exponential backoff: 2s → 4s → 8s → 16s → 30s (capped)
+  /// to avoid hammering the server during slow processing.
   Future<KorraMeasurementResult> _pollTaskResult(String taskId) async {
-    const maxAttempts = 60; // 60 * 5s = 5 minutes
-    const pollInterval = Duration(seconds: 5);
+    const maxAttempts = 30;
+    const initialInterval = Duration(seconds: 2);
+    const maxInterval = Duration(seconds: 30);
+    const backoffMultiplier = 2;
+
+    var interval = initialInterval;
 
     for (int i = 0; i < maxAttempts; i++) {
-      await Future.delayed(pollInterval);
+      await Future.delayed(interval);
 
       try {
         final response = await _dio.get(
@@ -244,10 +251,24 @@ class KorraClient {
             response.data['error'] ?? 'Extraction failed',
           );
         }
-        // Still processing — continue polling
+        // Still processing — increase interval
+        interval = Duration(
+          seconds: (interval.inSeconds * backoffMultiplier).clamp(
+            initialInterval.inSeconds,
+            maxInterval.inSeconds,
+          ),
+        );
+      } on DioException catch (e) {
+        debugPrint('[KORRA] Poll error (attempt ${i + 1}): ${_dioError(e)}');
+        // On network error, back off more aggressively
+        interval = Duration(
+          seconds: (interval.inSeconds * backoffMultiplier * 2).clamp(
+            initialInterval.inSeconds,
+            maxInterval.inSeconds,
+          ),
+        );
       } catch (e) {
-        debugPrint('[KORRA] Poll error: $e');
-        // Continue polling on transient errors
+        debugPrint('[KORRA] Poll error (attempt ${i + 1}): $e');
       }
     }
 

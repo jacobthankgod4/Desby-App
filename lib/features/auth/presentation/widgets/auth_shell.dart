@@ -29,22 +29,22 @@ class _AuthShellState extends State<AuthShell> {
 
   static const _slides = [
     _CarouselSlide(
-      image: 'assets/images/remote-capturing.png',
+      image: 'assets/images/remote-capturing.jpg',
       headline: 'Your tailoring\nbusiness, powered\nby AI.',
       accent: 'Manage orders, clients, and designs — all in one place.',
     ),
     _CarouselSlide(
-      image: 'assets/images/tailor-full.png',
+      image: 'assets/images/tailor-full.jpg',
       headline: 'Where craftsmanship\nmeets innovation.',
       accent: 'Precision tools for the modern artisan.',
     ),
     _CarouselSlide(
-      image: 'assets/images/lady-elegant-dress.png',
+      image: 'assets/images/lady-elegant-dress.jpg',
       headline: 'Effortless elegance,\nperfectly fitted.',
       accent: 'From concept to couture, every stitch tells a story.',
     ),
     _CarouselSlide(
-      image: 'assets/images/man-elegant-dress.png',
+      image: 'assets/images/man-elegant-dress.jpg',
       headline: 'Royal style,\nprecision tailored.',
       accent: 'Command attention with garments made to measure.',
     ),

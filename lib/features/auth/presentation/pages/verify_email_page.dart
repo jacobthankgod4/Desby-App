@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../theme/colors.dart';
 
-class VerifyEmailPage extends ConsumerWidget {
+class VerifyEmailPage extends ConsumerStatefulWidget {
   final String email;
 
   const VerifyEmailPage({
@@ -11,7 +12,64 @@ class VerifyEmailPage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VerifyEmailPage> createState() => _VerifyEmailPageState();
+}
+
+class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
+  bool _isResending = false;
+  int _resendCooldown = 0;
+
+  Future<void> _resendEmail() async {
+    if (_resendCooldown > 0 || _isResending) return;
+
+    setState(() => _isResending = true);
+
+    try {
+      await Supabase.instance.client.auth.resend(
+        type: OtpType.signup,
+        email: widget.email,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification email resent! Check your inbox.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {
+          _isResending = false;
+          _resendCooldown = 60;
+        });
+        _startCooldown();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to resend: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() => _isResending = false);
+      }
+    }
+  }
+
+  void _startCooldown() {
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+      if (_resendCooldown > 0) {
+        setState(() => _resendCooldown--);
+        return true;
+      }
+      return false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.darkNavy,
       appBar: AppBar(
@@ -59,7 +117,7 @@ class VerifyEmailPage extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                email,
+                widget.email,
                 style: const TextStyle(
                   color: AppColors.amber,
                   fontSize: 16,
@@ -100,16 +158,15 @@ class VerifyEmailPage extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
               TextButton(
-                onPressed: () {
-                  // In a real app, you might trigger a resend email call here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Resend feature coming soon')),
-                  );
-                },
-                child: const Text(
-                  'RESEND EMAIL',
+                onPressed: _isResending || _resendCooldown > 0 ? null : _resendEmail,
+                child: Text(
+                  _resendCooldown > 0
+                      ? 'RESEND IN ${_resendCooldown}s'
+                      : _isResending
+                          ? 'SENDING...'
+                          : 'RESEND EMAIL',
                   style: TextStyle(
-                    color: Colors.white54,
+                    color: _resendCooldown > 0 || _isResending ? Colors.white24 : Colors.white54,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     letterSpacing: 1,

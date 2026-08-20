@@ -177,11 +177,20 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         return;
       }
 
-      // EXPERT FIX: Get userType from correct source
+      // Get actual user ID from Supabase session instead of using token
+      final auth = sb.Supabase.instance.client.auth;
+      final sbUser = auth.currentUser;
+      final userId = sbUser?.id ?? '';
+
+      // Get userType from correct source
       final currentUserData = localStorage.get(StorageKeys.currentUser, defaultValue: null);
       String userType = 'tailor';
+      String? email;
+      String? name;
       if (currentUserData != null && currentUserData is Map) {
          userType = (currentUserData['user_type'] ?? currentUserData['userType']) as String? ?? 'tailor';
+         email = currentUserData['email'] as String?;
+         name = currentUserData['name'] as String?;
       } else {
          userType = localStorage.get(StorageKeys.userType, defaultValue: 'tailor');
       }
@@ -189,9 +198,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       state = AuthState.authenticated(
         AuthResponse(
           user: UserModel(
-            id: accessToken,
-            email: '',
-            name: '',
+            id: userId,
+            email: email ?? sbUser?.email ?? '',
+            name: name ?? sbUser?.userMetadata?['name'] ?? '',
             userType: userType,
             createdAt: DateTime.now(),
           ).toEntity(),

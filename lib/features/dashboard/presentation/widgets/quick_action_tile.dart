@@ -183,7 +183,7 @@ class _QuickActionTileState extends State<QuickActionTile>
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 6),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -255,17 +255,27 @@ class _QuickActionTileState extends State<QuickActionTile>
     final dark = Theme.of(context).brightness == Brightness.dark;
 
     if (widget.asset != null && !_imageFailed) {
-      return Image.asset(
-        widget.asset!,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.medium,
-        errorBuilder: (context, error, stack) {
-          // Flip state after the frame so it is not a setState during build.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_imageFailed) setState(() => _imageFailed = true);
-          });
-          return const SizedBox.shrink();
-        },
+      return Transform.scale(
+        // The processed artwork is a square whose subject already fills most of
+        // the frame, so laying it out at full bleed leaves the illustration
+        // touching the tile edges and the grid reads as one sheet of images.
+        // Padding alone does not fix that, because `contain` fits a square to
+        // the tile's narrower dimension — which on a portrait tile is the width.
+        // The explicit inset is what actually guarantees air on all four sides
+        // regardless of the source art's proportions.
+        scale: 0.82,
+        child: Image.asset(
+          widget.asset!,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (context, error, stack) {
+            // Flip state after the frame so it is not a setState during build.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_imageFailed) setState(() => _imageFailed = true);
+            });
+            return const SizedBox.shrink();
+          },
+        ),
       );
     }
 
@@ -273,8 +283,8 @@ class _QuickActionTileState extends State<QuickActionTile>
     // the well is cut by an inverted shadow pair so it reads as pressed INTO
     // the surface, which is the counter-relief to the raised tile around it.
     return Container(
-      constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
-      padding: const EdgeInsets.all(13),
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: colors.scaffoldBg,
         shape: BoxShape.circle,

@@ -98,46 +98,51 @@ class _QuickActionTileState extends State<QuickActionTile>
   List<BoxShadow> _shadows(BuildContext context, {required bool inset}) {
     final dark = Theme.of(context).brightness == Brightness.dark;
 
-    // Neumorphism needs one shadow darker than the fill and one lighter. In
-    // dark mode "lighter than the fill" is a white glow, not a white shadow.
+    // Neumorphism is defined by two shadows and nothing else: one darker than
+    // the fill, one lighter, cast from opposite corners. In dark mode the
+    // "lighter" half cannot be white — the fill is already near-black, so it
+    // becomes a low-alpha white glow.
     final depth = _hovered && !inset ? 1.0 : 0.0;
 
-    final light = dark
-        ? Colors.white.withValues(alpha: inset ? 0.0 : 0.045)
-        : Colors.white.withValues(alpha: inset ? 0.0 : 0.95);
+    final light = Colors.white.withValues(alpha: dark ? 0.055 : 0.95);
     final shade = dark
-        ? Colors.black.withValues(alpha: inset ? 0.45 : 0.55)
-        : const Color(0xFF94A3B8).withValues(alpha: inset ? 0.28 : 0.22 + 0.10 * depth);
+        ? Colors.black.withValues(alpha: inset ? 0.62 : 0.72)
+        : const Color(0xFF94A3B8).withValues(alpha: inset ? 0.30 : 0.24 + 0.10 * depth);
 
     if (inset) {
       return <BoxShadow>[
         BoxShadow(
           color: shade,
           offset: const Offset(3, 3),
-          blurRadius: 8,
+          blurRadius: 9,
           spreadRadius: -2,
         ),
         BoxShadow(
           color: light,
           offset: const Offset(-3, -3),
-          blurRadius: 8,
+          blurRadius: 9,
           spreadRadius: -2,
         ),
       ];
     }
 
+    // Without a border the shadow has to carry the whole silhouette, so the
+    // dark-mode spread is wider than the light-mode one — a tight shadow on a
+    // near-black fill reads as noise rather than relief.
+    final spread = dark ? -2.0 : -4.0;
+
     return <BoxShadow>[
       BoxShadow(
         color: shade,
-        offset: Offset(5 + 3 * depth, 5 + 3 * depth),
-        blurRadius: 14 + 8 * depth,
-        spreadRadius: -4,
+        offset: Offset(6 + 4 * depth, 6 + 4 * depth),
+        blurRadius: 16 + 10 * depth,
+        spreadRadius: spread,
       ),
       BoxShadow(
         color: light,
-        offset: Offset(-5 - 2 * depth, -5 - 2 * depth),
-        blurRadius: 14 + 6 * depth,
-        spreadRadius: -4,
+        offset: Offset(-6 - 3 * depth, -6 - 3 * depth),
+        blurRadius: 16 + 8 * depth,
+        spreadRadius: spread,
       ),
     ];
   }
@@ -145,7 +150,6 @@ class _QuickActionTileState extends State<QuickActionTile>
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final radius = BorderRadius.circular(18);
 
     // Pressed inverts the shadow direction: light appears to come from below,
@@ -158,16 +162,25 @@ class _QuickActionTileState extends State<QuickActionTile>
           : const Duration(milliseconds: 220),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
-        // Same colour as the page: relief comes from the shadows alone.
-        color: dark ? colors.surfaceElevated : colors.scaffoldBg,
+        // Identical to the page background. This is the whole trick: if the fill
+        // differs from the page at all, the tile reads as a bordered card rather
+        // than as material pressed out of the same surface. Relief comes only
+        // from the shadow pair below.
+        color: colors.scaffoldBg,
         borderRadius: radius,
-        boxShadow: _shadows(context, inset: inset),
-        border: Border.all(
-          color: _hovered
-              ? AppColors.amber.withValues(alpha: dark ? 0.34 : 0.42)
-              : colors.borderSubtle.withValues(alpha: dark ? 0.6 : 0.9),
-          width: _hovered ? 1.2 : 1,
-        ),
+        boxShadow: <BoxShadow>[
+          ..._shadows(context, inset: inset),
+          // With no border to colour, hover is signalled by a warm bloom under
+          // the tile. Same amber as the rest of the app so it reads as the
+          // accent rather than a new colour.
+          if (_hovered && !inset)
+            BoxShadow(
+              color: AppColors.amber.withValues(alpha: 0.22),
+              offset: const Offset(0, 6),
+              blurRadius: 20,
+              spreadRadius: -6,
+            ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
@@ -238,6 +251,7 @@ class _QuickActionTileState extends State<QuickActionTile>
   /// error the image widget reports asynchronously, so the icon is chosen from
   /// local state instead and the tile degrades to an icon without flashing.
   Widget _artwork(BuildContext context) {
+    final colors = context.colors;
     final dark = Theme.of(context).brightness == Brightness.dark;
 
     if (widget.asset != null && !_imageFailed) {
@@ -255,35 +269,31 @@ class _QuickActionTileState extends State<QuickActionTile>
       );
     }
 
-    // Icon fallback: a recessed well, mirroring the tile's own relief.
+    // Icon fallback: a recess, not a badge. Same no-border rule as the tile —
+    // the well is cut by an inverted shadow pair so it reads as pressed INTO
+    // the surface, which is the counter-relief to the raised tile around it.
     return Container(
       constraints: const BoxConstraints(minWidth: 54, minHeight: 54),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: dark
-            ? Colors.black.withValues(alpha: 0.22)
-            : AppColors.amber.withValues(alpha: 0.10),
+        color: colors.scaffoldBg,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.amber.withValues(alpha: dark ? 0.30 : 0.38),
-          width: 1.2,
-        ),
         boxShadow: [
           BoxShadow(
             color: dark
-                ? Colors.black.withValues(alpha: 0.45)
-                : const Color(0xFF94A3B8).withValues(alpha: 0.22),
-            offset: const Offset(2, 2),
-            blurRadius: 6,
-            spreadRadius: -1,
+                ? Colors.black.withValues(alpha: 0.60)
+                : const Color(0xFF94A3B8).withValues(alpha: 0.28),
+            offset: const Offset(3, 3),
+            blurRadius: 7,
+            spreadRadius: -2,
           ),
           BoxShadow(
             color: dark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.white.withValues(alpha: 0.9),
-            offset: const Offset(-2, -2),
-            blurRadius: 6,
-            spreadRadius: -1,
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white.withValues(alpha: 0.92),
+            offset: const Offset(-3, -3),
+            blurRadius: 7,
+            spreadRadius: -2,
           ),
         ],
       ),

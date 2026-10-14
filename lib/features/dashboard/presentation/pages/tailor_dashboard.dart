@@ -811,24 +811,28 @@ class _OpTileState extends State<_OpTile> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Fill the tile rather than sitting a fixed-size glyph in it.
-              // Expanded so the artwork absorbs whatever height the grid gives
-              // the tile, which keeps it large on both the 3-up mobile layout
-              // and the 5-up desktop layout.
+// Fill the tile rather than sitting a fixed-size glyph in it.
+              // Sized against the tile's smaller dimension and then scaled
+              // down slightly, so the artwork stays the dominant element
+              // without touching the card edges — at full bleed the tiles read
+              // as one continuous sheet of images with no breathing room.
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 2),
-                  child: Image.asset(
-                    widget.asset,
-                    fit: BoxFit.contain,
-                    // These are 512px WebP under 50 KB, sized for 3x density.
-                    filterQuality: FilterQuality.medium,
-                    errorBuilder: (context, error, stack) => const SizedBox.shrink(),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                  child: Transform.scale(
+                    scale: 0.86,
+                    child: Image.asset(
+                      widget.asset,
+                      fit: BoxFit.contain,
+                      // These are 512px WebP under 50 KB, sized for 3x density.
+                      filterQuality: FilterQuality.medium,
+                      errorBuilder: (context, error, stack) => const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(6, 4, 6, 10),
+                padding: const EdgeInsets.fromLTRB(6, 6, 6, 12),
                 child: Text(
                   widget.label,
                   textAlign: TextAlign.center,

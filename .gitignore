@@ -114,3 +114,7 @@ android/build/
 
 # Archived/superseded files kept locally for reference, not part of the build
 .archive/
+
+# Local-only operational notes: real names of shared server components.
+# Never commit â the handover doc is public and refers to these by placeholder.
+docs/PRIVATE-SHARED-INFRA.md

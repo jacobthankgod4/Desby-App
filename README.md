@@ -52,7 +52,8 @@ SnackBars are real and customer-visible.
 - **Shipping** — Terminal Shipping (42 carriers) and Fez Logistics. Uber Direct is
   **not implemented**; the repository behind it is dead
 - **AI** — ZOE chat with four-provider failover (Gemini, Groq, Mistral, DeepSeek),
-  plus Korra for body measurement, EachLabs for try-on, Magic Hour for clothes swap
+  plus an external service for body measurement, EachLabs for try-on and Magic
+  Hour for clothes swap
 
 ---
 
@@ -98,9 +99,9 @@ Builds Flutter web with `--base-href /app/`, backs up the live bundle, rsyncs to
 `/var/www/desby/app`, fixes ownership, and verifies five URLs.
 
 **The script is currently host-specific**: it hardcodes an SSH identity file at
-`/Users/mac/Downloads/korra-ai-key.pem` and targets `ubuntu@korra.work`, a box
-that also runs Korra and Scout. That shared host is the reason for the migration
-described in [docs/HANDOVER.md](docs/HANDOVER.md).
+an absolute path under one developer's home directory, and targets a host that
+also runs unrelated production workloads. That shared host is the reason for the
+migration described in [docs/HANDOVER.md](docs/HANDOVER.md).
 
 ---
 

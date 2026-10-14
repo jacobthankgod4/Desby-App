@@ -23,13 +23,13 @@ class ApprenticeshipContract extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        apprenticeshipId,
-        terms,
-        stipend,
-        durationMonths,
-        signedDate,
-        tailorSignature,
-        apprenticeSignature,
-      ];
+    id,
+    apprenticeshipId,
+    terms,
+    stipend,
+    durationMonths,
+    signedDate,
+    tailorSignature,
+    apprenticeSignature,
+  ];
 }

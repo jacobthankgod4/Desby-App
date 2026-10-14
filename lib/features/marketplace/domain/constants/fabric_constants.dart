@@ -1,0 +1,30 @@
+const List<String> kFabricCategories = [
+  'All',
+  'Ankara',
+  'Cotton',
+  'Silk',
+  'Linen',
+  'Wool',
+  'Chiffon',
+  'Satin',
+  'Lace',
+  'Damask',
+  'Crepe',
+  'Velvet',
+  'Leather',
+];
+
+const List<String> kFabricCategoriesWithoutAll = [
+  'Ankara',
+  'Cotton',
+  'Silk',
+  'Linen',
+  'Wool',
+  'Chiffon',
+  'Satin',
+  'Lace',
+  'Damask',
+  'Crepe',
+  'Velvet',
+  'Leather',
+];

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../presentation/providers/tailor_finder_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/status_pill.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 /// Tailor Shop Card Widget
 /// Displays individual tailor information for map markers and list views
@@ -20,13 +21,16 @@ class TailorShopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.amber.withValues(alpha: 0.1) : AppColors.uberCard,
+          color: isSelected
+              ? AppColors.amber.withValues(alpha: 0.1)
+              : AppColors.uberCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.amber : Colors.transparent,
@@ -60,14 +64,16 @@ class TailorShopCard extends StatelessWidget {
                   child: tailor.profileImage != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            tailor.profileImage!,
+                          child: AppNetworkImage(
+                            url: tailor.profileImage!,
                             fit: BoxFit.cover,
                           ),
                         )
                       : Center(
                           child: Text(
-                            tailor.name.isNotEmpty ? tailor.name[0].toUpperCase() : 'T',
+                            tailor.name.isNotEmpty
+                                ? tailor.name[0].toUpperCase()
+                                : 'T',
                             style: const TextStyle(
                               color: AppColors.amber,
                               fontSize: 20,
@@ -84,8 +90,8 @@ class TailorShopCard extends StatelessWidget {
                     children: [
                       Text(
                         tailor.name,
-                        style: const TextStyle(
-                          color: AppColors.uberTextPrimary,
+                        style: TextStyle(
+                          color: colors.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
@@ -98,15 +104,15 @@ class TailorShopCard extends StatelessWidget {
                           children: [
                             const Icon(
                               Icons.location_on_outlined,
-                              color: AppColors.uberTextMuted,
+                              color: AppColors.textMuted,
                               size: 12,
                             ),
                             const SizedBox(width: 2),
                             Expanded(
                               child: Text(
                                 tailor.shopAddress!,
-                                style: const TextStyle(
-                                  color: AppColors.uberTextMuted,
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
                                   fontSize: 11,
                                 ),
                                 maxLines: 1,
@@ -153,10 +159,7 @@ class TailorShopCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${tailor.reviewCount} reviews',
-                      style: const TextStyle(
-                        color: AppColors.uberTextMuted,
-                        fontSize: 9,
-                      ),
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 9),
                     ),
                   ],
                 ),
@@ -174,13 +177,13 @@ class TailorShopCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: colors.surface.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     service,
                     style: const TextStyle(
-                      color: AppColors.uberTextMuted,
+                      color: AppColors.textMuted,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
@@ -205,7 +208,7 @@ class TailorShopCard extends StatelessWidget {
                     Text(
                       'From',
                       style: TextStyle(
-                        color: AppColors.uberTextMuted,
+                        color: AppColors.textMuted,
                         fontSize: 10,
                       ),
                     ),
@@ -243,6 +246,8 @@ class TailorMarkerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -257,7 +262,9 @@ class TailorMarkerCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: (isSelected ? AppColors.amber : Colors.black).withValues(alpha: 0.3),
+              color: (isSelected ? AppColors.amber : Colors.black).withValues(
+                alpha: 0.3,
+              ),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -271,8 +278,8 @@ class TailorMarkerCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isSelected 
-                    ? AppColors.darkNavy 
+                color: isSelected
+                    ? (isDark ? AppColors.darkNavy : AppColors.darkNavy)
                     : AppColors.amber.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
@@ -292,7 +299,7 @@ class TailorMarkerCard extends StatelessWidget {
             Text(
               tailor.name,
               style: TextStyle(
-                color: isSelected ? AppColors.darkNavy : AppColors.uberTextPrimary,
+                color: isSelected ? AppColors.darkNavy : colors.textPrimary,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -313,7 +320,7 @@ class TailorMarkerCard extends StatelessWidget {
                 Text(
                   tailor.rating.toStringAsFixed(1),
                   style: TextStyle(
-                    color: isSelected ? AppColors.darkNavy : AppColors.uberTextPrimary,
+                    color: isSelected ? AppColors.darkNavy : colors.textPrimary,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -326,7 +333,9 @@ class TailorMarkerCard extends StatelessWidget {
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: tailor.isAvailable ? AppColors.uberLive : AppColors.uberWarning,
+                color: tailor.isAvailable
+                    ? AppColors.uberLive
+                    : AppColors.uberWarning,
                 shape: BoxShape.circle,
               ),
             ),

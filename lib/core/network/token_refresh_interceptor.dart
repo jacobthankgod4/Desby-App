@@ -1,11 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../logging/logger.dart';
 import 'dio_client.dart';
-
-
 
 /// Token Refresh Interceptor
 /// Automatically refreshes access token when it expires (401 response)
@@ -45,11 +44,16 @@ class TokenRefreshInterceptor extends Interceptor {
         _retryFailedRequests();
         handler.resolve(await _retry(err.requestOptions));
       } else {
-        // Token refresh failed, logout user
+        // Token refresh failed - check if Supabase session still exists before forcing logout
         _isRefreshing = false;
-        await ref.read(authStateProvider.notifier).logout();
-
-        handler.next(err);
+        final sessionResp = await sb.Supabase.instance.client.auth.getSession();
+        if (sessionResp != null) {
+          _retryFailedRequests();
+          handler.resolve(await _retry(err.requestOptions));
+        } else {
+          await ref.read(authStateProvider.notifier).logout();
+          handler.next(err);
+        }
       }
     } catch (e) {
       _isRefreshing = false;
@@ -64,7 +68,6 @@ class TokenRefreshInterceptor extends Interceptor {
       final authRepository = ref.read(authRepositoryProvider);
       final refreshTokenResult = await authRepository.getRefreshToken();
       final refreshToken = refreshTokenResult.getOrNull();
-
 
       if (refreshToken == null) {
         return false;
@@ -105,7 +108,9 @@ class TokenRefreshInterceptor extends Interceptor {
       validateStatus: requestOptions.validateStatus,
     );
 
-    return ref.read(dioProvider).request<dynamic>(
+    return ref
+        .read(dioProvider)
+        .request<dynamic>(
           requestOptions.path,
           data: requestOptions.data,
           queryParameters: requestOptions.queryParameters,

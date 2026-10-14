@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../theme/colors.dart';
 import '../../../../theme/spacing.dart';
 import '../../../../theme/typography.dart';
 
@@ -42,6 +43,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.lg),
@@ -79,12 +81,32 @@ class _RegisterFormState extends State<RegisterForm> {
             TextField(
               controller: nameController,
               enabled: !widget.isLoading,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                labelText: 'Full Name',
                 hintText: 'Enter your full name',
-                prefixIcon: const Icon(Icons.person_outlined),
+                hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.person_outlined,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+                filled: true,
+                fillColor: colors.borderSubtle,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.amber, width: 1.5),
                 ),
               ),
               textInputAction: TextInputAction.next,
@@ -93,12 +115,32 @@ class _RegisterFormState extends State<RegisterForm> {
             TextField(
               controller: emailController,
               enabled: !widget.isLoading,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                labelText: 'Email',
                 hintText: 'Enter your email',
-                prefixIcon: const Icon(Icons.email_outlined),
+                hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+                filled: true,
+                fillColor: colors.borderSubtle,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.amber, width: 1.5),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -108,25 +150,42 @@ class _RegisterFormState extends State<RegisterForm> {
             TextField(
               controller: passwordController,
               enabled: !widget.isLoading,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                labelText: 'Password',
                 hintText: 'Enter your password',
-                prefixIcon: const Icon(Icons.lock_outlined),
+                hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.lock_outlined,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+                filled: true,
+                fillColor: colors.borderSubtle,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.amber, width: 1.5),
                 ),
               ),
               obscureText: true,
               textInputAction: TextInputAction.done,
             ),
             SizedBox(height: AppSpacing.md),
-            Text(
-              'Account Type',
-              style: AppTypography.body1,
-            ),
+            Text('Account Type', style: AppTypography.body1),
             SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
-              initialValue: selectedUserType,
+              value: selectedUserType,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -134,7 +193,10 @@ class _RegisterFormState extends State<RegisterForm> {
               ),
               items: const [
                 DropdownMenuItem(value: 'tailor', child: Text('Tailor')),
-                DropdownMenuItem(value: 'apprentice', child: Text('Apprentice')),
+                DropdownMenuItem(
+                  value: 'apprentice',
+                  child: Text('Apprentice'),
+                ),
                 DropdownMenuItem(value: 'customer', child: Text('Customer')),
               ],
               onChanged: widget.isLoading
@@ -156,10 +218,7 @@ class _RegisterFormState extends State<RegisterForm> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(
-                        'Create Account',
-                        style: AppTypography.button,
-                      ),
+                    : Text('Create Account', style: AppTypography.button),
               ),
             ),
           ],

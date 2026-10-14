@@ -73,14 +73,7 @@ enum HighlightMode {
 }
 
 /// Preferred viewing angle for each segment
-enum PreferredView {
-  front,
-  back,
-  left,
-  right,
-  oblique,
-  auto,
-}
+enum PreferredView { front, back, left, right, oblique, auto }
 
 /// Rig metadata for a single segment
 class SegmentMetadata {

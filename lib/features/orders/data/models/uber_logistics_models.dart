@@ -22,14 +22,14 @@ class UberDeliveryQuoteModel with _$UberDeliveryQuoteModel {
 
 extension UberDeliveryQuoteModelX on UberDeliveryQuoteModel {
   UberDeliveryQuote toEntity() => UberDeliveryQuote(
-        id: id,
-        fee: fee,
-        currencyType: currencyType,
-        expiresAt: expiresAt,
-        pickupDuration: pickupDuration,
-        totalDuration: totalDuration,
-        dropoffEta: dropoffEta,
-      );
+    id: id,
+    fee: fee,
+    currencyType: currencyType,
+    expiresAt: expiresAt,
+    pickupDuration: pickupDuration,
+    totalDuration: totalDuration,
+    dropoffEta: dropoffEta,
+  );
 }
 
 @freezed

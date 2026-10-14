@@ -14,18 +14,22 @@ class ApprenticeDashboard extends ConsumerStatefulWidget {
   const ApprenticeDashboard({super.key});
 
   @override
-  ConsumerState<ApprenticeDashboard> createState() => _ApprenticeDashboardState();
+  ConsumerState<ApprenticeDashboard> createState() =>
+      _ApprenticeDashboardState();
 }
 
 class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final currentUser = ref.watch(currentUserProvider);
     final userId = currentUser?.id ?? '';
-    final apprenticeshipAsync = ref.watch(apprenticeApprenticeshipProvider(userId));
+    final apprenticeshipAsync = ref.watch(
+      apprenticeApprenticeshipProvider(userId),
+    );
 
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: colors.scaffoldBg,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(apprenticeApprenticeshipProvider(userId));
@@ -43,7 +47,10 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AnimatedEntry(index: 0, child: _buildHeader(currentUser?.name)),
+                  AnimatedEntry(
+                    index: 0,
+                    child: _buildHeader(currentUser?.name),
+                  ),
                   const SizedBox(height: 24),
 
                   // Craft Mastery HUD
@@ -78,7 +85,13 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
                   const SizedBox(height: 24),
 
                   // Mentor Access
-                  AnimatedEntry(index: 3, child: _buildMentorHUD(apprenticeship.tailorId)),
+                  AnimatedEntry(
+                    index: 3,
+                    child: _buildMentorHUD(
+                      apprenticeship.tailorId,
+                      apprenticeship.tailorProfile?.name,
+                    ),
+                  ),
                   const SizedBox(height: 32),
 
                   // Task Queue
@@ -87,14 +100,20 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
                     child: _buildSectionHeader('My Tasks', '/tasks'),
                   ),
                   const SizedBox(height: 16),
-                  AnimatedEntry(index: 5, child: _buildTasksManifest(ref, apprenticeship.id)),
+                  AnimatedEntry(
+                    index: 5,
+                    child: _buildTasksManifest(ref, apprenticeship.id),
+                  ),
 
                   const SizedBox(height: 32),
 
                   // Curriculum Sync
                   AnimatedEntry(
                     index: 6,
-                    child: _buildSectionHeader('Learning Modules', '/curriculum'),
+                    child: _buildSectionHeader(
+                      'Learning Modules',
+                      '/curriculum',
+                    ),
                   ),
                   const SizedBox(height: 16),
                   AnimatedEntry(index: 7, child: _buildCurriculumHUD(ref)),
@@ -104,13 +123,61 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
             );
           },
           loading: () => DashboardShimmer(statCount: 2, listCount: 3),
-          error: (error, _) => const Center(
+          error: (error, _) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.school_rounded, color: Colors.white10, size: 48),
-                SizedBox(height: 12),
-                Text('ACADEMY SYNC FAILED', style: TextStyle(color: Colors.white24, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 2)),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: colors.textMuted.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.sync_problem_rounded,
+                    color: colors.textMuted,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'SYNC ERROR',
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Could not load academy data',
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () =>
+                      ref.invalidate(apprenticeApprenticeshipProvider(userId)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.amber,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'RETRY',
+                      style: TextStyle(
+                        color: AppColors.darkNavy,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -120,6 +187,7 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
   }
 
   Widget _buildNoSessionState() {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -130,33 +198,66 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
               color: AppColors.amber.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.school_rounded, color: AppColors.amber, size: 48),
+            child: const Icon(
+              Icons.school_rounded,
+              color: AppColors.amber,
+              size: 48,
+            ),
           ),
           const SizedBox(height: 24),
-          const Text('NO ACTIVE COURSE', style: TextStyle(color: Colors.white24, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
+          Text(
+            'NO ACTIVE COURSE',
+            style: TextStyle(
+              color: colors.textMuted,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+              letterSpacing: 2,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Contact your mentor to get started', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 11)),
+          Text(
+            'Contact your mentor to get started',
+            style: TextStyle(color: colors.textMuted, fontSize: 11),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildHeader(String? name) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('ACADEMY', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        const Text(
+          'ACADEMY',
+          style: TextStyle(
+            color: AppColors.amber,
+            fontSize: 8,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(
           'Hello, ${name ?? 'Apprentice'}',
-          style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildMentorHUD(String tailorId) {
-    return _MentorCard(tailorId: tailorId);
+  Widget _buildMentorHUD(String tailorId, String? tailorName) {
+    return _MentorCard(
+      tailorId: tailorId,
+      tailorName: tailorName,
+      onChatTap: () => ref.pushShell('/chats'),
+    );
   }
 
   Widget _buildTasksManifest(WidgetRef ref, String apprenticeshipId) {
@@ -181,11 +282,65 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber, strokeWidth: 2)),
-      error: (e, _) => _buildEmptyState(
-        icon: Icons.error_outline_rounded,
-        title: 'SYNC ERROR',
-        subtitle: 'Pull down to retry',
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.amber,
+          strokeWidth: 2,
+        ),
+      ),
+      error: (e, _) => LuxuryGlassCard(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.sync_problem_rounded,
+                color: AppColors.textMuted,
+                size: 32,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'SYNC ERROR',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Could not load tasks',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => ref.invalidate(
+                  apprenticeshipTasksProvider(apprenticeshipId),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.amber,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'RETRY',
+                    style: TextStyle(
+                      color: AppColors.darkNavy,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 9,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -195,16 +350,28 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
     required String title,
     required String subtitle,
   }) {
+    final colors = context.colors;
     return LuxuryGlassCard(
       padding: const EdgeInsets.all(40),
       child: Center(
         child: Column(
           children: [
-            Icon(icon, color: Colors.white10, size: 36),
+            Icon(icon, color: colors.textMuted, size: 36),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(color: Colors.white10, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)),
+            Text(
+              title,
+              style: TextStyle(
+                color: colors.textMuted,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                letterSpacing: 2,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.15), fontSize: 10)),
+            Text(
+              subtitle,
+              style: TextStyle(color: colors.textMuted, fontSize: 10),
+            ),
           ],
         ),
       ),
@@ -223,10 +390,15 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
           );
         }
         return Column(
-          children: modules.take(3).map((m) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _CurriculumTile(title: m.title),
-          )).toList(),
+          children: modules
+              .take(3)
+              .map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _CurriculumTile(title: m.title, moduleId: m.id),
+                ),
+              )
+              .toList(),
         );
       },
       loading: () => DashboardShimmer(listCount: 2),
@@ -235,10 +407,19 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
   }
 
   Widget _buildSectionHeader(String title, String route) {
+    final colors = context.colors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
+        Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+            color: colors.textMuted,
+          ),
+        ),
         GestureDetector(
           onTap: () => ref.setShell(route),
           child: Container(
@@ -247,7 +428,15 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
               color: AppColors.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Text('VIEW ALL', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+            child: const Text(
+              'VIEW ALL',
+              style: TextStyle(
+                color: AppColors.amber,
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+                letterSpacing: 1,
+              ),
+            ),
           ),
         ),
       ],
@@ -257,7 +446,9 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
 
 class _MentorCard extends StatefulWidget {
   final String tailorId;
-  const _MentorCard({required this.tailorId});
+  final String? tailorName;
+  final VoidCallback? onChatTap;
+  const _MentorCard({required this.tailorId, this.tailorName, this.onChatTap});
 
   @override
   State<_MentorCard> createState() => _MentorCardState();
@@ -268,6 +459,8 @@ class _MentorCardState extends State<_MentorCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final displayName = widget.tailorName ?? 'MENTOR';
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -278,30 +471,50 @@ class _MentorCardState extends State<_MentorCard> {
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 50, height: 50,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 color: _isHovered
                     ? AppColors.amber.withValues(alpha: 0.15)
                     : AppColors.amber.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.person_pin_rounded, color: AppColors.amber),
+              child: const Icon(
+                Icons.person_pin_rounded,
+                color: AppColors.amber,
+              ),
             ),
             const SizedBox(width: 16),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('MASTER MENTOR', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
-                  Text('Atelier Direct Access', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                  Text(
+                    displayName.toUpperCase(),
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    'Atelier Direct Access',
+                    style: TextStyle(
+                      color: colors.textMuted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.forum_rounded, color: AppColors.amber, size: 20),
-              onPressed: () {
-                Navigator.of(context).pushNamed('/chats');
-              },
+              icon: const Icon(
+                Icons.forum_rounded,
+                color: AppColors.amber,
+                size: 20,
+              ),
+              onPressed: widget.onChatTap,
             ),
           ],
         ),
@@ -311,11 +524,12 @@ class _MentorCardState extends State<_MentorCard> {
 }
 
 class _TaskTile extends StatelessWidget {
-  final dynamic task;
+  final ApprenticeTask task;
   const _TaskTile({required this.task});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final bool isReview = task.status == ApprenticeTaskStatus.underReview;
     final bool isCompleted = task.status == ApprenticeTaskStatus.completed;
 
@@ -324,8 +538,16 @@ class _TaskTile extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            isCompleted ? Icons.check_circle_rounded : isReview ? Icons.hourglass_empty_rounded : Icons.pending_rounded,
-            color: isCompleted ? const Color(0xFF00FF7F) : isReview ? AppColors.amber : Colors.white24,
+            isCompleted
+                ? Icons.check_circle_rounded
+                : isReview
+                ? Icons.hourglass_empty_rounded
+                : Icons.pending_rounded,
+            color: isCompleted
+                ? AppColors.successGreen
+                : isReview
+                ? AppColors.amber
+                : colors.textMuted,
             size: 18,
           ),
           const SizedBox(width: 16),
@@ -333,15 +555,32 @@ class _TaskTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(task.title.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
                 Text(
-                  isReview ? 'PENDING VALIDATION' : 'DEADLINE: ${task.dueDate.day}/${task.dueDate.month}',
-                  style: TextStyle(color: isReview ? AppColors.amber : Colors.white24, fontSize: 8, fontWeight: FontWeight.w900),
+                  task.title.toUpperCase(),
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                  ),
+                ),
+                Text(
+                  isReview
+                      ? 'PENDING VALIDATION'
+                      : 'DEADLINE: ${task.dueDate.day}/${task.dueDate.month}',
+                  style: TextStyle(
+                    color: isReview ? AppColors.amber : colors.textMuted,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white10, size: 12),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: colors.textMuted,
+            size: 12,
+          ),
         ],
       ),
     );
@@ -350,7 +589,8 @@ class _TaskTile extends StatelessWidget {
 
 class _CurriculumTile extends StatefulWidget {
   final String title;
-  const _CurriculumTile({required this.title});
+  final String moduleId;
+  const _CurriculumTile({required this.title, required this.moduleId});
 
   @override
   State<_CurriculumTile> createState() => _CurriculumTileState();
@@ -361,23 +601,41 @@ class _CurriculumTileState extends State<_CurriculumTile> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: LuxuryGlassCard(
-        padding: const EdgeInsets.all(4),
-        borderColor: _isHovered ? Colors.purpleAccent.withValues(alpha: 0.2) : null,
-        child: ListTile(
-          leading: Icon(
-            Icons.bookmark_rounded,
-            color: _isHovered ? Colors.purpleAccent : Colors.purpleAccent.withValues(alpha: 0.7),
-            size: 20,
-          ),
-          title: Text(widget.title.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
-          trailing: Icon(
-            _isHovered ? Icons.chevron_right_rounded : Icons.chevron_right_rounded,
-            color: _isHovered ? Colors.purpleAccent : Colors.white24,
-            size: 16,
+      child: Consumer(
+        builder: (context, ref, _) => GestureDetector(
+          onTap: () =>
+              ref.pushShell('/module-detail', {'moduleId': widget.moduleId}),
+          child: LuxuryGlassCard(
+            padding: const EdgeInsets.all(4),
+            borderColor: _isHovered
+                ? Colors.purpleAccent.withValues(alpha: 0.2)
+                : null,
+            child: ListTile(
+              leading: Icon(
+                Icons.bookmark_rounded,
+                color: _isHovered
+                    ? Colors.purpleAccent
+                    : Colors.purpleAccent.withValues(alpha: 0.7),
+                size: 20,
+              ),
+              title: Text(
+                widget.title.toUpperCase(),
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              trailing: Icon(
+                Icons.chevron_right_rounded,
+                color: _isHovered ? Colors.purpleAccent : colors.textMuted,
+                size: 16,
+              ),
+            ),
           ),
         ),
       ),

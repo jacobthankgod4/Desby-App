@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/apprentice_task.dart';
 import '../providers/apprenticeship_provider.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class ApprenticeTaskGradingPage extends ConsumerStatefulWidget {
   final ApprenticeTask task;
   const ApprenticeTaskGradingPage({super.key, required this.task});
 
   @override
-  ConsumerState<ApprenticeTaskGradingPage> createState() => _ApprenticeTaskGradingPageState();
+  ConsumerState<ApprenticeTaskGradingPage> createState() =>
+      _ApprenticeTaskGradingPageState();
 }
 
-class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradingPage> {
+class _ApprenticeTaskGradingPageState
+    extends ConsumerState<ApprenticeTaskGradingPage> {
   double _score = 80.0;
   final _feedbackController = TextEditingController();
   bool _isSaving = false;
@@ -36,11 +41,22 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
       ref.invalidate(apprenticeshipTasksProvider(widget.task.apprenticeshipId));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('GRADE SUBMITTED & CERTIFIED!'), backgroundColor: Color(0xFF00FF7F)));
-        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Grade submitted!'),
+            backgroundColor: AppColors.successGreen,
+          ),
+        );
+        ref.popShell();
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Grading Error: $e'), backgroundColor: Colors.redAccent));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not submit grade. Please try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -48,18 +64,10 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
-        title: const Text('GRADING STATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 2)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: colors.scaffoldBg,
+      appBar: shellAppBar(context, title: 'Grade Task'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -67,9 +75,9 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
           children: [
             _buildProofGallery(),
             const SizedBox(height: 40),
-            _buildSubmissionDetails(),
+            _buildSubmissionDetails(colors),
             const SizedBox(height: 48),
-            _buildGradingSection(),
+            _buildGradingSection(colors),
             const SizedBox(height: 48),
             _buildActionButtons(),
             const SizedBox(height: 60),
@@ -80,14 +88,30 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
   }
 
   Widget _buildProofGallery() {
+    final colors = context.colors;
     final urls = widget.task.proofImageUrls ?? [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('PHYSICAL PROOF', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        const Text(
+          'Submitted Work',
+          style: TextStyle(
+            color: AppColors.amber,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 16),
         if (urls.isEmpty)
-          const Text('NO MEDIA ATTACHED', style: TextStyle(color: Colors.white10, fontWeight: FontWeight.w900, fontSize: 18))
+          Text(
+            'No photos attached',
+            style: TextStyle(
+              color: colors.textMuted,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          )
         else
           SizedBox(
             height: 240,
@@ -97,7 +121,11 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
               separatorBuilder: (ctx, idx) => const SizedBox(width: 16),
               itemBuilder: (context, index) => ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: Image.network(urls[index], fit: BoxFit.cover, width: 240),
+                child: AppNetworkImage(
+                  url: urls[index],
+                  fit: BoxFit.cover,
+                  width: 240,
+                ),
               ),
             ),
           ),
@@ -105,48 +133,101 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
     );
   }
 
-  Widget _buildSubmissionDetails() {
+  Widget _buildSubmissionDetails(DesbyThemeColors colors) {
     return Container(
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(28), border: Border.all(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: colors.divider),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('SUBMISSION NARRATIVE', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          const Text(
+            'Notes from Apprentice',
+            style: TextStyle(
+              color: AppColors.amber,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
           const SizedBox(height: 16),
-          Text(widget.task.submissionNotes ?? 'No notes provided.', style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6)),
+          Text(
+            widget.task.submissionNotes ?? 'No notes provided.',
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 14,
+              height: 1.6,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildGradingSection() {
+  Widget _buildGradingSection(DesbyThemeColors colors) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('SCORE MASTERY', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-            Text('${_score.toInt()}/100', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+            const Text(
+              'Score',
+              style: TextStyle(
+                color: AppColors.amber,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+            ),
+            Text(
+              '${_score.toInt()}/100',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+              ),
+            ),
           ],
         ),
         Slider.adaptive(
-          value: _score, min: 0, max: 100,
-          divisions: 100, activeColor: AppColors.amber,
+          value: _score,
+          min: 0,
+          max: 100,
+          divisions: 100,
+          activeColor: AppColors.amber,
           onChanged: (v) => setState(() => _score = v),
         ),
         const SizedBox(height: 32),
-        const Text('MENTOR FEEDBACK', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        const Text(
+          'MENTOR FEEDBACK',
+          style: TextStyle(
+            color: AppColors.amber,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 16),
         TextField(
-          controller: _feedbackController, maxLines: 3,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          controller: _feedbackController,
+          maxLines: 3,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
           decoration: InputDecoration(
             hintText: 'Share expert insights...',
-            hintStyle: const TextStyle(color: Colors.white10),
-            filled: true, fillColor: Colors.white.withValues(alpha: 0.03),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+            hintStyle: TextStyle(color: colors.textHint),
+            filled: true,
+            fillColor: colors.inputFill,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
       ],
@@ -154,12 +235,20 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
   }
 
   Widget _buildActionButtons() {
+    final colors = context.colors;
     return Row(
       children: [
         Expanded(
           child: TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('RE-ASSIGN', style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            onPressed: () => ref.popShell(),
+            child: const Text(
+              'Back',
+              style: TextStyle(
+                color: Colors.orangeAccent,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 16),
@@ -167,10 +256,23 @@ class _ApprenticeTaskGradingPageState extends ConsumerState<ApprenticeTaskGradin
           flex: 2,
           child: ElevatedButton(
             onPressed: _isSaving ? null : _submitGrade,
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-            child: _isSaving 
-              ? const CircularProgressIndicator(color: AppColors.darkNavy)
-              : const Text('CERTIFY MODULE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.amber,
+              foregroundColor: AppColors.darkNavy,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: _isSaving
+                ? CircularProgressIndicator(color: colors.iconPrimary)
+                : const Text(
+                    'Submit Grade',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
           ),
         ),
       ],

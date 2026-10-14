@@ -10,15 +10,22 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return SupabaseNotificationRepository();
 });
 
-final getNotificationsUsecaseProvider = Provider<GetNotificationsUsecase>((ref) {
+final getNotificationsUsecaseProvider = Provider<GetNotificationsUsecase>((
+  ref,
+) {
   return GetNotificationsUsecase(ref.watch(notificationRepositoryProvider));
 });
 
-final getNotificationStreamUsecaseProvider = Provider<GetNotificationStreamUsecase>((ref) {
-  return GetNotificationStreamUsecase(ref.watch(notificationRepositoryProvider));
-});
+final getNotificationStreamUsecaseProvider =
+    Provider<GetNotificationStreamUsecase>((ref) {
+      return GetNotificationStreamUsecase(
+        ref.watch(notificationRepositoryProvider),
+      );
+    });
 
-final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
+final notificationsProvider = FutureProvider<List<AppNotification>>((
+  ref,
+) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return [];
   final usecase = ref.watch(getNotificationsUsecaseProvider);
@@ -38,7 +45,10 @@ final unreadNotificationCountProvider = Provider<int>((ref) {
   );
 });
 
-final markAllAsReadProvider = FutureProvider.family<void, String>((ref, userId) async {
+final markAllAsReadProvider = FutureProvider.family<void, String>((
+  ref,
+  userId,
+) async {
   final repository = ref.watch(notificationRepositoryProvider);
   await repository.markAllAsRead(userId);
   ref.invalidate(notificationsProvider);

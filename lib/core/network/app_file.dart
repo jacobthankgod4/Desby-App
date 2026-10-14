@@ -1,11 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum FileType {
-  image,
-  video,
-  pdf,
-  other
-}
+enum FileType { image, video, pdf, other }
 
 class AppFile extends Equatable {
   final String id;

@@ -50,13 +50,15 @@ class UserModel {
       name: json['name'] as String? ?? '',
       userType: (json['user_type'] ?? json['userType']) as String? ?? '',
       createdAt: (json['created_at'] ?? json['createdAt']) is String
-              ? DateTime.parse((json['created_at'] ?? json['createdAt']) as String)
-              : DateTime.now(),
+          ? DateTime.parse((json['created_at'] ?? json['createdAt']) as String)
+          : DateTime.now(),
       phone: json['phone'] as String?,
       profileImage: (json['profile_image'] ?? json['profileImage']) as String?,
       bio: json['bio'] as String?,
       isVerified: (json['is_verified'] ?? json['isVerified']) as bool? ?? false,
-      servicePricing: (json['service_pricing'] ?? json['servicePricing']) as Map<String, dynamic>?,
+      servicePricing:
+          (json['service_pricing'] ?? json['servicePricing'])
+              as Map<String, dynamic>?,
       pricingTier: (json['pricing_tier'] ?? json['pricingTier']) as String?,
     );
   }

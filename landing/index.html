@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desby — The Operating System for Fashion Businesses</title>
+<meta name="description" content="Desby helps tailors, fabric sellers and apprentices run their fashion business: orders, clients, AI body scans, virtual try-ons, marketplace and logistics — all in one place.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1921; --navy-2:#0E2430; --navy-3:#123240;
+    --amber:#FFC107; --amber-deep:#E6A800; --amber-soft:#FFF3CC;
+    --paper:#F7F6F2; --card:#FFFFFF;
+    --muted:#5B6B74; --line:#E8E6DF;
+    --green:#0F9D76; --blue:#2F6BFF;
+    --radius:22px;
+    --shadow-sm:0 1px 3px rgba(10,25,33,.08);
+    --shadow-md:0 14px 38px rgba(10,25,33,.12);
+    --shadow-lg:0 30px 80px rgba(10,25,33,.24);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:100vw}
+  h1,h2,h3{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.14;color:var(--navy);overflow-wrap:break-word}
+  img{max-width:100%;display:block}
+  a{text-decoration:none;color:inherit}
+  section{scroll-margin-top:90px}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 28px;overflow:hidden}
+  @media(max-width:600px){.wrap{padding:0 16px}}
+  .btn{position:relative;display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:15px;border-radius:999px;padding:15px 30px;transition:transform .25s var(--ease-out),box-shadow .25s,background .25s,border-color .25s;border:none;cursor:pointer;font-family:'Inter';overflow:hidden}
+  .btn::after{content:"";position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);transition:left .6s var(--ease-out)}
+  .btn:hover::after{left:130%}
+  .btn:hover{transform:translateY(-3px)}
+  .btn:active{transform:translateY(-1px) scale(.98)}
+  .btn-amber{background:var(--amber);color:#111;box-shadow:0 8px 24px rgba(255,193,7,.35)}
+  .btn-amber:hover{background:var(--amber-deep);box-shadow:0 14px 34px rgba(255,193,7,.45)}
+  .btn-navy{background:var(--navy);color:#fff}
+  .btn-navy:hover{background:var(--navy-3);box-shadow:0 14px 30px rgba(10,25,33,.25)}
+  .btn-ghost{background:transparent;color:var(--navy);border:1.5px solid #D8D5CC}
+  .btn-ghost:hover{border-color:var(--navy)}
+  .btn-ghost-light{background:rgba(255,255,255,.06);color:#fff;border:1.5px solid rgba(255,255,255,.3);backdrop-filter:blur(6px)}
+  .btn-ghost-light:hover{border-color:#fff;background:rgba(255,255,255,.12)}
+  .tag{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--amber-deep);text-transform:uppercase;margin-bottom:16px}
+
+  /* ===================== SCROLL REVEAL SYSTEM ===================== */
+  [data-reveal]{opacity:0;filter:blur(10px);transition:opacity 1s var(--ease-out),transform 1s var(--ease-out),filter 1s var(--ease-out);will-change:transform,opacity,filter}
+  [data-reveal="up"]{transform:translateY(64px)}
+  [data-reveal="down"]{transform:translateY(-48px)}
+  [data-reveal="left"]{transform:translateX(-72px)}
+  [data-reveal="right"]{transform:translateX(72px)}
+  [data-reveal="zoom"]{transform:scale(.9) translateY(36px)}
+  [data-reveal="tilt"]{transform:perspective(900px) rotateX(10deg) translateY(56px);transform-origin:top}
+  [data-reveal].in-view{opacity:1;transform:none;filter:blur(0)}
+  @media(prefers-reduced-motion:reduce){
+    [data-reveal]{opacity:1;transform:none;filter:none;transition:none}
+    *{animation-duration:.01ms !important;animation-iteration-count:1 !important}
+  }
+
+  /* ===================== NAV ===================== */
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2px;border-radius:2px;background:var(--amber);transition:width .3s var(--ease-out)}
+  .nav-links a:hover::after,.nav-links a.active::after{width:100%}
+  .nav-links a:hover,.nav-links a.active{color:#fff}
+  
+
+  /* ===================== HERO ===================== */
+  .hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 55%,var(--navy-3) 100%);color:#fff;overflow:hidden;position:relative}
+  .hero::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(700px 380px at 85% 20%,rgba(255,193,7,.10),transparent 70%),
+    radial-gradient(600px 340px at 8% 80%,rgba(47,107,255,.10),transparent 70%);pointer-events:none}
+  .hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:44px;align-items:center;padding:96px 0 130px;position:relative}
+  .hero .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,193,7,.13);color:var(--amber);font-size:13px;font-weight:700;padding:9px 18px;border-radius:999px;border:1px solid rgba(255,193,7,.25)}
+  .hero h1{color:#fff;font-size:clamp(32px,5.8vw,68px);font-weight:800;margin:0 0 22px;max-width:100%}
+  .hero h1 em{font-style:normal;color:var(--amber);position:relative;white-space:nowrap}
+  .hero h1 em svg{position:absolute;left:0;bottom:-10px;width:100%;height:14px}
+  .hero h1 em svg path{stroke:var(--amber);stroke-width:5;fill:none;stroke-linecap:round;stroke-dasharray:320;stroke-dashoffset:320;animation:draw 1.1s var(--ease-out) 1.1s forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .hero .sub{font-size:clamp(16px,1.8vw,18.5px);color:#B9CBD4;max-width:520px;margin-bottom:38px}
+  .hero-actions{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:42px}
+  @media(max-width:600px){.hero-actions{flex-direction:column;gap:12px;margin-bottom:38px}.hero-actions .btn{text-align:center;justify-content:center}}
+  .trust-row{display:flex;gap:22px;flex-wrap:wrap;font-size:13.5px;color:#8FA6B1;font-weight:500}
+  .trust-row span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(15,157,118,.5);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(15,157,118,.45)}70%{box-shadow:0 0 0 9px rgba(15,157,118,0)}100%{box-shadow:0 0 0 0 rgba(15,157,118,0)}}
+
+  .hero-visual{position:relative;height:620px;perspective:1200px}
+  .tile{position:absolute;border-radius:24px;overflow:hidden;box-shadow:var(--shadow-lg);border:5px solid rgba(255,255,255,.09);animation:floaty 7s ease-in-out infinite;background:var(--navy-2)}
+  .tile img{width:100%;height:100%;object-fit:cover}
+  .tile-1{width:330px;aspect-ratio:612/408;top:3%;left:2%;--r:-4deg;transform:rotate(-4deg);animation-delay:0s}
+  .tile-2{width:272px;aspect-ratio:984/1200;top:15%;right:0;--r:4deg;transform:rotate(4deg);animation-delay:1.4s}
+  .tile-3{width:236px;aspect-ratio:800/1200;bottom:2%;left:24%;--r:2deg;transform:rotate(2deg);animation-delay:2.6s}
+  @keyframes floaty{0%,100%{margin-top:0}50%{margin-top:-16px}}
+  .float-chip{position:absolute;background:#fff;color:var(--navy);border-radius:16px;padding:13px 19px;box-shadow:var(--shadow-lg);font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:11px;animation:floaty 6s ease-in-out infinite}
+  .float-chip small{display:block;font-weight:600;color:var(--muted);font-size:11px}
+  .chip-a{top:-2%;right:6%;animation-delay:.8s}
+  .chip-b{bottom:14%;left:-4%;animation-delay:2s}
+  .chip-ico{width:36px;height:36px;border-radius:11px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;font-size:16px}
+  @media(max-width:960px){
+    .hero-grid{grid-template-columns:1fr;padding:72px 0 96px}
+    .hero-visual{height:auto;max-width:540px;margin:26px auto 0;width:100%;display:flex;flex-wrap:wrap;gap:18px;justify-content:center;align-items:flex-start}
+    .tile,.float-chip{position:static;animation:none;transform:none}
+    .tile{width:min(46%,230px)}
+    .tile img{height:auto}
+    .float-chip{display:none}
+  }
+
+  /* ===================== SEGMENT MARQUEE BAND ===================== */
+  .band{margin-top:-64px;position:relative;z-index:5;padding:0 28px}
+  .band-card{max-width:1144px;margin:0 auto;background:#fff;border-radius:24px;box-shadow:var(--shadow-md);padding:36px 44px}
+  .band-top{display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:24px}
+  .band-top h3{font-size:22px;margin-bottom:4px}
+  .band-top p{color:var(--muted);font-size:14.5px}
+  .marquee{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .marquee-track{display:flex;gap:16px;width:max-content;animation:marquee 30s linear infinite}
+  .marquee:hover .marquee-track{animation-play-state:paused}
+  @keyframes marquee{to{transform:translateX(-50%)}}
+  .seg{display:inline-flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:11px 22px;font-weight:700;font-size:14px;color:var(--navy);white-space:nowrap;transition:.25s}
+  .seg:hover{border-color:var(--amber);background:var(--amber-soft);transform:translateY(-2px)}
+  .seg svg{width:17px;height:17px;flex-shrink:0}
+  .mico svg{width:22px;height:22px}
+  .chip-ico svg{width:18px;height:18px}
+
+  /* ===================== TOOL ROWS ===================== */
+  .tools-sec{padding:150px 0 30px}
+  .sec-head{text-align:center;max-width:780px;margin:0 auto 40px}
+  .sec-head h2{font-size:clamp(31px,4.6vw,50px);margin-bottom:18px}
+  .sec-head p{color:var(--muted);font-size:17.5px}
+  .tool-row{display:grid;grid-template-columns:1fr 1.08fr;gap:clamp(40px,6vw,84px);align-items:center;padding:74px 0}
+  .tool-row h3{font-size:clamp(27px,3.5vw,40px);margin-bottom:18px}
+  .tool-row p{color:var(--muted);font-size:16.5px;margin-bottom:24px;max-width:480px}
+  .tool-row ul{list-style:none;margin:0 0 34px;display:grid;gap:12px}
+  .tool-row li{display:flex;gap:12px;font-size:15.5px;font-weight:500;color:#33454F}
+  .tool-row li::before{content:"✓";color:var(--green);font-weight:800;flex-shrink:0}
+  .tool-cta{display:flex;gap:14px;flex-wrap:wrap}
+  .tool-img{width:fit-content;max-width:100%;margin:0 auto;border-radius:28px;overflow:hidden;box-shadow:var(--shadow-md);transition:transform .55s var(--ease-out),box-shadow .55s var(--ease-out)}
+  .tool-img:hover{transform:translateY(-10px) rotate(.6deg);box-shadow:var(--shadow-lg)}
+  .tool-img img{display:block;width:100%;height:auto}
+  .tool-img.portrait img{width:auto;height:min(56vw,580px);max-width:100%}
+  .tool-row.flip .tool-text{order:2}
+  .tool-row.flip .tool-img{order:1}
+
+  /* ---- Live tracking product mock ---- */
+  .track-mock{position:relative;width:400px;max-width:78vw;border-radius:28px;overflow:hidden;box-shadow:var(--shadow-lg);font-family:'Inter'}
+  .track-map{display:block;width:100%;height:auto}
+  .rider-dot{animation:riderPulse 2s ease-in-out infinite}
+  @keyframes riderPulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .track-chip{position:absolute;background:#fff;color:var(--navy);border-radius:14px;padding:10px 16px;box-shadow:var(--shadow-md)}
+  .track-chip b{display:block;font-size:13px}
+  .track-chip small{font-size:11px;color:var(--muted);font-weight:600}
+  .tc-origin{left:16px;bottom:120px}
+  .tc-dest{right:16px;top:56px}
+  .track-eta{position:absolute;left:16px;top:16px;background:#fff;border-radius:14px;padding:11px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-md)}
+  .track-eta b{display:block;font-size:13.5px;color:var(--navy)}
+  .track-eta small{font-size:11px;color:var(--muted);font-weight:600}
+  .track-pod{position:absolute;left:16px;right:16px;bottom:16px;background:rgba(10,25,33,.88);backdrop-filter:blur(8px);color:#DFE9EE;font-size:12.5px;font-weight:600;border-radius:14px;padding:12px 16px;border:1px solid rgba(255,255,255,.12)}
+  @media(max-width:560px){.tc-origin{bottom:104px}.track-chip{padding:8px 12px}.track-chip small{font-size:10px}}
+  @media(max-width:920px){
+    .tools-sec{padding:110px 0 10px}
+    .tool-row{grid-template-columns:1fr;gap:34px;padding:52px 0}
+    .tool-row.flip .tool-text{order:1}
+    .tool-row.flip .tool-img{order:2}
+    .tool-img{width:100%;max-width:100%;border-radius:20px}
+    .tool-img img{width:100%;height:auto}
+    .tool-img.portrait img{width:100%;height:auto;max-width:100%}
+  }
+
+  /* ===================== WHY CARDS ===================== */
+  .more-sec{padding:150px 0}
+  .about-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(40px,6vw,80px);align-items:start}
+  .about-intro h2{font-size:clamp(30px,4vw,46px);margin-top:16px}
+  .about-story p{color:#3A4B54;font-size:16.5px;margin-bottom:20px;max-width:560px}
+  .about-story b{color:var(--navy)}
+  .about-pull{font-family:'Sora';font-weight:700;font-size:clamp(18px,2.2vw,22px);color:var(--navy);border-left:4px solid var(--amber);padding-left:22px;margin-top:28px;line-height:1.5}
+  @media(max-width:920px){.about-grid{grid-template-columns:1fr}}
+  .more-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:70px}
+  .more-card{background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;transition:transform .5s var(--ease-out),box-shadow .5s var(--ease-out)}
+  .more-card:hover{transform:translateY(-10px);box-shadow:var(--shadow-md)}
+  .more-img{overflow:hidden;aspect-ratio:2/3}
+  .more-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease-out)}
+  .more-card:hover .more-img img{transform:scale(1.045)}
+  .more-body{padding:28px 28px 32px}
+  .more-body .mico{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:21px;background:var(--amber-soft);margin:-64px 0 16px;position:relative;border:4px solid #fff;box-shadow:var(--shadow-sm)}
+  .more-card:nth-child(2) .mico{background:#DFF3EC}
+  .more-card:nth-child(3) .mico{background:#E7EDFB}
+  .more-body h3{font-size:19px;margin-bottom:10px}
+  .more-body p{color:var(--muted);font-size:14.5px}
+  @media(max-width:1100px){.more-grid{grid-template-columns:repeat(2,1fr);max-width:640px;margin-inline:auto}}
+  @media(max-width:640px){.more-grid{grid-template-columns:1fr;max-width:480px}}
+
+  /* ===================== STEPS ===================== */
+  .steps-sec{background:#fff;border-block:1px solid var(--line);padding:150px 0}
+  .steps-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:clamp(44px,6vw,84px);align-items:center;margin-top:30px}
+  .steps-img{border-radius:28px;overflow:hidden;box-shadow:var(--shadow-md);max-width:400px;margin:0 auto;transition:transform .55s var(--ease-out),box-shadow .55s var(--ease-out)}
+  .steps-img:hover{transform:translateY(-8px) rotate(-.6deg);box-shadow:var(--shadow-lg)}
+  .steps-img img{width:100%;height:auto}
+  .step{display:flex;gap:22px;padding:26px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:none}
+  .step-num{flex-shrink:0;width:46px;height:46px;border-radius:50%;background:var(--navy);color:var(--amber);font-family:'Sora';font-weight:800;display:flex;align-items:center;justify-content:center;font-size:16px;transition:transform .35s var(--ease-out),background .35s}
+  .step:hover .step-num{transform:scale(1.12) rotate(-6deg);background:var(--amber);color:var(--navy)}
+  .step h3{font-size:17.5px;margin-bottom:7px}
+  .step p{color:var(--muted);font-size:14.5px}
+  @media(max-width:920px){.steps-grid{grid-template-columns:1fr}.steps-sec{padding:110px 0}}
+
+  /* ===================== TESTIMONIAL ===================== */
+  .stories{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-3) 100%);color:#fff;padding:150px 0;position:relative;overflow:hidden}
+  .stories::before{content:"";position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.08),transparent 65%);bottom:-220px;left:-160px}
+  .stories-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(44px,6vw,80px);align-items:center;position:relative}
+  .stories h2{color:#fff;font-size:clamp(29px,4.2vw,44px);margin-bottom:30px}
+  .stories blockquote{font-family:'Sora';font-size:clamp(17px,2vw,21px);font-weight:600;line-height:1.6;color:#E8EEF2}
+  .stories blockquote::before{content:"\201C";color:var(--amber);font-size:1.5em}
+  .stories blockquote::after{content:"\201D";color:var(--amber);font-size:1.5em}
+  .quote-who{margin-top:32px;display:flex;align-items:center;gap:15px}
+  .avatar{width:56px;height:56px;border-radius:50%;overflow:hidden;border:3px solid var(--amber);flex-shrink:0}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .quote-who b{display:block;color:#fff;font-size:15.5px}
+  .quote-who small{color:#8FA6B1;font-size:13.5px}
+  .story-img{border-radius:28px;overflow:hidden;box-shadow:var(--shadow-lg);border:5px solid rgba(255,255,255,.09);max-width:440px;margin:0 auto;justify-self:end;transition:transform .55s var(--ease-out)}
+  .story-img:hover{transform:translateY(-10px) rotate(.6deg)}
+  .story-img img{width:100%;height:auto}
+  @media(max-width:920px){.stories-grid{grid-template-columns:1fr;gap:38px}.story-img{justify-self:center}.stories{padding:110px 0}}
+
+  /* ===================== CTA ===================== */
+  .cta-sec{padding:150px 0}
+  .cta-banner{background:linear-gradient(135deg,#123240 0%,var(--navy-2) 100%);border-radius:34px;color:#fff;padding:clamp(60px,8vw,100px) clamp(30px,6vw,90px);text-align:center;position:relative;overflow:hidden}
+  .cta-banner::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.2),transparent 65%);top:-200px;right:-140px;animation:drift 12s ease-in-out infinite alternate}
+  .cta-banner::before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(47,107,255,.16),transparent 65%);bottom:-190px;left:-120px;animation:drift 14s ease-in-out infinite alternate-reverse}
+  @keyframes drift{from{transform:translate(0,0)}to{transform:translate(-36px,26px)}}
+  .cta-banner h2{color:#fff;font-size:clamp(29px,4.8vw,52px);margin-bottom:18px;position:relative;z-index:1}
+  .cta-banner p{color:#B9CBD4;font-size:17px;margin-bottom:40px;position:relative;z-index:1}
+  .cta-banner .btn{position:relative;z-index:1;font-size:16px;padding:17px 38px}
+  @media(max-width:920px){.cta-sec{padding:110px 0}}
+
+  /* ===================== FOOTER ===================== */
+  
+
+  /* ===================== HERO LOAD SEQUENCE ===================== */
+  .hero [data-hero]{opacity:0;transform:translateY(34px);transition:opacity 1s var(--ease-out),transform 1s var(--ease-out)}
+  .hero .tile,.hero .float-chip{opacity:0;transition:opacity 1.1s var(--ease-out),transform 1.1s var(--ease-out)}
+  body.loaded .hero [data-hero]{opacity:1;transform:none}
+  body.loaded .hero .tile{opacity:1}
+  body.loaded .hero .float-chip{opacity:1;transform:none}
+  body.loaded .tile-1{transform:rotate(-4deg)}
+  body.loaded .tile-2{transform:rotate(4deg)}
+  body.loaded .tile-3{transform:rotate(2deg)}
+  .hero .tile-1{transform:rotate(-4deg) translateY(60px)}
+  .hero .tile-2{transform:rotate(4deg) translateY(60px)}
+  .hero .tile-3{transform:rotate(2deg) translateY(60px)}
+  .chip-a{transform:translateY(40px) scale(.9)}
+  .chip-b{transform:translateY(40px) scale(.9)}
+
+  header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:84px;max-width:1200px;margin:0 auto;padding:0 28px}
+  .logo{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:800;font-size:23px;color:var(--navy)}
+  .logo-mark{width:54px;height:54px;border-radius:14px;object-fit:cover;display:block}
+  .nav-links{display:flex;align-items:center;gap:30px;font-size:15px;font-weight:500;color:#3A4B54}
+  .nav-links a{transition:color .2s}
+  .nav-links a:hover{color:var(--navy)}
+  .nav-links a.active{color:var(--navy);font-weight:700;position:relative}
+  .nav-links a.active::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:2.5px;border-radius:2px;background:var(--amber)}
+  .nav-cta{display:flex;align-items:center;gap:16px}
+  .signin{font-weight:600;font-size:15px;color:var(--navy)}
+  .nav-cta .btn-amber{padding:12px 24px;font-size:14px}
+  @media(max-width:600px){
+    nav{height:60px;padding:0 16px}
+    .logo-mark{width:36px;height:36px;border-radius:10px}
+    .logo{font-size:18px;gap:8px}
+    .nav-cta{gap:10px}
+    .signin{font-size:13px}
+    .nav-cta .btn-amber{padding:9px 16px;font-size:12.5px}
+  }
+
+  footer{background:var(--navy);color:#9FB3BC;padding:70px 0 34px;font-size:14px}
+  .foot-inner{max-width:1200px;margin:0 auto;padding:0 28px}
+  .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:44px;margin-bottom:52px}
+  .foot-brand p{margin:18px 0 0;max-width:280px;color:#7E93A0}
+  footer h4{color:#fff;font-family:'Sora';font-size:13.5px;margin-bottom:20px;letter-spacing:.06em}
+  .foot-col a{display:block;margin-bottom:13px;transition:.2s;width:fit-content}
+  .foot-col a:hover{color:var(--amber);transform:translateX(4px)}
+  .foot-base{border-top:1px solid rgba(255,255,255,.09);padding-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;color:#7E93A0;font-size:13px}
+  @media(max-width:860px){.foot-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.foot-grid{grid-template-columns:1fr;gap:32px}.foot-brand p{max-width:100%}.foot-base{flex-direction:column;text-align:center;gap:8px}footer{padding:48px 0 28px}.foot-inner{padding:0 16px}}
+
+  .socials{display:flex;gap:12px;margin-top:22px}
+  .socials a{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#CFE0E8;transition:.25s}
+  .socials a:hover{background:var(--amber);color:var(--navy);border-color:var(--amber);transform:translateY(-3px)}
+
+  .persona-switch{display:flex;flex-wrap:wrap;gap:6px;padding:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;backdrop-filter:blur(10px);margin-bottom:28px;max-width:100%}
+  .p-btn{background:transparent;border:none;color:#9FB3BC;font-family:'Inter';font-weight:600;font-size:13.5px;padding:10px 18px;border-radius:999px;cursor:pointer;transition:.28s;white-space:nowrap;flex-shrink:0}
+  .p-btn:hover{color:#fff}
+  .p-btn.on{background:var(--amber);color:#111;font-weight:700;box-shadow:0 4px 16px rgba(255,193,7,.35)}
+  @media(max-width:600px){
+    .persona-switch{border-radius:16px;gap:6px;padding:8px;display:grid;grid-template-columns:1fr 1fr}
+    .p-btn{font-size:12px;padding:10px 8px;text-align:center;border-radius:12px}
+  }
+  .tile img{transition:opacity .45s ease}
+  .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;z-index:200}
+  .hamburger span{display:block;width:22px;height:2px;background:var(--navy);border-radius:2px;transition:.3s}
+  .mobile-menu{display:none;position:fixed;inset:0;background:#fff;z-index:150;padding:100px 28px 40px;flex-direction:column;gap:0}
+  .mobile-menu.open{display:flex}
+  .mobile-menu .mob-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--navy);z-index:160}
+  .mobile-menu .mob-close:hover{background:var(--line)}
+  .mobile-menu a{display:block;padding:16px 0;font-size:17px;font-weight:600;color:var(--navy);border-bottom:1px solid var(--line)}
+  .mobile-menu a:last-child{border-bottom:none}
+  .mobile-menu .mob-cta{margin-top:auto;padding-bottom:40px;display:flex;flex-direction:column;gap:12px}
+  .mobile-menu .mob-cta a{text-align:center;border:none;padding:14px;border-radius:999px;font-weight:700}
+  .mob-cta .btn-amber{background:var(--amber);color:#111}
+  .mob-cta .btn-navy{background:var(--navy);color:#fff}
+  @media(max-width:900px){.nav-links{display:none}.nav-cta{display:none}.hamburger{display:flex}}
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="/shop">Shop</a>
+      <a href="/#about">About</a>
+      <a href="/help">Help</a>
+    </div>
+    <div class="nav-cta">
+      <a class="signin" href="/app">Sign in</a>
+      <a class="btn btn-amber header-cta-btn" href="/app">Get started</a>
+    </div>
+    <button class="hamburger" onclick="document.getElementById('mobMenu').classList.add('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<div class="mobile-menu" id="mobMenu">
+  <button class="mob-close" onclick="document.getElementById('mobMenu').classList.remove('open')" aria-label="Close menu">&times;</button>
+  <a href="/#features" onclick="document.getElementById('mobMenu').classList.remove('open')">Features</a>
+  <a href="/shop" onclick="document.getElementById('mobMenu').classList.remove('open')">Shop</a>
+  <a href="/#about" onclick="document.getElementById('mobMenu').classList.remove('open')">About</a>
+  <a href="/help" onclick="document.getElementById('mobMenu').classList.remove('open')">Help</a>
+  <div class="mob-cta">
+    <a class="btn-amber mob-cta-btn" href="/app">Get started</a>
+    <a class="btn-navy" href="/app">Sign in</a>
+  </div>
+</div>
+<script>
+(function(){
+  var btns = document.querySelectorAll('.header-cta-btn, .mob-cta-btn');
+  var hasSession = false;
+  try { hasSession = !!localStorage.getItem('sb-aemumiyzowraoachzxtu-auth-token'); } catch(e){}
+  btns.forEach(function(b){
+    if(hasSession){ b.textContent='Dashboard'; b.href='/app'; }
+  });
+})();
+</script>
+
+
+
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="persona-switch" data-hero style="transition-delay:.16s">
+          <button class="p-btn" data-p="tailor" type="button">For tailors</button>
+          <button class="p-btn on" data-p="client" type="button">For clients</button>
+          <button class="p-btn" data-p="apprentice" type="button">For apprentices</button>
+          <button class="p-btn" data-p="seller" type="button">For fabric sellers</button>
+        </div>
+        <div class="eyebrow" data-hero style="transition-delay:.18s">FOR FASHION BUSINESSES</div>
+        <h1 id="heroH1" data-hero style="transition-delay:.22s">Your next outfit, <em>made for you</em> — without the back-and-forth</h1>
+        <p class="sub" id="heroSub" data-hero style="transition-delay:.34s">Find trusted tailors, use AI to measure yourself from your phone, virtually try on your outfit before it's made, and track your order all the way to your door.</p>
+        <p style="font-size:15px;color:#8FA6B1;margin-bottom:28px;max-width:520px;transition-delay:.38s" data-hero>Find a tailor, scan your body, preview designs and track your order.</p>
+        <div class="hero-actions" data-hero style="transition-delay:.46s">
+          <a class="btn btn-amber" href="/app" id="heroCta">Find your tailor</a>
+          <a class="btn btn-ghost-light" href="#features">See how it works ↓</a>
+        </div>
+        <div class="trust-row" data-hero style="transition-delay:.58s">
+          <span><i class="dot"></i>AI Body Scan</span>
+          <span><i class="dot" style="animation-delay:.4s"></i>Order Management</span>
+          <span><i class="dot" style="animation-delay:.8s"></i>Production</span>
+          <span><i class="dot" style="animation-delay:1.2s"></i>Marketplace</span>
+          <span><i class="dot" style="animation-delay:1.6s"></i>Delivery</span>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="tile tile-1" style="transition-delay:.5s;aspect-ratio:800/534"><img src="/img/measuring-client.webp" alt="Tailor taking a client's measurements"></div>
+        <div class="tile tile-2" style="transition-delay:.68s;aspect-ratio:800/1200"><img src="/img/card-clients.jpg" alt="Elegant bespoke dress"></div>
+        <div class="tile tile-3" style="transition-delay:.86s;aspect-ratio:1254/1254"><img src="/img/virtual-tryon.jpg" alt="Virtual try-on result"></div>
+        <div class="float-chip chip-a" style="transition-delay:1.05s"><span class="chip-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg></span><span id="chipAText">AI Body Scan<small>Scan once — use it for every order</small></span></div>
+        <div class="float-chip chip-b" style="transition-delay:1.2s"><span class="chip-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><path d="M5.5 17.5h6l3-9h4"/><path d="M14.5 8.5h4l1 5"/></svg></span><span id="chipBText">On the way<small>Arriving 4:30 PM · Live tracking</small></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEGMENT BAND -->
+<div class="band">
+  <div class="band-card" data-reveal="up">
+    <div class="band-top">
+      <div>
+        <h3>Built for everyone in fashion</h3>
+        <p>One platform serving every hand in Nigeria's fashion value chain.</p>
+      </div>
+    </div>
+    <div class="marquee">
+      <div class="marquee-track" id="marqueeTrack">
+        <span class="seg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></svg> Master Tailors</span>
+        <span class="seg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3v4c0 2-1.5 3-1.5 5S8 15 8 17v4"/><path d="M16 3v4c0 2 1.5 3 1.5 5S16 15 16 17v4"/><path d="M8 11h8"/><path d="M8 14h8"/></svg> Fabric Sellers</span>
+        <span class="seg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 9-10-5L2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.66 2.69 3 6 3s6-1.34 6-3v-5.5"/></svg> Apprentices</span>
+        <span class="seg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6l1 4 3 3-2 3 2 10H5l2-10-2-3 3-3 1-4z"/><path d="M9 6h6"/></svg> Fashion Clients</span>
+        <span class="seg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 3-4h14l3 4"/><path d="M4 7v13h16V7"/><path d="M9 20v-6h6v6"/><path d="M2 7h20"/></svg> Boutique Owners</span>
+        <span class="seg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.3 8.7 15.3 2.7a1 1 0 0 0-1.4 0L2.7 13.9a1 1 0 0 0 0 1.4l6 6a1 1 0 0 0 1.4 0L21.3 10.1a1 1 0 0 0 0-1.4z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/></svg> Stylists</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="tools-sec" id="problem" style="padding-top:110px">
+  <div class="wrap">
+    <div class="sec-head" style="max-width:800px">
+      <span class="tag" data-reveal="up">The Problem</span>
+      <h2 data-reveal="up" style="transition-delay:.1s">Growing your fashion business shouldn't mean losing control of it.</h2>
+      <p data-reveal="up" style="transition-delay:.15s;text-align:left;max-width:640px;margin:18px auto 0">More customers mean more orders to track. More orders mean more measurements, fittings, payments, deadlines and people to coordinate.</p>
+      <p data-reveal="up" style="transition-delay:.2s;text-align:left;max-width:640px;margin:18px auto 0">But most fashion businesses are still managing all of this manually.</p>
+      <p data-reveal="up" style="transition-delay:.25s;text-align:left;max-width:640px;margin:18px auto 0">That makes it harder to know which orders are on track, which clients have paid, what needs to be done next, and where money is being lost.</p>
+      <p data-reveal="up" style="transition-delay:.3s;font-family:'Sora';font-weight:700;font-size:clamp(18px,2.2vw,22px);color:var(--navy);border-left:4px solid var(--amber);padding-left:22px;margin-top:32px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto">You can be fully booked and still feel like your business is running you.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section class="tools-sec" id="solution" style="background:#fff;padding-top:110px">
+  <div class="wrap">
+    <div class="sec-head" style="max-width:800px">
+      <span class="tag" data-reveal="up">Meet Desby</span>
+      <h2 data-reveal="up" style="transition-delay:.1s">Everything you need to run the business behind the fashion.</h2>
+      <p data-reveal="up" style="transition-delay:.15s;text-align:left;max-width:560px;margin:18px auto 0">Desby gives you one place to manage the work that keeps your fashion business moving.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:900px;margin:0 auto" data-reveal-group>
+      <div class="tool-row" style="padding:24px 0;display:block" data-reveal="up"><h3 style="font-size:17px;margin-bottom:6px">Know your clients.</h3><p style="color:var(--muted);font-size:14.5px;margin:0">Keep their details, history and preferences in one place.</p></div>
+      <div class="tool-row" style="padding:24px 0;display:block" data-reveal="up" style="transition-delay:.08s"><h3 style="font-size:17px;margin-bottom:6px">Track your orders.</h3><p style="color:var(--muted);font-size:14.5px;margin:0">From deposit to delivery, see where every order stands.</p></div>
+      <div class="tool-row" style="padding:24px 0;display:block" data-reveal="up" style="transition-delay:.16s"><h3 style="font-size:17px;margin-bottom:6px">Keep measurements ready.</h3><p style="color:var(--muted);font-size:14.5px;margin:0">Scan once, use for every future order.</p></div>
+      <div class="tool-row" style="padding:24px 0;display:block" data-reveal="up" style="transition-delay:.24s"><h3 style="font-size:17px;margin-bottom:6px">Manage production.</h3><p style="color:var(--muted);font-size:14.5px;margin:0">Know what is being worked on and what comes next.</p></div>
+      <div class="tool-row" style="padding:24px 0;display:block" data-reveal="up" style="transition-delay:.32s"><h3 style="font-size:17px;margin-bottom:6px">Coordinate your team.</h3><p style="color:var(--muted);font-size:14.5px;margin:0">Assign work and keep your workshop moving.</p></div>
+      <div class="tool-row" style="padding:24px 0;display:block" data-reveal="up" style="transition-delay:.4s"><h3 style="font-size:17px;margin-bottom:6px">Stay on top of payments.</h3><p style="color:var(--muted);font-size:14.5px;margin:0">Track deposits, balances and who has paid.</p></div>
+      <div class="tool-row" style="padding:24px 0;display:block" data-reveal="up" style="transition-delay:.48s"><h3 style="font-size:17px;margin-bottom:6px">Get finished orders to clients.</h3><p style="color:var(--muted);font-size:14.5px;margin:0">Arrange delivery with tracking and proof of delivery.</p></div>
+    </div>
+    <p data-reveal="up" style="transition-delay:.55s;font-family:'Sora';font-weight:700;font-size:clamp(18px,2.2vw,22px);color:var(--navy);border-top:1px solid var(--line);padding-top:32px;margin-top:40px;text-align:center">Less chasing. More control.</p>
+  </div>
+</section>
+
+<!-- CORE VALUE -->
+<section class="tools-sec" id="core-value" style="padding-top:110px">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 data-reveal="up">Know what's happening in your business.</h2>
+      <p data-reveal="up" style="transition-delay:.1s">You shouldn't have to open five conversations, check three notebooks and call your apprentice just to find out where one order stands.</p>
+      <p data-reveal="up" style="transition-delay:.15s">With Desby, the information you need is connected to the work it belongs to.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px;max-width:900px;margin:0 auto" data-reveal-group>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:32px 24px;text-align:center" data-reveal="up">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <h3 style="font-size:16px;margin-bottom:6px">Client</h3>
+        <p style="color:var(--muted);font-size:14px">Know who you're making for.</p>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:32px 24px;text-align:center" data-reveal="up" style="transition-delay:.08s">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
+        <h3 style="font-size:16px;margin-bottom:6px">Order</h3>
+        <p style="color:var(--muted);font-size:14px">Know what they've ordered, what they've paid and when it's due.</p>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:32px 24px;text-align:center" data-reveal="up" style="transition-delay:.16s">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3 style="font-size:16px;margin-bottom:6px">Production</h3>
+        <p style="color:var(--muted);font-size:14px">Know what is being worked on, who is responsible and what comes next.</p>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:32px 24px;text-align:center" data-reveal="up" style="transition-delay:.24s">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></div>
+        <h3 style="font-size:16px;margin-bottom:6px">Delivery</h3>
+        <p style="color:var(--muted);font-size:14px">Know when the finished order is on its way.</p>
+      </div>
+    </div>
+    <p data-reveal="up" style="transition-delay:.3s;font-family:'Sora';font-weight:700;font-size:clamp(18px,2.2vw,22px);color:var(--navy);border-top:1px solid var(--line);padding-top:32px;margin-top:40px;text-align:center">Everything connected. Nothing left to memory.</p>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section class="tools-sec" id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag" data-reveal="up">One platform, every tool</span>
+      <h2 data-reveal="up" style="transition-delay:.1s">All the tools you need to stitch, sell &amp; scale</h2>
+      <p data-reveal="up" style="transition-delay:.2s">Pick the tools you need today, grow into the rest tomorrow. All included in every Desby workspace.</p>
+    </div>
+
+    <div class="tool-row" data-reveal-group>
+      <div class="tool-text" data-reveal="left">
+        <span class="tag">Tailor OS · For tailors &amp; clothing brands</span>
+        <h3>Your entire workshop, beautifully organised</h3>
+        <p>Track every order from booking to pickup, keep client measurement ledgers forever, and never lose a deadline again.</p>
+        <ul>
+          <li>Order pipeline with status tracking clients can see</li>
+          <li>Permanent digital measurement ledger per client</li>
+          <li>Automated price estimates before you commit</li>
+        </ul>
+        <div class="tool-cta"><a class="btn btn-navy" href="/app">Start free</a><a class="btn btn-ghost" href="/app">Learn more</a></div>
+      </div>
+      <div class="tool-img" data-reveal="right"><img src="/img/tailor-workshop.avif" alt="Tailors designing a red dress on a mannequin in their workshop" loading="lazy"></div>
+    </div>
+
+    <div class="tool-row flip" data-reveal-group>
+      <div class="tool-text" data-reveal="right">
+        <span class="tag">AI Body Scan · For clients &amp; tailors</span>
+        <h3>27 accurate measurements from two photos</h3>
+        <p>No tape measure, no travel. Clients scan themselves at home and their numbers arrive in your dashboard instantly.</p>
+        <ul>
+          <li>Dual-photo capture with pose guidance</li>
+          <li>Saved scan history for repeat clients</li>
+          <li>Works alongside manual measurements</li>
+        </ul>
+        <div class="tool-cta"><a class="btn btn-navy" href="/app">Try a scan</a><a class="btn btn-ghost" href="/app">Learn more</a></div>
+      </div>
+      <div class="tool-img portrait" data-reveal="left"><img src="/img/body-scan.jpg" alt="Client taking a remote AI body scan photo" loading="lazy"></div>
+    </div>
+
+    <div class="tool-row" data-reveal-group>
+      <div class="tool-text" data-reveal="left">
+        <span class="tag">Virtual Try-On · For clients</span>
+        <h3>Let clients see the outfit before you cut</h3>
+        <p>AI renders any design onto a client photo. Fewer surprises, faster approvals, more confident bookings.</p>
+        <ul>
+          <li>Render any gallery design on a client photo</li>
+          <li>Share try-on results with one link</li>
+          <li>Full try-on history saved to each account</li>
+        </ul>
+        <div class="tool-cta"><a class="btn btn-navy" href="/app">See it live</a><a class="btn btn-ghost" href="/app">Learn more</a></div>
+      </div>
+      <div class="tool-img portrait" data-reveal="right"><img src="/img/virtual-tryon.jpg" alt="Virtual try-on result showing a design rendered on a client" loading="lazy"></div>
+    </div>
+
+    <div class="tool-row flip" data-reveal-group>
+      <div class="tool-text" data-reveal="right">
+        <span class="tag">Fabric Marketplace · For sellers &amp; buyers</span>
+        <h3>Sell fabric. Source fabric. All in-app.</h3>
+        <p>List your inventory with wholesale tiers or shop verified sellers — then dispatch to buyers without leaving Desby.</p>
+        <ul>
+          <li>Verified seller profiles with trust badges</li>
+          <li>Wholesale pricing tiers built in</li>
+          <li>Inventory and stock alerts included</li>
+        </ul>
+        <div class="tool-cta"><a class="btn btn-navy" href="/app">Browse market</a><a class="btn btn-ghost" href="/app">Learn more</a></div>
+      </div>
+      <div class="tool-img" data-reveal="left"><img src="/img/fabric-seller.webp" alt="Fabric seller in her successful fashion marketplace shop" loading="lazy"></div>
+    </div>
+
+    <div class="tool-row" data-reveal-group>
+      <div class="tool-text" data-reveal="left">
+        <span class="tag">Apprenticeship · For masters &amp; apprentices</span>
+        <h3>Train the next generation, structured</h3>
+        <p>Structured curricula, task grading and progress tracking turn your workshop into a school that graduates skilled hands.</p>
+        <ul>
+          <li>Ready-made curriculum modules</li>
+          <li>Task submissions with grading flow</li>
+          <li>Progress milestones for every learner</li>
+        </ul>
+        <div class="tool-cta"><a class="btn btn-navy" href="/app">Mentor a learner</a><a class="btn btn-ghost" href="/app">Learn more</a></div>
+      </div>
+      <div class="tool-img portrait" data-reveal="right" style="max-width:520px;margin:0 auto"><img src="/img/step-3.webp" alt="Apprentice learning to sew under a master tailor" loading="lazy"></div>
+    </div>
+
+    <div class="tool-row flip" data-reveal-group>
+      <div class="tool-text" data-reveal="right">
+        <span class="tag">Smart Logistics · For tailors &amp; clients</span>
+        <h3>Dispatch finished work without the wahala</h3>
+        <p>Summon a rider for deliveries and pickups inside the app, with real-time tracking your client can watch too.</p>
+        <ul>
+          <li>A rider is dispatched automatically when your order is marked READY</li>
+          <li>Live delivery tracking links</li>
+          <li>Proof-of-delivery records</li>
+        </ul>
+        <div class="tool-cta"><a class="btn btn-navy" href="/app">Send a package</a><a class="btn btn-ghost" href="/app">Learn more</a></div>
+      </div>
+      <div class="tool-img portrait" data-reveal="left" style="max-width:540px;margin:0 auto;width:fit-content">
+        <div class="track-mock">
+          <svg class="track-map" viewBox="0 0 400 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="400" height="480" fill="#0E2430"/>
+            <g stroke="#1C3644" stroke-width="10" opacity=".55">
+              <path d="M-20 90 H420" fill="none"/><path d="M-20 210 H420" fill="none"/><path d="M-20 340 H420" fill="none"/>
+              <path d="M70 -20 V500" fill="none"/><path d="M200 -20 V500" fill="none"/><path d="M330 -20 V500" fill="none"/>
+            </g>
+            <g stroke="#16303C" stroke-width="4" opacity=".5">
+              <path d="M-20 150 H420" fill="none"/><path d="M-20 285 H420" fill="none"/><path d="M-20 410 H420" fill="none"/>
+              <path d="M135 -20 V500" fill="none"/><path d="M265 -20 V500" fill="none"/>
+            </g>
+            <path d="M70 410 C 70 300, 200 300, 200 210 S 330 120, 330 90" fill="none" stroke="#FFC107" stroke-width="5" stroke-dasharray="12 10" stroke-linecap="round"/>
+            <circle cx="70" cy="410" r="9" fill="#fff"/><circle cx="70" cy="410" r="16" fill="none" stroke="#FFC107" stroke-width="2" opacity=".6"/>
+            <circle cx="330" cy="90" r="9" fill="#0F9D76"/><circle cx="330" cy="90" r="16" fill="none" stroke="#0F9D76" stroke-width="2" opacity=".6"/>
+            <g class="rider-dot"><circle cx="200" cy="210" r="15" fill="#FFC107"/><g transform="translate(190,200.5)"><circle cx="4" cy="10" r="3" fill="none" stroke="#0A1921" stroke-width="2"/><circle cx="16" cy="10" r="3" fill="none" stroke="#0A1921" stroke-width="2"/><path d="M4 10h6l2.5-7H16" stroke="#0A1921" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 10h5.5l1.5 3" stroke="#0A1921" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+          </svg>
+          <div class="track-chip tc-origin"><b>Pickup</b><small>Adaeze Fashion House · Yaba</small></div>
+          <div class="track-chip tc-dest"><b>Drop-off</b><small>Ikeja GRA · Client</small></div>
+          <div class="track-eta">
+            <span class="pill">LIVE</span>
+            <div><b>Arriving 4:30 PM</b><small>Rider: Emeka · 12 min away</small></div>
+          </div>
+          <div class="track-pod">✓ Proof of delivery · Signature + photo on completion</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="more-sec" id="about">
+  <div class="wrap">
+    <div class="about-grid">
+      <div class="about-intro">
+        <span class="tag" data-reveal="up">About Desby</span>
+        <h2 data-reveal="up" style="transition-delay:.1s">We're building for the way it already works.</h2>
+      </div>
+      <div class="about-story" data-reveal-group>
+        <p data-reveal="right">Desby started with a simple observation: Nigerian fashion is already a massive industry. It just wasn't built with the systems to match.</p>
+        <p data-reveal="right">We saw talented tailors running serious businesses from notebooks, WhatsApp chats, memory and spreadsheets. Measurements got lost. Orders became difficult to track. Payments got messy. And apprentices learned the craft without always having a clear path to becoming business owners.</p>
+        <p data-reveal="right"><b>We knew because we had lived it.</b></p>
+        <p data-reveal="right">So we built Desby, an operating system for the people who make fashion happen.</p>
+        <p data-reveal="right">Desby brings the everyday realities of Nigerian fashion into one place, helping fashion businesses manage their clients, orders, payments, production and growth.</p>
+      </div>
+    </div>
+    <div class="sec-head" style="margin-top:90px">
+      <span class="tag" data-reveal="up">Who Desby is for</span>
+      <h2 data-reveal="up" style="transition-delay:.1s">One platform, every hand in fashion</h2>
+    </div>
+    <div class="more-grid">
+      <div class="more-card" data-reveal="up">
+        <div class="more-img"><img src="/img/card-tailors.jpg" alt="Tailor managing her studio" loading="lazy"></div>
+        <div class="more-body">
+          <div class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></svg></div>
+          <h3>For master tailors</h3>
+          <p>Fill your calendar, price with confidence, keep every client's measurements forever, and get discovered by new customers browsing designs.</p>
+        </div>
+      </div>
+      <div class="more-card" data-reveal="up" style="transition-delay:.14s">
+        <div class="more-img"><img src="/img/card-clients.jpg" alt="Client in an elegant bespoke dress" loading="lazy"></div>
+        <div class="more-body">
+          <div class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6l1 4 3 3-2 3 2 10H5l2-10-2-3 3-3 1-4z"/><path d="M9 6h6"/></svg></div>
+          <h3>For clients</h3>
+          <p>Find verified tailors near you, scan your body once, try outfits virtually, and follow your order from fabric to front door.</p>
+        </div>
+      </div>
+      <div class="more-card" data-reveal="up" style="transition-delay:.28s">
+        <div class="more-img"><img src="/img/card-apprentices.jpg" alt="Apprentice learning to sew" loading="lazy"></div>
+        <div class="more-body">
+          <div class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 9-10-5L2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.66 2.69 3 6 3s6-1.34 6-3v-5.5"/></svg></div>
+          <h3>For apprentices</h3>
+          <p>Learn through structured lessons, submit tasks to your master, and build a portfolio that opens doors — while you earn.</p>
+        </div>
+      </div>
+      <div class="more-card" data-reveal="up" style="transition-delay:.42s">
+        <div class="more-img"><img src="/img/card-sellers.jpg" alt="Fabric seller managing her shop" loading="lazy"></div>
+        <div class="more-body">
+          <div class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3v4c0 2-1.5 3-1.5 5S8 15 8 17v4"/><path d="M16 3v4c0 2 1.5 3 1.5 5S16 15 16 17v4"/><path d="M8 11h8"/><path d="M8 14h8"/></svg></div>
+          <h3>For fabric sellers</h3>
+          <p>List your fabrics with wholesale pricing, track your stock, and sell to buyers far beyond your shop counter.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="steps-sec" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="tag" data-reveal="up" style="margin-bottom:0">How to get started</span>
+      <h2 data-reveal="up" style="transition-delay:.1s">From sign-up to first order in minutes</h2>
+      <p data-reveal="up" style="transition-delay:.2s">Your journey with Desby starts here. Just follow these easy steps.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="steps-img" data-reveal="left"><img src="/img/studio-boutique.jpg" alt="Tailor arranging senator outfits on mannequins in her boutique" loading="lazy"></div>
+      <div data-reveal-group>
+        <div class="step" data-reveal="right"><div class="step-num">1</div><div><h3>Create your free account</h3><p>Sign up with your email and choose how you use fashion — tailor, client, apprentice or fabric seller.</p></div></div>
+        <div class="step" data-reveal="right"><div class="step-num">2</div><div><h3>Set up your profile</h3><p>Add your skills, services and location so the right people can find and book you.</p></div></div>
+        <div class="step" data-reveal="right"><div class="step-num">3</div><div><h3>Invite clients or browse</h3><p>Share your studio link, take AI body scans, or explore the fabric marketplace.</p></div></div>
+        <div class="step" data-reveal="right"><div class="step-num">4</div><div><h3>Grow with insights</h3><p>Track revenue, bestsellers and client trends from your dashboard to make smarter calls.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="stories" id="stories">
+  <div class="wrap">
+    <div class="stories-grid" data-reveal-group>
+      <div data-reveal="left">
+        <h2>Don't just take our word for it.</h2>
+        <blockquote>Before Desby, I was writing things down, checking WhatsApp and trying to remember everything. Now I can keep my orders, measurements and fabrics in one place. It makes my work much easier.</blockquote>
+        <div class="quote-who">
+          <div class="avatar"><img src="/img/testimonial-tailor.jpg" alt="Adaeze, master tailor"></div>
+          <div><b>Adaeze O.</b><small>Master Tailor &amp; Studio Owner, Lagos</small></div>
+        </div>
+      </div>
+      <div class="story-img" data-reveal="right"><img src="/img/hero-tailor.jpg" alt="Master tailor in her studio" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec">
+  <div class="wrap">
+    <div class="cta-banner" data-reveal="zoom">
+      <h2>Your fashion business deserves better software.</h2>
+      <p>Join the fashion businesses running on Desby today — free to start.</p>
+      <a class="btn btn-amber" href="/app">Open Desby — it's free</a>
+    </div>
+  </div>
+</section>
+
+<!-- WHY DESBY -->
+<section class="more-sec" id="why" style="background:#fff">
+  <div class="wrap">
+    <div class="about-grid" style="max-width:800px;margin:0 auto">
+      <div class="about-intro">
+        <span class="tag" data-reveal="up">Why Desby</span>
+        <h2 data-reveal="up" style="transition-delay:.1s">Built for fashion.</h2>
+      </div>
+      <div class="about-story" data-reveal-group>
+        <p data-reveal="right">Most business tools weren't designed around the realities of fashion.</p>
+        <p data-reveal="right">They don't understand measurements. They don't understand fittings. They don't understand production stages. They don't understand the relationship between a client, a design, a fabric and the finished garment.</p>
+        <p data-reveal="right"><b>Desby does.</b></p>
+        <p data-reveal="right">We've built the system around how fashion businesses actually work.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BRAND STATEMENT -->
+<section style="background:var(--navy);color:#fff;padding:120px 0;text-align:center">
+  <div class="wrap">
+    <h2 data-reveal="zoom" style="color:#fff;font-size:clamp(32px,5vw,56px);font-weight:800">The craft is yours.<br>The system is Desby.</h2>
+  </div>
+</section>
+
+<!-- HELP CTA -->
+<section class="steps-sec" style="padding:80px 0;text-align:center">
+  <div class="wrap">
+    <h2 data-reveal="up" style="font-size:clamp(28px,4vw,44px);margin-bottom:18px">Have questions?</h2>
+    <p data-reveal="up" style="transition-delay:.1s;color:var(--muted);font-size:17px;margin-bottom:32px">Find answers in our Help Centre — from getting started to AI body scanning.</p>
+    <a class="btn btn-amber" href="/help" data-reveal="up" style="transition-delay:.2s">Visit Help Centre →</a>
+  </div>
+</section>
+
+
+
+<script>
+  // Persona switcher (client-first, auto-rotates every 7s)
+const SPARKLE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg>`;
+const SCISSORS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></svg>`;
+const CAP = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 9-10-5L2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.66 2.69 3 6 3s6-1.34 6-3v-5.5"/></svg>`;
+const SPOOL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3v4c0 2-1.5 3-1.5 5S8 15 8 17v4"/><path d="M16 3v4c0 2 1.5 3 1.5 5S16 15 16 17v4"/><path d="M8 11h8"/><path d="M8 14h8"/></svg>`;
+const SCOOTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="2.5"/><circle cx="18.5" cy="17.5" r="2.5"/><path d="M5.5 17.5h6l3-9h4"/><path d="M14.5 8.5h4l1 5"/></svg>`;
+const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+const BAG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l1.5 13.5a1 1 0 0 1-1 1.5h-13a1 1 0 0 1-1-1.5L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>`;
+const PERSONAS = {
+  client: {
+    h1: 'Your next outfit, <em>made for you</em> — without the back-and-forth',
+    sub: 'Find trusted tailors, use AI to measure yourself from your phone, virtually try on your outfit before it\'s made, and track your order all the way to your door.',
+    cta: 'Find your tailor',
+    a: { icon: SPARKLE, t: 'AI Body Scan', s: '27 measurements from two photos' },
+    b: { icon: SCOOTER, t: 'Order #DB-1043', s: 'Agbada set · In production' },
+    tiles: [['/img/measuring-client.webp','800/534'],['/img/card-clients.jpg','800/1200'],['/img/virtual-tryon.jpg','1254/1254']]
+  },
+  tailor: {
+    h1: 'Run your workshop with <em>clarity</em> and control',
+    sub: 'Keep your customers, orders, measurements, pricing and production organised from one workspace.',
+    cta: 'Start free as a tailor',
+    a: { icon: SPARKLE, t: 'AI Body Scan', s: '27 measurements · 98% accuracy' },
+    b: { icon: SCISSORS, t: 'Order #DB-1043', s: 'Agbada set · In stitching' },
+    tiles: [['/img/hero-tailor.jpg','612/408'],['/img/design-woman.jpg','984/1200'],['/img/design-man.jpg','800/1200']]
+  },
+  apprentice: {
+    h1: 'Build skilled hands, <em>not just extra hands</em>',
+    sub: 'Structured lessons, real tasks and honest feedback from your master — plus a portfolio that opens doors.',
+    cta: 'Start learning free',
+    a: { icon: CAP, t: 'Module 4 · Finishing', s: '80% complete this month' },
+    b: { icon: CHECK, t: 'Task approved', s: 'Great finishing on the sleeve' },
+    tiles: [['/img/tailor-workshop.avif','740/492'],['/img/apprentice.jpg','941/1672'],['/img/card-apprentices.jpg','941/1411']]
+  },
+  seller: {
+    h1: 'Your fabric shop, <em>now online</em>',
+    sub: 'List your fabrics with wholesale pricing, track your stock, and reach buyers ready to purchase.',
+    cta: 'Open your fabric shop',
+    a: { icon: SPOOL, t: 'Premium Ankara', s: '12 yards in stock' },
+    b: { icon: BAG, t: 'New order', s: '₦45,000 · Wholesale buyer' },
+    tiles: [['/img/fabric-seller.webp','600/401'],['/img/design-woman.jpg','984/1200'],['/img/design-man.jpg','800/1200']]
+  }
+};
+const P_ORDER = ['client','tailor','apprentice','seller'];
+const tileEls = [document.querySelector('.tile-1'), document.querySelector('.tile-2'), document.querySelector('.tile-3')];
+let currentPersona = 'client';
+
+function applyTiles(key){
+  const tiles = PERSONAS[key].tiles;
+  tileEls.forEach((tile, i) => {
+    const [src, ratio] = tiles[i];
+    const img = tile.querySelector('img');
+    tile.style.aspectRatio = ratio;
+    if (img.getAttribute('src') === src) return;
+    img.style.opacity = 0;
+    setTimeout(() => { img.src = src; img.onload = () => { img.style.opacity = 1; }; }, 220);
+  });
+}
+function setPersona(key){
+  const d = PERSONAS[key]; if (!d || key === currentPersona) { if (d) syncButtons(key); return; }
+  currentPersona = key;
+  const h1 = document.getElementById('heroH1');
+  const sub = document.getElementById('heroSub');
+  h1.style.opacity = 0; sub.style.opacity = 0;
+  setTimeout(() => {
+    h1.innerHTML = d.h1; sub.textContent = d.sub;
+    h1.style.opacity = 1; sub.style.opacity = 1;
+  }, 180);
+  document.getElementById('heroCta').textContent = d.cta;
+  document.getElementById('chipAText').innerHTML = d.a.t + '<small>' + d.a.s + '</small>';
+  document.getElementById('chipBText').innerHTML = d.b.t + '<small>' + d.b.s + '</small>';
+  document.querySelector('.chip-a .chip-ico').innerHTML = d.a.icon;
+  document.querySelector('.chip-b .chip-ico').innerHTML = d.b.icon;
+  syncButtons(key);
+  applyTiles(key);
+}
+function syncButtons(key){
+  document.querySelectorAll('.p-btn').forEach(b => b.classList.toggle('on', b.dataset.p === key));
+}
+let autoTimer = null;
+function startAuto(){}
+function stopAuto(){}
+document.querySelectorAll('.p-btn').forEach(b => b.addEventListener('click', () => {
+  setPersona(b.dataset.p);
+}));
+
+// Hero load sequence
+  window.addEventListener('load', () => document.body.classList.add('loaded'));
+  setTimeout(() => document.body.classList.add('loaded'), 1400); // fallback
+
+  // Duplicate marquee content for seamless loop
+  const track = document.getElementById('marqueeTrack');
+  track.innerHTML += track.innerHTML;
+
+  // Scroll reveal: slide in when entering, slide out when leaving
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('in-view');
+      else e.target.classList.remove('in-view');
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+  // Stagger children inside groups
+  document.querySelectorAll('[data-reveal-group]').forEach(group => {
+    group.querySelectorAll('[data-reveal]').forEach((el, i) => {
+      el.style.transitionDelay = (i * 0.13).toFixed(2) + 's';
+    });
+  });
+  document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
+
+  // Header state + hero parallax + active nav link
+  const header = document.getElementById('siteHeader');
+  const heroVisual = document.querySelector('.hero-visual');
+  const navAnchors = [...document.querySelectorAll('.nav-links a')];
+  const sections = navAnchors.map(a => a.getAttribute('href')).filter(h => h && h.startsWith('#')).map(h => document.querySelector(h)).filter(Boolean);
+  let ticking = false;
+  function onScroll(){
+    const y = window.scrollY;
+    
+    if (heroVisual && y < 900) heroVisual.style.transform = `translateY(${y * 0.07}px)`;
+    let current = '';
+    sections.forEach(s => { if (y >= s.offsetTop - 140) current = '#' + s.id; });
+    navAnchors.forEach(a => a.classList.toggle('active', a.getAttribute('href') === current));
+    ticking = false;
+  }
+  window.addEventListener('scroll', () => {
+    if (!ticking){ requestAnimationFrame(onScroll); ticking = true; }
+  }, { passive: true });
+  onScroll();
+</script>
+<footer>
+  <div class="foot-inner">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+        <p>The operating system for fashion businesses across Africa.</p>
+        <div class="socials">
+          <a href="https://www.linkedin.com/company/desby-app/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></a>
+          <a href="https://www.instagram.com/desby_app" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.8" cy="6.2" r="1.4" fill="currentColor" stroke="none"/></svg></a>
+          <a href="https://www.facebook.com/profile.php?id=61567341441314" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.52 1.5-3.91 3.78-3.91 1.09 0 2.24.2 2.24.2v2.46H15.2c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.45 2.9h-2.33V22c4.78-.76 8.43-4.92 8.43-9.94z"/></svg></a>
+          <a href="https://x.com/desby_app" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M18.24 2.25h3.31l-7.23 8.26L22.83 21.75h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.83L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z"/></svg></a>
+        </div>
+      </div>
+      <div class="foot-col">
+        <h4>PRODUCT</h4>
+        <a href="/shop">Shop all designs</a>
+        <a href="/#features">Tailor OS</a>
+        <a href="/#features">AI Body Scan</a>
+        <a href="/#features">Virtual Try-On</a>
+        <a href="/#features">Fabric Marketplace</a>
+        <a href="/#features">Smart Logistics</a>
+      </div>
+      <div class="foot-col">
+        <h4>COMPANY</h4>
+        <a href="/#about">About Desby</a>
+        <a href="/#stories">Stories</a>
+        <a href="/#how">Get started</a>
+        <a href="/app">Sign in</a>
+      </div>
+      <div class="foot-col">
+        <h4>SUPPORT</h4>
+        <a href="mailto:hello@desby.app">hello@desby.app</a>
+        <a href="/help">Help centre</a>
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of service</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Desby. All rights reserved.</span>
+      <span>Made for the people who make fashion happen.</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

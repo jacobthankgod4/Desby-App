@@ -16,7 +16,9 @@ void main() {
   setUp(() {
     mockRepo = MockSubscriptionRepository();
     getPlans = GetAvailablePlansUsecase(mockRepo);
-    provideDummy<Result<List<SubscriptionPlan>>>(Failure(ServerFailure(message: 'dummy')));
+    provideDummy<Result<List<SubscriptionPlan>>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
   });
 
   final tPlans = [
@@ -34,15 +36,15 @@ void main() {
       price: '15,000',
       amount: 15000,
       features: ['Feature 1', 'Feature 2'],
-      isElite: true,
       userType: 'tailor',
     ),
   ];
 
   group('GetAvailablePlansUsecase', () {
     test('should return list of plans on success', () async {
-      when(mockRepo.getPlans('tailor'))
-          .thenAnswer((_) async => Success(tPlans));
+      when(
+        mockRepo.getPlans('tailor'),
+      ).thenAnswer((_) async => Success(tPlans));
 
       final result = await getPlans('tailor');
 
@@ -54,8 +56,9 @@ void main() {
     });
 
     test('should return Failure on error', () async {
-      when(mockRepo.getPlans('tailor'))
-          .thenAnswer((_) async => Failure(ServerFailure(message: 'DB error')));
+      when(
+        mockRepo.getPlans('tailor'),
+      ).thenAnswer((_) async => Failure(ServerFailure(message: 'DB error')));
 
       final result = await getPlans('tailor');
 

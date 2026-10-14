@@ -93,12 +93,12 @@ class MeasurementMappingRegistry {
 
   /// Combined mapping for all families
   static Map<String, MeasurementFamily> get allMappings => {
-        ...upperBody,
-        ...torso,
-        ...hipLegs,
-        ...garmentSpecific,
-        ...corsetFemale,
-      };
+    ...upperBody,
+    ...torso,
+    ...hipLegs,
+    ...garmentSpecific,
+    ...corsetFemale,
+  };
 
   /// Get family for a measurement key
   static MeasurementFamily? getFamily(String measurementKey) {

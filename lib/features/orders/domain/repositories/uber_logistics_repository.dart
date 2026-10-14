@@ -22,7 +22,10 @@ abstract class UberLogisticsRepository {
 
   Future<Either<Failure, UberDeliveryStatus>> getStatus(String deliveryId);
 
-  Future<Either<Failure, void>> cancelDelivery(String deliveryId, String reason);
+  Future<Either<Failure, void>> cancelDelivery(
+    String deliveryId,
+    String reason,
+  );
 }
 
 class UberDeliveryStatus {

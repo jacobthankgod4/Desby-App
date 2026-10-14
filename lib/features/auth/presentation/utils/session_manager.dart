@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import '../providers/auth_provider.dart';
 
@@ -21,6 +22,13 @@ class SessionManager {
       final accessToken = accessTokenResult.getOrNull();
 
       if (accessToken == null) {
+        return false;
+      }
+
+      // Verify the Supabase session is still valid (not expired/revoked)
+      final currentSession = Supabase.instance.client.auth.currentSession;
+      if (currentSession == null) {
+        // Local token exists but Supabase session is gone — cannot restore
         return false;
       }
 

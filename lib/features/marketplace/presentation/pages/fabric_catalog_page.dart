@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
-import '../widgets/market_header.dart';
+import '../../../../core/providers/layout_provider.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
+import '../../domain/constants/fabric_constants.dart';
 import '../widgets/search_hero.dart';
 import '../widgets/fabric_card_grid.dart';
 import '../widgets/shortcut_cards.dart';
@@ -22,44 +23,22 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 900;
+    final colors = context.colors;
+    final bool isMobile = !ref.watch(isDesktopProvider);
     final fabricsAsync = ref.watch(fabricCatalogProvider(_selectedCategory));
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: colors.scaffoldBg,
       // Drawer works on both mobile and desktop - opens category filter
       drawer: Drawer(
-        backgroundColor: AppColors.darkNavy, 
-        child: _buildMobileSidebar()
+        backgroundColor: colors.scaffoldBg,
+        child: _buildMobileSidebar(),
       ),
-      appBar: AppBar(
-        backgroundColor: AppColors.darkNavy,
-        elevation: 0,
-        leading: isMobile 
-          ? IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.white),
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            )
-          : (Navigator.canPop(context) 
-              ? IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-                  onPressed: () {
-                    if (ref.canPopShell) {
-                      ref.popShell();
-                    } else {
-                      ref.setShell('/main');
-                    }
-                  },
-                )
-              : null),
-        title: const Text('MARKETPLACE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1.5)),
-        centerTitle: true,
-      ),
+      appBar: shellAppBar(context, title: 'Fabric Marketplace'),
       body: Column(
         children: [
-          if (!isMobile) const SizedBox(height: 0) else const MarketHeader(),
-          if (!isMobile) const SizedBox.shrink() else const SearchHero(),
+          const SearchHero(),
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,22 +57,31 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
                           if (!isMobile) const SizedBox(height: 32),
                           _buildContentHeader(fabrics.length),
                           const SizedBox(height: 16),
-                          FabricCardGrid(isGridView: _isGridView, fabrics: fabrics),
+                          FabricCardGrid(
+                            isGridView: _isGridView,
+                            fabrics: fabrics,
+                          ),
                           const SizedBox(height: 40),
                         ],
                       ),
                     ),
-                    loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(color: AppColors.amber),
+                    ),
                     error: (e, _) => Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.storefront_outlined, color: Colors.white24, size: 64),
+                          Icon(
+                            Icons.storefront_outlined,
+                            color: colors.textMuted,
+                            size: 64,
+                          ),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'MARKETPLACE UNAVAILABLE',
                             style: TextStyle(
-                              color: Colors.white38,
+                              color: colors.textMuted,
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 2,
@@ -102,13 +90,29 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
                           const SizedBox(height: 8),
                           Text(
                             'Check your connection and try again.',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 12),
+                            style: TextStyle(
+                              color: colors.textMuted,
+                              fontSize: 12,
+                            ),
                           ),
                           const SizedBox(height: 24),
                           TextButton.icon(
-                            onPressed: () => ref.invalidate(fabricCatalogProvider(_selectedCategory)),
-                            icon: const Icon(Icons.refresh, color: AppColors.amber, size: 16),
-                            label: const Text('RETRY', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                            onPressed: () => ref.invalidate(
+                              fabricCatalogProvider(_selectedCategory),
+                            ),
+                            icon: const Icon(
+                              Icons.refresh,
+                              color: AppColors.amber,
+                              size: 16,
+                            ),
+                            label: const Text(
+                              'RETRY',
+                              style: TextStyle(
+                                color: AppColors.amber,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -124,9 +128,12 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
   }
 
   Widget _buildDesktopSidebar() {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(border: Border(right: BorderSide(color: Colors.white10))),
+      decoration: BoxDecoration(
+        border: Border(right: BorderSide(color: colors.borderSubtle)),
+      ),
       child: _buildCategoryList(),
     );
   }
@@ -137,7 +144,14 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('CATEGORIES', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, letterSpacing: 2)),
+          const Text(
+            'CATEGORIES',
+            style: TextStyle(
+              color: AppColors.amber,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
           const SizedBox(height: 32),
           Expanded(child: _buildCategoryList()),
         ],
@@ -146,10 +160,11 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
   }
 
   Widget _buildCategoryList() {
-    final categories = ['All', 'Cotton', 'Silk', 'Linen', 'Wool', 'Lace', 'Velvet', 'Leather', 'Satin', 'Damask'];
+    final colors = context.colors;
+    final categories = kFabricCategories;
     return ListView.separated(
       itemCount: categories.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final cat = categories[index];
         final isSel = _selectedCategory == cat;
@@ -161,10 +176,20 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isSel ? AppColors.amber.withValues(alpha: 0.1) : Colors.transparent,
+              color: isSel
+                  ? AppColors.amber.withValues(alpha: 0.1)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(cat.toUpperCase(), style: TextStyle(color: isSel ? AppColors.amber : Colors.white60, fontWeight: isSel ? FontWeight.w900 : FontWeight.w600, fontSize: 11, letterSpacing: 1)),
+            child: Text(
+              cat.toUpperCase(),
+              style: TextStyle(
+                color: isSel ? AppColors.amber : colors.textSecondary,
+                fontWeight: isSel ? FontWeight.w900 : FontWeight.w600,
+                fontSize: 11,
+                letterSpacing: 1,
+              ),
+            ),
           ),
         );
       },
@@ -172,31 +197,58 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
   }
 
   Widget _buildMobileFilterButton() {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: OutlinedButton.icon(
         onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         icon: const Icon(Icons.filter_list_rounded, color: AppColors.amber),
-        label: const Text('EXPLORE CATEGORIES', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+        label: const Text(
+          'EXPLORE CATEGORIES',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 10,
+            letterSpacing: 1,
+          ),
+        ),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.white10),
-          foregroundColor: Colors.white,
+          side: BorderSide(color: colors.borderSubtle),
+          foregroundColor: colors.textPrimary,
           padding: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildContentHeader(int count) {
+    final colors = context.colors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('PREMIUM INVENTORY', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5)),
-            Text('$count Masterpieces Found', style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900)),
+            Text(
+              'PREMIUM INVENTORY',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: colors.textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '$count Masterpieces Found',
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
         _buildViewToggle(),
@@ -205,13 +257,32 @@ class _FabricCatalogPageState extends ConsumerState<FabricCatalogPage> {
   }
 
   Widget _buildViewToggle() {
+    final colors = context.colors;
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.borderSubtle),
+      ),
       child: Row(
         children: [
-          IconButton(icon: Icon(Icons.grid_view_rounded, color: _isGridView ? AppColors.amber : Colors.white24, size: 20), onPressed: () => setState(() => _isGridView = true)),
-          Container(width: 1, height: 24, color: Colors.white10),
-          IconButton(icon: Icon(Icons.list_rounded, color: !_isGridView ? AppColors.amber : Colors.white24, size: 20), onPressed: () => setState(() => _isGridView = false)),
+          IconButton(
+            icon: Icon(
+              Icons.grid_view_rounded,
+              color: _isGridView ? AppColors.amber : colors.textMuted,
+              size: 20,
+            ),
+            onPressed: () => setState(() => _isGridView = true),
+          ),
+          Container(width: 1, height: 24, color: colors.borderSubtle),
+          IconButton(
+            icon: Icon(
+              Icons.list_rounded,
+              color: !_isGridView ? AppColors.amber : colors.textMuted,
+              size: 20,
+            ),
+            onPressed: () => setState(() => _isGridView = false),
+          ),
         ],
       ),
     );

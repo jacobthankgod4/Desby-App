@@ -36,12 +36,12 @@ class _AuthShellState extends State<AuthShell> {
     _CarouselSlide(
       image: 'assets/images/tailor-full.jpg',
       headline: 'Where craftsmanship\nmeets innovation.',
-      accent: 'Precision tools for the modern artisan.',
+      accent: 'Simple tools that help your business grow every day.',
     ),
     _CarouselSlide(
       image: 'assets/images/lady-elegant-dress.jpg',
       headline: 'Effortless elegance,\nperfectly fitted.',
-      accent: 'From concept to couture, every stitch tells a story.',
+      accent: 'From idea to outfit, every stitch tells a story.',
     ),
     _CarouselSlide(
       image: 'assets/images/man-elegant-dress.jpg',
@@ -78,28 +78,29 @@ class _AuthShellState extends State<AuthShell> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: colors.scaffoldBg,
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth <= 900) {
-            return _buildMobileLayout();
+            return _buildMobileLayout(colors);
           }
-          return _buildDesktopLayout();
+          return _buildDesktopLayout(colors);
         },
       ),
     );
   }
 
-  Widget _buildDesktopLayout() {
+  Widget _buildDesktopLayout(DesbyThemeColors colors) {
     return Row(
       children: [
-        // Left: Carousel panel (white background)
+        // Left: Carousel panel (always white regardless of theme)
         Expanded(
           flex: 4,
           child: Container(
             height: double.infinity,
-            color: Colors.white,
+            color: colors.surface,
             child: Stack(
               children: [
                 // Carousel
@@ -107,7 +108,7 @@ class _AuthShellState extends State<AuthShell> {
                   controller: _pageController,
                   itemCount: _slides.length,
                   onPageChanged: (i) => setState(() => _currentPage = i),
-                  itemBuilder: (_, i) => _buildSlide(_slides[i]),
+                  itemBuilder: (_, i) => _buildSlide(_slides[i], colors),
                 ),
                 // Bottom gradient overlay for text readability
                 Positioned(
@@ -116,14 +117,11 @@ class _AuthShellState extends State<AuthShell> {
                   bottom: 0,
                   height: 260,
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Color(0xCC0A1921),
-                        ],
+                        colors: [Colors.transparent, Color(0xCC0A1921)],
                       ),
                     ),
                   ),
@@ -141,10 +139,10 @@ class _AuthShellState extends State<AuthShell> {
                       children: [
                         Text(
                           _slides[_currentPage].headline,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 36,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: colors.textPrimary,
                             letterSpacing: -1.2,
                             height: 1.1,
                           ),
@@ -185,7 +183,7 @@ class _AuthShellState extends State<AuthShell> {
                             borderRadius: BorderRadius.circular(4),
                             color: _currentPage == i
                                 ? AppColors.amber
-                                : Colors.white.withValues(alpha: 0.4),
+                                : colors.textMuted,
                           ),
                         ),
                       ),
@@ -196,15 +194,18 @@ class _AuthShellState extends State<AuthShell> {
             ),
           ),
         ),
-        // Right: Form panel (dark green background)
+        // Right: Form panel (dark green background) - now scrollable
         Expanded(
           flex: 5,
           child: Container(
             height: double.infinity,
-            color: AppColors.darkNavy,
+            color: colors.scaffoldBg,
             child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 32,
+                ),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 440),
                   child: widget.child,
@@ -217,9 +218,9 @@ class _AuthShellState extends State<AuthShell> {
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(DesbyThemeColors colors) {
     return Container(
-      color: AppColors.darkNavy,
+      color: colors.scaffoldBg,
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -234,18 +235,23 @@ class _AuthShellState extends State<AuthShell> {
     );
   }
 
-  Widget _buildSlide(_CarouselSlide slide) {
+  Widget _buildSlide(_CarouselSlide slide, DesbyThemeColors colors) {
     return Container(
-      color: Colors.white,
+      color: colors.surface,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Image centered with padding
-          Padding(
-            padding: const EdgeInsets.all(40),
+          // Full-bleed cover so the photograph fills the panel without
+          // letterboxing (BoxFit.contain left white gaps on the sides).
+          Positioned.fill(
             child: Image.asset(
               slide.image,
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('[AUTH_SHELL] slide image failed: $error');
+                return const SizedBox.shrink();
+              },
             ),
           ),
         ],
@@ -272,6 +278,7 @@ class AuthLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: () {
         if (Navigator.of(context).canPop()) {
@@ -281,17 +288,14 @@ class AuthLogo extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.asset(
-            'assets/images/logo.png',
-            height: 36,
-          ),
+          Image.asset('assets/images/logo.png', height: 36),
           const SizedBox(width: 10),
-          const Text(
+          Text(
             'Desby',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: colors.textPrimary,
               letterSpacing: -0.5,
             ),
           ),

@@ -10,32 +10,39 @@ class TailorAvailabilityPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1921),
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Appointments', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+        title: Text(
+          'Appointments',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: MediaQuery.of(context).size.width <= 1000,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(Icons.arrow_back, color: colors.textPrimary),
+          onPressed: () => ref.popShell(),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          // Offline Card
           _buildAvailabilityCard(
+            context: context,
             status: 'Offline',
-            statusColor: Colors.redAccent,
+            statusColor: colors.statusError,
             actionLabel: 'Get Directions',
             actionIcon: Icons.directions_rounded,
             onAction: () {},
           ),
           const SizedBox(height: 24),
-          
-          // Online Card
           _buildAvailabilityCard(
+            context: context,
             status: 'Online',
             statusColor: Colors.greenAccent,
             showSecondAction: true,
@@ -52,6 +59,7 @@ class TailorAvailabilityPage extends ConsumerWidget {
   }
 
   Widget _buildAvailabilityCard({
+    required BuildContext context,
     required String status,
     required Color statusColor,
     required String actionLabel,
@@ -62,12 +70,13 @@ class TailorAvailabilityPage extends ConsumerWidget {
     IconData? secondActionIcon,
     VoidCallback? onSecondAction,
   }) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +88,11 @@ class TailorAvailabilityPage extends ConsumerWidget {
                 backgroundColor: AppColors.amber,
                 child: Text(
                   (tailor['name'] ?? 'T')[0].toString().toUpperCase(),
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.darkNavy),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: colors.scaffoldBg,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -89,17 +102,24 @@ class TailorAvailabilityPage extends ConsumerWidget {
                   children: [
                     Text(
                       tailor['name'] ?? 'Tailor Name',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       tailor['location'] ?? 'Shop Address',
-                      style: const TextStyle(color: Colors.white54, fontSize: 13),
+                      style: TextStyle(color: colors.textMuted, fontSize: 13),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -107,32 +127,45 @@ class TailorAvailabilityPage extends ConsumerWidget {
                 ),
                 child: Text(
                   status.toUpperCase(),
-                  style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const Divider(color: Colors.white10),
+          Divider(color: colors.borderDefault),
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(Icons.phone_outlined, color: AppColors.amber, size: 18),
+              const Icon(
+                Icons.phone_outlined,
+                color: AppColors.amber,
+                size: 18,
+              ),
               const SizedBox(width: 12),
               Text(
                 tailor['phone'] ?? '+234 800 000 0000',
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: colors.textSecondary),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Row(
+          Row(
             children: [
-              Icon(Icons.access_time_rounded, color: AppColors.amber, size: 18),
-              SizedBox(width: 12),
+              const Icon(
+                Icons.access_time_rounded,
+                color: AppColors.amber,
+                size: 18,
+              ),
+              const SizedBox(width: 12),
               Text(
                 '09:00 AM - 06:00 PM',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: colors.textSecondary),
               ),
             ],
           ),
@@ -145,10 +178,16 @@ class TailorAvailabilityPage extends ConsumerWidget {
                   icon: Icon(actionIcon, size: 18),
                   label: Text(actionLabel),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: showSecondAction ? Colors.white10 : AppColors.amber,
-                    foregroundColor: showSecondAction ? Colors.white : AppColors.darkNavy,
+                    backgroundColor: showSecondAction
+                        ? colors.surface
+                        : AppColors.amber,
+                    foregroundColor: showSecondAction
+                        ? colors.textPrimary
+                        : colors.scaffoldBg,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
@@ -161,9 +200,11 @@ class TailorAvailabilityPage extends ConsumerWidget {
                     label: Text(secondActionLabel!),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.amber,
-                      foregroundColor: AppColors.darkNavy,
+                      foregroundColor: colors.scaffoldBg,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ),

@@ -1,12 +1,10 @@
-
 /// Manages interaction with the model's rig/bones or overlays.
 /// Part of Step 4.1: Rig Interaction Layer.
 class RigInteractionLayer {
   final Map<String, List<String>> _segmentBones;
-  
-  RigInteractionLayer({
-    required Map<String, List<String>> segmentBones,
-  }) : _segmentBones = segmentBones;
+
+  RigInteractionLayer({required Map<String, List<String>> segmentBones})
+    : _segmentBones = segmentBones;
 
   List<String> getBonesForSegment(String segmentId) {
     return _segmentBones[segmentId] ?? [];

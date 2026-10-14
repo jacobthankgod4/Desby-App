@@ -6,6 +6,7 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../profile/domain/entities/user_profile.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
 
 class ShopSetupPage extends ConsumerStatefulWidget {
   const ShopSetupPage({super.key});
@@ -20,24 +21,36 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
   final _bioController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
-  
-  // FOCUS NODES: Explicit management for desktop stability
+
   final _shopNameFocus = FocusNode();
   final _bioFocus = FocusNode();
   final _addressFocus = FocusNode();
   final _phoneFocus = FocusNode();
-  
+
   bool _isLoading = false;
-  bool _isInitialized = false; // GUARD: Only load from DB once
+  bool _isInitialized = false;
   List<String> _selectedServices = [];
   List<String> _availableFabrics = [];
 
   final List<String> _serviceOptions = [
-    'Custom Suits', 'Traditional Wear', 'Bridal', 'Alterations', 'Childrenswear', 'Menswear', 'Womenswear'
+    'Custom Suits',
+    'Traditional Wear',
+    'Bridal',
+    'Alterations',
+    'Childrenswear',
+    'Menswear',
+    'Womenswear',
   ];
 
   final List<String> _fabricOptions = [
-    'Cotton', 'Silk', 'Linen', 'Wool', 'Lace', 'Ankara', 'Cashmere', 'Velvet'
+    'Cotton',
+    'Silk',
+    'Linen',
+    'Wool',
+    'Lace',
+    'Ankara',
+    'Cashmere',
+    'Velvet',
   ];
 
   @override
@@ -86,48 +99,68 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
 
     try {
       final user = ref.read(currentUserProvider);
-      if (user != null) {
-        final currentProfile = await ref.read(userProfileProvider(user.id).future);
-        
-        final updatedProfile = (currentProfile ?? UserProfile(
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          userType: 'tailor',
-          createdAt: DateTime.now(),
-        )).copyWith(
-          businessName: _shopNameController.text.trim(),
-          bio: _bioController.text.trim(),
-          address: _addressController.text.trim(),
-          phone: _phoneController.text.trim(),
-          services: _selectedServices,
-          availableFabrics: _availableFabrics,
-          userType: 'tailor', // ENSURE role is forced to tailor
-          updatedAt: DateTime.now(),
+      if (user == null || user.id.isEmpty) {
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Your session expired. Please sign in again.',
+              ),
+              backgroundColor: context.colors.statusError,
+            ),
+          );
+        return;
+      }
+      {
+        final currentProfile = await ref.read(
+          userProfileProvider(user.id).future,
         );
 
+        final updatedProfile =
+            (currentProfile ??
+                    UserProfile(
+                      id: user.id,
+                      email: user.email,
+                      name: user.name,
+                      userType: 'tailor',
+                      createdAt: DateTime.now(),
+                    ))
+                .copyWith(
+                  businessName: _shopNameController.text.trim(),
+                  bio: _bioController.text.trim(),
+                  address: _addressController.text.trim(),
+                  phone: _phoneController.text.trim(),
+                  services: _selectedServices,
+                  availableFabrics: _availableFabrics,
+                  userType: 'tailor',
+                  updatedAt: DateTime.now(),
+                );
+
         await ref.read(updateProfileUsecaseProvider)(updatedProfile);
-        
-        // REFRESH: Force provider to clear cached empty profile
+
         ref.invalidate(userProfileProvider(user.id));
         await ref.read(userProfileProvider(user.id).future);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Atelier configuration updated successfully!'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Atelier configuration updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
-          
-          if (ref.canPopShell) {
-            ref.popShell();
-          } else {
-            ref.setShell('/main');
-          }
+
+          ref.setShell('/product-list');
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Configuration Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: const Text(
+              'Could not save your shop settings. Please try again.',
+            ),
+            backgroundColor: context.colors.statusError,
+          ),
         );
       }
     } finally {
@@ -137,25 +170,10 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
-        title: const Text('ATELIER CONFIG', 
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 20),
-          onPressed: () {
-            if (ref.canPopShell) {
-              ref.popShell();
-            } else {
-              ref.setShell('/main');
-            }
-          },
-        ),
-      ),
+      backgroundColor: colors.scaffoldBg,
+      appBar: shellAppBar(context, title: 'Shop Setup'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -163,19 +181,43 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle('BUSINESS IDENTITY'),
-              _buildRawTextField('BUSINESS NAME', _shopNameController, _shopNameFocus, (v) => v!.isEmpty ? 'Enter your atelier name' : null),
+              _buildSectionTitle('Business Info'),
+              _buildRawTextField(
+                'BUSINESS NAME',
+                _shopNameController,
+                _shopNameFocus,
+                (v) => v!.isEmpty ? 'Enter your business name' : null,
+              ),
               const SizedBox(height: 16),
-              _buildRawTextField('CRAFT NARRATIVE (BIO)', _bioController, _bioFocus, null, maxLines: 3),
+              _buildRawTextField(
+                'About You (Bio)',
+                _bioController,
+                _bioFocus,
+                null,
+                maxLines: 3,
+              ),
               const SizedBox(height: 32),
 
-              _buildSectionTitle('CONTACT & LOGISTICS'),
-              _buildRawTextField('PHYSICAL ATELIER ADDRESS', _addressController, _addressFocus, null, icon: Icons.location_on_rounded),
+              _buildSectionTitle('Contact Details'),
+              _buildRawTextField(
+                'Workshop Address',
+                _addressController,
+                _addressFocus,
+                null,
+                icon: Icons.location_on_rounded,
+              ),
               const SizedBox(height: 16),
-              _buildRawTextField('BUSINESS HOTLINE', _phoneController, _phoneFocus, null, type: TextInputType.phone, icon: Icons.phone_rounded),
+              _buildRawTextField(
+                'Phone Number',
+                _phoneController,
+                _phoneFocus,
+                null,
+                type: TextInputType.phone,
+                icon: Icons.phone_rounded,
+              ),
               const SizedBox(height: 32),
 
-              _buildSectionTitle('MASTERED SERVICES'),
+              _buildSectionTitle('Services You Offer'),
               _buildChipSelection(_serviceOptions, _selectedServices, (val) {
                 setState(() {
                   if (_selectedServices.contains(val)) {
@@ -187,7 +229,7 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
               }),
               const SizedBox(height: 32),
 
-              _buildSectionTitle('AVAILABLE TEXTILES'),
+              _buildSectionTitle('Fabrics You Work With'),
               _buildChipSelection(_fabricOptions, _availableFabrics, (val) {
                 setState(() {
                   if (_availableFabrics.contains(val)) {
@@ -200,7 +242,7 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
               const SizedBox(height: 48),
 
               CustomButton(
-                text: 'SAVE CONFIGURATION',
+                text: 'Save',
                 onPressed: _saveShop,
                 isLoading: _isLoading,
               ),
@@ -215,15 +257,40 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Text(title, style: const TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: AppColors.amber,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
+        ),
+      ),
     );
   }
 
-  Widget _buildRawTextField(String label, TextEditingController controller, FocusNode focusNode, String? Function(String?)? validator, {IconData? icon, TextInputType type = TextInputType.text, int maxLines = 1}) {
+  Widget _buildRawTextField(
+    String label,
+    TextEditingController controller,
+    FocusNode focusNode,
+    String? Function(String?)? validator, {
+    IconData? icon,
+    TextInputType type = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        Text(
+          label,
+          style: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -231,21 +298,37 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
           validator: validator,
           keyboardType: type,
           maxLines: maxLines,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: TextStyle(color: colors.textPrimary, fontSize: 14),
           decoration: InputDecoration(
-            prefixIcon: icon != null ? Icon(icon, color: AppColors.amber, size: 20) : null,
+            prefixIcon: icon != null
+                ? Icon(icon, color: AppColors.amber, size: 20)
+                : null,
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.05),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.amber, width: 1.5)),
+            fillColor: colors.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.amber, width: 1.5),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildChipSelection(List<String> options, List<String> selected, Function(String) onToggle) {
+  Widget _buildChipSelection(
+    List<String> options,
+    List<String> selected,
+    Function(String) onToggle,
+  ) {
+    final colors = context.colors;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -257,14 +340,16 @@ class _ShopSetupPageState extends ConsumerState<ShopSetupPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.05),
+              color: isSelected ? AppColors.amber : colors.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isSelected ? AppColors.amber : Colors.white10),
+              border: Border.all(
+                color: isSelected ? AppColors.amber : colors.borderSubtle,
+              ),
             ),
             child: Text(
               option.toUpperCase(),
               style: TextStyle(
-                color: isSelected ? AppColors.darkNavy : Colors.white70,
+                color: isSelected ? colors.scaffoldBg : colors.textSecondary,
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
               ),

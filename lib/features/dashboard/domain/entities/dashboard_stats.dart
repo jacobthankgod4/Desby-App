@@ -29,18 +29,18 @@ class DashboardStats extends Equatable {
 
   @override
   List<Object?> get props => [
-        totalOrders,
-        pendingOrders,
-        completedOrders,
-        totalRevenue,
-        totalClients,
-        urgentDeadlines,
-        totalApprentices,
-        fabricInventoryLevel,
-        growthPercentage,
-        unreadMessages,
-        lastUpdated,
-      ];
+    totalOrders,
+    pendingOrders,
+    completedOrders,
+    totalRevenue,
+    totalClients,
+    urgentDeadlines,
+    totalApprentices,
+    fabricInventoryLevel,
+    growthPercentage,
+    unreadMessages,
+    lastUpdated,
+  ];
 
   DashboardStats copyWith({
     int? totalOrders,

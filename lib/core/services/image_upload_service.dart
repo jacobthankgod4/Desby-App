@@ -1,7 +1,17 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+
+/// Thrown when an image upload to Supabase Storage fails.
+class ImageUploadException implements Exception {
+  final String message;
+
+  const ImageUploadException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 class ImageUploadService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -70,6 +80,43 @@ class ImageUploadService {
     } catch (e) {
       debugPrint('Error uploading image: $e');
       return null;
+    }
+  }
+
+  /// Mirror a remote image into Supabase Storage and return its permanent URL.
+  ///
+  /// Providers such as Magic Hour hand back signed URLs with a short TTL (the GCS
+  /// signed links expire in 24h). Persisting one of those leaves the row pointing at
+  /// a dead image the next day, so results meant to outlive the session have to be
+  /// copied somewhere we control.
+  ///
+  /// Falls back to [remoteUrl] when the copy fails, so a transient error degrades to
+  /// a short-lived link instead of losing the result.
+  Future<String> mirrorRemoteImage(
+    String remoteUrl, {
+    String folder = 'tryon_outputs',
+  }) async {
+    try {
+      final resp = await http.get(Uri.parse(remoteUrl));
+      if (resp.statusCode != 200 || resp.bodyBytes.isEmpty) {
+        debugPrint('[ImageUpload] mirror skipped (HTTP ${resp.statusCode})');
+        return remoteUrl;
+      }
+      final path = '$folder/${DateTime.now().microsecondsSinceEpoch}.png';
+      await _supabase.storage.from('images').uploadBinary(
+        path,
+        resp.bodyBytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/png',
+          upsert: true,
+        ),
+      );
+      final publicUrl = _supabase.storage.from('images').getPublicUrl(path);
+      debugPrint('[ImageUpload] mirrored -> $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      debugPrint('[ImageUpload] mirror failed, keeping source URL: $e');
+      return remoteUrl;
     }
   }
 

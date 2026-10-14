@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../model/focus_models.dart';
 import 'focus_quality_scorer.dart';
 
@@ -48,7 +49,10 @@ class FocusOptimizer {
     final focusOrbit = baseProfile?.orbit ?? const FocusOrbit(0, 0, 1.75);
 
     // Compute region bounding radius (Step 8.2.2)
-    final regionRadius = _computeRegionRadius(measurementKey, measurementFamily);
+    final regionRadius = _computeRegionRadius(
+      measurementKey,
+      measurementFamily,
+    );
 
     // Apply family multiplier (Step 8.2.3)
     final familyMult = _getFamilyMultiplier(measurementFamily);
@@ -67,11 +71,7 @@ class FocusOptimizer {
     // Return optimized profile
     return FocusProfile(
       target: focusTarget,
-      orbit: FocusOrbit(
-        adjustedOrbit.theta,
-        adjustedOrbit.phi,
-        adjustedRadius,
-      ),
+      orbit: FocusOrbit(adjustedOrbit.theta, adjustedOrbit.phi, adjustedRadius),
       bucket: baseProfile?.bucket ?? measurementFamily,
     );
   }
@@ -86,14 +86,16 @@ class FocusOptimizer {
         measurementKey.contains('wrist')) {
       return 1.65;
     }
-    if (measurementKey.contains('chest') || measurementKey.contains('bust')) return 1.55;
+    if (measurementKey.contains('chest') || measurementKey.contains('bust'))
+      return 1.55;
     if (measurementKey.contains('waist')) return 1.45;
     if (measurementKey.contains('hip')) return 1.50;
     if (measurementKey.contains('thigh')) return 1.55;
     if (measurementKey.contains('knee')) return 1.55;
     if (measurementKey.contains('calf')) return 1.40;
     if (measurementKey.contains('ankle')) return 1.28;
-    if (measurementKey.contains('full') || measurementKey.contains('floor')) return 2.0;
+    if (measurementKey.contains('full') || measurementKey.contains('floor'))
+      return 2.0;
 
     // Family-based defaults
     switch (family) {
@@ -135,20 +137,13 @@ class FocusOptimizer {
     final radius = orbit.radius;
 
     // Back measurements get theta + 180
-    final backMeasurements = [
-      'back_waist_length',
-      'back_waist',
-      'across_back',
-    ];
+    final backMeasurements = ['back_waist_length', 'back_waist', 'across_back'];
     if (backMeasurements.any((m) => measurementKey.contains(m))) {
       theta = (theta + thetaBack) % 360;
     }
 
     // Side measurements get theta +/- 90
-    final sideMeasurements = [
-      'side',
-      'half_length',
-    ];
+    final sideMeasurements = ['side', 'half_length'];
     if (sideMeasurements.any((m) => measurementKey.contains(m))) {
       if (measurementKey.contains('left')) {
         theta = (theta + thetaLeft) % 360;
@@ -246,6 +241,8 @@ class FocusOptimizer {
     // Stub: In production, implement persistence
     // Could use SharedPreferences or Firebase
     // Only persist if stable across N sessions
-    print('Would persist: $measurementKey/$gender -> radius=${profile.orbit.radius} ($stableSessions sessions)');
+    debugPrint(
+      'Would persist: $measurementKey/$gender -> radius=${profile.orbit.radius} ($stableSessions sessions)',
+    );
   }
 }

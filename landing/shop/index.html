@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Bespoke Fashion — Desby</title>
+<meta name="description" content="Browse authentic Nigerian bespoke fashion: Agbada, Ankara, Senator, Aso Ebi and more — listed by verified tailors on Desby.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1921; --navy-2:#0E2430; --navy-3:#123240;
+    --amber:#FFC107; --amber-deep:#E6A800; --amber-soft:#FFF3CC;
+    --paper:#F7F6F2; --card:#FFFFFF;
+    --muted:#5B6B74; --line:#E8E6DF;
+    --green:#0F9D76;
+    --shadow-sm:0 1px 3px rgba(10,25,33,.08);
+    --shadow-md:0 14px 38px rgba(10,25,33,.12);
+    --shadow-lg:0 30px 80px rgba(10,25,33,.24);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.14;color:var(--navy)}
+  img{display:block}
+  a{text-decoration:none;color:inherit}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
+  .btn{position:relative;display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:15px;border-radius:999px;padding:14px 28px;transition:.22s;border:none;cursor:pointer;font-family:'Inter';overflow:hidden}
+  .btn::after{content:"";position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);transition:left .6s var(--ease-out)}
+  .btn:hover::after{left:130%}
+  .btn-amber{background:var(--amber);color:#111;box-shadow:0 8px 24px rgba(255,193,7,.35)}
+  .btn-amber:hover{background:var(--amber-deep);transform:translateY(-2px)}
+  
+
+  .shop-hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 60%,var(--navy-3) 100%);color:#fff;padding:76px 0 66px;text-align:center;position:relative;overflow:hidden}
+  .shop-hero::after{content:"";position:absolute;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.14),transparent 65%);top:-180px;right:-120px}
+  .shop-hero h1{color:#fff;font-size:clamp(32px,4.8vw,52px);margin:18px 0 14px;position:relative;z-index:1}
+  .shop-hero p{color:#B9CBD4;font-size:17px;max-width:560px;margin:0 auto;position:relative;z-index:1}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,193,7,.13);color:var(--amber);font-size:13px;font-weight:700;padding:8px 18px;border-radius:999px;border:1px solid rgba(255,193,7,.25);position:relative;z-index:1}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:34px 0 10px}
+  .chips{display:flex;gap:10px;flex-wrap:wrap}
+  .chip{border:1.5px solid var(--line);background:#fff;color:#4A5C66;font-weight:600;font-size:13.5px;padding:9px 18px;border-radius:999px;cursor:pointer;transition:.2s;font-family:'Inter'}
+  .chip:hover{border-color:var(--navy);color:var(--navy)}
+  .chip.on{background:var(--navy);border-color:var(--navy);color:var(--amber)}
+  select{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:10px 18px;font-family:'Inter';font-weight:600;font-size:13.5px;color:#4A5C66;cursor:pointer}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:26px;padding:34px 0 110px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:22px;overflow:hidden;cursor:pointer;transition:transform .45s var(--ease-out),box-shadow .45s var(--ease-out);opacity:0;transform:translateY(30px);animation:cardIn .7s var(--ease-out) forwards}
+  @keyframes cardIn{to{opacity:1;transform:none}}
+  .card:hover{transform:translateY(-8px);box-shadow:var(--shadow-md)}
+  .card-img{aspect-ratio:4/4.6;overflow:hidden;background:linear-gradient(150deg,#F2EFE6,#E7E2D4);display:flex;align-items:center;justify-content:center}
+  .card-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease-out)}
+  .card:hover .card-img img{transform:scale(1.05)}
+  .card-body{padding:18px 20px 22px}
+  .card-cat{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--amber-deep);text-transform:uppercase}
+  .card-title{font-family:'Sora';font-weight:700;font-size:16px;color:var(--navy);margin:6px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-tailor{font-size:13px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:6px}
+  .card-tailor::before{content:"✓";color:var(--green);font-weight:800;font-size:12px}
+  .card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+  .price{font-family:'Sora';font-weight:800;font-size:17px;color:var(--navy)}
+  .view{font-size:12.5px;font-weight:700;color:var(--amber-deep);display:flex;align-items:center;gap:5px;transition:gap .25s}
+  .card:hover .view{gap:9px}
+
+  .skeleton{border-radius:22px;overflow:hidden;background:#fff;border:1px solid var(--line)}
+  .sk-img{aspect-ratio:4/4.6;background:linear-gradient(100deg,#EFEDE5 40%,#F7F5EE 50%,#EFEDE5 60%);background-size:200% 100%;animation:shimmer 1.3s infinite}
+  .sk-lines{padding:18px 20px 22px}
+  .sk-line{height:12px;border-radius:6px;background:linear-gradient(100deg,#EFEDE5 40%,#F7F5EE 50%,#EFEDE5 60%);background-size:200% 100%;animation:shimmer 1.3s infinite;margin-bottom:10px}
+  @keyframes shimmer{to{background-position:-200% 0}}
+
+  .empty{display:none;text-align:center;padding:80px 20px 130px}
+  .empty .eico{width:76px;height:76px;border-radius:22px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 22px}
+  .empty h3{font-size:22px;margin-bottom:10px}
+  .empty p{color:var(--muted);margin-bottom:26px}
+
+  .count-note{color:var(--muted);font-size:14px;font-weight:500;padding-top:26px}
+  footer .logo{color:#fff}
+
+  header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:84px;max-width:1200px;margin:0 auto;padding:0 28px}
+  .logo{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:800;font-size:23px;color:var(--navy)}
+  .logo-mark{width:54px;height:54px;border-radius:14px;object-fit:cover;display:block}
+  .nav-links{display:flex;align-items:center;gap:30px;font-size:15px;font-weight:500;color:#3A4B54}
+  .nav-links a{transition:color .2s}
+  .nav-links a:hover{color:var(--navy)}
+  .nav-links a.active{color:var(--navy);font-weight:700;position:relative}
+  .nav-links a.active::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:2.5px;border-radius:2px;background:var(--amber)}
+  .nav-cta{display:flex;align-items:center;gap:16px}
+  .signin{font-weight:600;font-size:15px;color:var(--navy)}
+  .nav-cta .btn-amber{padding:12px 24px;font-size:14px}
+  .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;z-index:200}
+  .hamburger span{display:block;width:22px;height:2px;background:var(--navy);border-radius:2px;transition:.3s}
+  .mobile-menu{display:none;position:fixed;inset:0;background:#fff;z-index:150;padding:100px 28px 40px;flex-direction:column;gap:0}
+  .mobile-menu.open{display:flex}
+  .mobile-menu a{display:block;padding:16px 0;font-size:17px;font-weight:600;color:var(--navy);border-bottom:1px solid var(--line)}
+  .mobile-menu a:last-child{border-bottom:none}
+  .mobile-menu .mob-cta{margin-top:auto;padding-bottom:40px;display:flex;flex-direction:column;gap:12px}
+  .mobile-menu .mob-cta a{text-align:center;border:none;padding:14px;border-radius:999px;font-weight:700}
+  .mob-cta .btn-amber{background:var(--amber);color:#111}
+  .mob-cta .btn-navy{background:var(--navy);color:#fff}
+  .mobile-menu .mob-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--navy);z-index:160}
+  .mobile-menu .mob-close:hover{background:var(--line)}
+  @media(max-width:900px){.nav-links{display:none}.nav-cta{display:none}.hamburger{display:flex}}
+
+  footer{background:var(--navy);color:#9FB3BC;padding:70px 0 34px;font-size:14px}
+  .foot-inner{max-width:1200px;margin:0 auto;padding:0 28px}
+  .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:44px;margin-bottom:52px}
+  .foot-brand p{margin:18px 0 0;max-width:280px;color:#7E93A0}
+  footer h4{color:#fff;font-family:'Sora';font-size:13.5px;margin-bottom:20px;letter-spacing:.06em}
+  .foot-col a{display:block;margin-bottom:13px;transition:.2s;width:fit-content}
+  .foot-col a:hover{color:var(--amber);transform:translateX(4px)}
+  .foot-base{border-top:1px solid rgba(255,255,255,.09);padding-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;color:#7E93A0;font-size:13px}
+  @media(max-width:860px){.foot-grid{grid-template-columns:1fr 1fr}}
+
+  .socials{display:flex;gap:12px;margin-top:22px}
+  .socials a{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#CFE0E8;transition:.25s}
+  .socials a:hover{background:var(--amber);color:var(--navy);border-color:var(--amber);transform:translateY(-3px)}
+
+  .eyebrow svg{width:14px;height:14px}
+  .eico svg{width:32px;height:32px}
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+    <div class="nav-links">
+      <a href="/#features">Features</a>
+      <a href="/shop" class="active">Shop</a>
+      <a href="/#about">About</a>
+      <a href="/help">Help</a>
+    </div>
+    <div class="nav-cta">
+      <a class="signin" href="#" onclick="return false">Sign in</a>
+      <a class="btn btn-amber header-cta-btn" href="/app" onclick="return false">Get started</a>
+    </div>
+    <button class="hamburger" onclick="document.getElementById('mobMenu').classList.add('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<div class="mobile-menu" id="mobMenu">
+  <button class="mob-close" onclick="document.getElementById('mobMenu').classList.remove('open')" aria-label="Close menu">&times;</button>
+  <a href="/#features" onclick="document.getElementById('mobMenu').classList.remove('open')">Features</a>
+  <a href="/shop" onclick="document.getElementById('mobMenu').classList.remove('open')">Shop</a>
+  <a href="/#about" onclick="document.getElementById('mobMenu').classList.remove('open')">About</a>
+  <a href="/help" onclick="document.getElementById('mobMenu').classList.remove('open')">Help</a>
+  <div class="mob-cta">
+    <a class="btn-amber mob-cta-btn" href="/app">Get started</a>
+    <a class="btn-navy" href="#" onclick="return false">Sign in</a>
+  </div>
+</div>
+<script>
+(function(){
+  var btns = document.querySelectorAll('.header-cta-btn, .mob-cta-btn');
+  var hasSession = false;
+  try { hasSession = !!localStorage.getItem('sb-aemumiyzowraoachzxtu-auth-token'); } catch(e){}
+  btns.forEach(function(b){
+    if(hasSession){ b.textContent='Dashboard'; b.href='/app'; }
+  });
+})();
+</script>
+
+
+
+
+<div class="shop-hero">
+  <div class="wrap">
+    <span class="eyebrow" style="gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg> Fresh from verified tailors</span>
+    <h1>Shop bespoke fashion, made for you</h1>
+    <p>Every piece below is listed by a real tailor on Desby. Browse freely — sign up only when you're ready to order or try something on.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="toolbar">
+    <div class="chips" id="chips"><button class="chip on" data-cat="ALL">All</button></div>
+    <select id="sort">
+      <option value="new">Newest first</option>
+      <option value="low">Price: Low → High</option>
+      <option value="high">Price: High → Low</option>
+    </select>
+  </div>
+  <div class="count-note" id="countNote"></div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty">
+    <div class="eico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3v4c0 2-1.5 3-1.5 5S8 15 8 17v4"/><path d="M16 3v4c0 2 1.5 3 1.5 5S16 15 16 17v4"/><path d="M8 11h8"/><path d="M8 14h8"/></svg></div>
+    <h3>No pieces match that filter</h3>
+    <p>Try another category, or check back soon — tailors add new work every week.</p>
+    <button class="btn btn-navy" onclick="resetFilters()">Show everything</button>
+  </div>
+</div>
+
+
+
+<script>
+  const SUPABASE_URL = 'https://aemumiyzowraoachzxtu.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbXVtaXl6b3dyYW9hY2h6eHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjAxNTcsImV4cCI6MjEwMTI5NjE1N30.9qXwWvuPWHxMk7q45fcLZfLTVUvnzAbLn9mIa_8tBSM';
+  const headers = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+
+  let items = [];
+  let activeCat = 'ALL';
+  let sortMode = 'new';
+
+  const naira = n => '₦' + Number(n||0).toLocaleString('en-NG');
+  const imgOf = it => (it.image_urls && it.image_urls[0]) || '';
+
+  async function fetchData(){
+    // Show skeletons immediately
+    const grid = document.getElementById('grid');
+    grid.innerHTML = Array(8).fill('<div class="skeleton"><div class="sk-img"></div><div class="sk-lines"><div class="sk-line" style="width:35%"></div><div class="sk-line" style="width:80%"></div><div class="sk-line" style="width:50%"></div></div></div>').join('');
+
+    const reqs = [
+      fetch(`${SUPABASE_URL}/rest/v1/designs?select=*&is_visible=eq.true&order=created_at.desc`, { headers })
+        .then(r => r.ok ? r.json() : []).then(rows => rows.map(d => ({...d, kind:'design'}))),
+      fetch(`${SUPABASE_URL}/rest/v1/products?select=*&is_visible=eq.true&order=created_at.desc`, { headers })
+        .then(r => r.ok ? r.json() : []).then(rows => rows.map(p => ({...p, kind:'product'}))),
+    ];
+    const [designs, products] = await Promise.all(reqs);
+    items = [...products, ...designs].filter(it => imgOf(it));
+    render();
+  }
+
+  function categories(){
+    const cats = [...new Set(items.map(it => (it.category||'OTHER').toUpperCase()))];
+    return cats.sort();
+  }
+
+  function renderChips(){
+    const wrap = document.getElementById('chips');
+    wrap.innerHTML = '<button class="chip ' + (activeCat==="ALL"?"on":"") + '" data-cat="ALL">All</button>' +
+      categories().map(c => `<button class="chip ${c===activeCat?'on':''}" data-cat="${c}">${c}</button>`).join('');
+    wrap.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
+      activeCat = ch.dataset.cat; renderChips(); render();
+    }));
+  }
+
+  function visible(){
+    let list = items.filter(it => activeCat==='ALL' || (it.category||'OTHER').toUpperCase()===activeCat);
+    if (sortMode==='low') list = [...list].sort((a,b)=>(a.price||0)-(b.price||0));
+    if (sortMode==='high') list = [...list].sort((a,b)=>(b.price||0)-(a.price||0));
+    return list;
+  }
+
+  function render(){
+    const grid = document.getElementById('grid');
+    const empty = document.getElementById('empty');
+    const note = document.getElementById('countNote');
+    const list = visible();
+    renderChips();
+    note.textContent = list.length ? `${list.length} piece${list.length>1?'s':''} from verified tailors` : '';
+    if (!list.length){
+      grid.innerHTML = ''; empty.style.display = 'block'; return;
+    }
+    empty.style.display = 'none';
+    grid.innerHTML = list.map((it,i) => `
+      <div class="card" style="animation-delay:${Math.min(i*60,600)}ms" onclick="location.href='/product/?id=${it.id}&kind=${it.kind}'">
+        <div class="card-img"><img src="${imgOf(it)}" alt="${it.title||it.name||'Bespoke piece'}" loading="lazy" onerror="this.parentNode.style.background='linear-gradient(150deg,#FFF3CC,#FFE9A8)';this.remove()"></div>
+        <div class="card-body">
+          <div class="card-cat">${(it.category||'BESPOKE')}</div>
+          <div class="card-title">${it.title||it.name||'Untitled piece'}</div>
+          <div class="card-tailor">${it.tailor_name||'Verified tailor'}</div>
+          <div class="card-foot">
+            <span class="price">${naira(it.price)}</span>
+            <span class="view">View →</span>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function resetFilters(){ activeCat='ALL'; sortMode='new'; document.getElementById('sort').value='new'; render(); }
+  document.getElementById('sort').addEventListener('change', e => { sortMode = e.target.value; render(); });
+  fetchData();
+</script>
+<footer>
+  <div class="foot-inner">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+        <p>The digital operating system for tailors, fashion entrepreneurs, apprentices and fabric sellers across Africa.</p>
+      </div>
+      <div class="foot-col">
+        <h4>PRODUCT</h4>
+        <a href="/shop">Shop all designs</a>
+        <a href="/#features">Tailor OS</a>
+        <a href="/#features">AI Body Scan</a>
+        <a href="/#features">Virtual Try-On</a>
+        <a href="/#features">Fabric Marketplace</a>
+        <a href="/#features">Smart Logistics</a>
+      </div>
+      <div class="foot-col">
+        <h4>COMPANY</h4>
+        <a href="/#about">About Desby</a>
+        <a href="/#stories">Stories</a>
+        <a href="/#how">Get started</a>
+        <a href="#" onclick="return false">Sign in</a>
+      </div>
+      <div class="foot-col">
+        <h4>SUPPORT</h4>
+        <a href="mailto:hello@desby.app">hello@desby.app</a>
+        <a href="/help">Help centre</a>
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of service</a>
+      </div>
+<div class="socials">
+        <a href="https://www.linkedin.com/company/desby-app/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></a>
+        <a href="https://www.instagram.com/desby_app" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.8" cy="6.2" r="1.4" fill="currentColor" stroke="none"/></svg></a>
+        <a href="https://www.facebook.com/profile.php?id=61567341441314" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.52 1.5-3.91 3.78-3.91 1.09 0 2.24.2 2.24.2v2.46H15.2c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.45 2.9h-2.33V22c4.78-.76 8.43-4.92 8.43-9.94z"/></svg></a>
+        <a href="https://x.com/desby_app" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M18.24 2.25h3.31l-7.23 8.26L22.83 21.75h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.83L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z"/></svg></a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Desby. All rights reserved.</span>
+      <span>Made with love for fashion</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

@@ -39,7 +39,7 @@ class LocationService {
         return null;
       }
 
-final position = await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
@@ -72,7 +72,7 @@ final position = await Geolocator.getCurrentPosition(
 
   /// Default Lagos location fallback
   static const LatLng defaultLocation = LatLng(6.5244, 3.3792);
-  
+
   /// Ikeja location fallback if Lagos location unavailable
   static const LatLng ikejaLocation = LatLng(6.5969, 3.3215);
 }

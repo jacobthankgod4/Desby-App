@@ -19,7 +19,10 @@ final getRecentClientsUsecaseProvider = Provider((ref) {
   return GetRecentClientsUsecase(ref.watch(dashboardRepositoryProvider));
 });
 
-final dashboardStatsProvider = FutureProvider.family((ref, String userId) async {
+final dashboardStatsProvider = FutureProvider.family((
+  ref,
+  String userId,
+) async {
   final usecase = ref.watch(getDashboardStatsUsecaseProvider);
   final result = await usecase(userId);
   return result.fold(

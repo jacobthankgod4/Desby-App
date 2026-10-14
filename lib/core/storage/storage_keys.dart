@@ -7,23 +7,28 @@ class StorageKeys {
   static const String refreshToken = 'refresh_token';
   static const String rememberMe = "remember_me";
   static const String rememberedEmail = "remembered_email";
+
+  /// Email awaiting confirmation, so the verify page survives a hard reload.
+  static const String pendingVerificationEmail = 'pending_verification_email';
   static const String userCredentials = 'user_credentials';
   static const String isLoggedIn = 'is_logged_in';
   static const String userType = "user_type";
 
-// User Data
+  // User Data
   static const String currentUser = 'current_user';
   static const String userProfile = 'user_profile';
   static const String userPreferences = 'user_preferences';
   static const String userSettings = 'user_settings';
 
-// Onboarding
+  // Onboarding
   static const String tailorOnboardingComplete = 'tailor_onboarding_complete';
-  static const String apprenticeOnboardingComplete = 'apprentice_onboarding_complete';
+  static const String apprenticeOnboardingComplete =
+      'apprentice_onboarding_complete';
   static const String clientOnboardingComplete = 'client_onboarding_complete';
-  
+
   // Fabric Seller Onboarding
-  static const String fabricSellerOnboardingComplete = 'fabric_seller_onboarding_complete';
+  static const String fabricSellerOnboardingComplete =
+      'fabric_seller_onboarding_complete';
 
   // App State
   static const String appTheme = 'app_theme';
@@ -57,7 +62,7 @@ class StorageKeys {
   static const String analyticsEvents = 'analytics_events';
   static const String crashReports = 'crash_reports';
 
-// Device Info
+  // Device Info
   static const String deviceId = 'device_id';
   static const String deviceToken = 'device_token';
   static const String lastSyncTime = 'last_sync_time';
@@ -65,10 +70,48 @@ class StorageKeys {
   // Onboarding State
   static const String appOnboardingComplete = 'app_onboarding_complete';
 
+  // Navigation
+  static const String lastRoute = 'last_route';
+
+  /// JSON-encoded arguments for [lastRoute], so an argument-taking route
+  /// (e.g. `/shop-checkout`) can be rebuilt after a reload instead of
+  /// silently falling back to the dashboard.
+  static const String lastRouteArgs = 'last_route_args';
+
+  /// Local record that this device/user has already seen the request-journey
+  /// tour. Local is the source of truth: deciding whether someone needs
+  /// onboarding must never depend on a network round trip.
+  static const String requestJourneyTourSeen = 'request_journey_tour_seen';
+
   // Timestamps
   static const String lastAuthRefresh = 'last_auth_refresh';
   static const String lastDataSync = 'last_data_sync';
   static const String cacheTimestamp = 'cache_timestamp';
+  // ── Per-user onboarding ────────────────────────────────────────────────
+  //
+  // The onboarding-complete flags are read by the sign-in gate in main.dart
+  // to decide dashboard vs onboarding. They used to be one global key each, so
+  // a user who onboarded left `tailor_onboarding_complete = true` behind, and
+  // the next person to sign up on the same browser inherited it and was sent
+  // straight to the dashboard without ever seeing onboarding.
+  //
+  // These helpers namespace every flag by user id, so one account can never
+  // speak for another.
+  static String onboardingCompleteKey(String baseKey, String userId) =>
+      '$baseKey::$userId';
+
+  static String tailorOnboardedFor(String userId) =>
+      onboardingCompleteKey(tailorOnboardingComplete, userId);
+
+  static String apprenticeOnboardedFor(String userId) =>
+      onboardingCompleteKey(apprenticeOnboardingComplete, userId);
+
+  static String clientOnboardedFor(String userId) =>
+      onboardingCompleteKey(clientOnboardingComplete, userId);
+
+  static String fabricSellerOnboardedFor(String userId) =>
+      onboardingCompleteKey(fabricSellerOnboardingComplete, userId);
+
 }
 
 /// Cache duration constants
@@ -85,5 +128,7 @@ class CacheDuration {
   static const Duration conversations = Duration(minutes: 15);
   static const Duration notifications = Duration(minutes: 5);
   static const Duration analytics = Duration(hours: 24);
+
+
   static const Duration default_ = Duration(hours: 1);
 }

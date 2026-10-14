@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../../theme/colors.dart';
 
 class ProofOfDeliveryView extends StatelessWidget {
   final String base64Image;
@@ -15,12 +16,13 @@ class ProofOfDeliveryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,10 +30,10 @@ class ProofOfDeliveryView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'PROOF OF DELIVERY',
                 style: TextStyle(
-                  color: Colors.white38,
+                  color: colors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
@@ -40,13 +42,13 @@ class ProofOfDeliveryView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00FF7F).withValues(alpha: 0.1),
+                  color: AppColors.successGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   status.toUpperCase(),
                   style: const TextStyle(
-                    color: Color(0xFF00FF7F),
+                    color: AppColors.successGreen,
                     fontSize: 8,
                     fontWeight: FontWeight.w900,
                   ),
@@ -67,7 +69,7 @@ class ProofOfDeliveryView extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Verified on ${timestamp.toLocal().toString().split('.')[0]}',
-            style: const TextStyle(color: Colors.white38, fontSize: 11),
+            style: TextStyle(color: colors.textMuted, fontSize: 11),
           ),
         ],
       ),

@@ -43,8 +43,8 @@ class TailorMarker {
       startingPrice: profile.startingPrice ?? 0.0,
       aiScanEnabled: true,
       shopAddress: profile.address,
-      rating: 4.5,
-      reviewCount: 12,
+      rating: 0.0,
+      reviewCount: 0,
       availableServices: profile.services ?? [],
       isAvailable: true,
       distanceMinutes: profile.distanceMinutes,
@@ -149,12 +149,19 @@ class TailorFinderNotifier extends StateNotifier<TailorFinderState> {
     try {
       final repo = ref.read(profileRepositoryProvider);
       final result = await repo.searchMasters(state.filters.searchQuery ?? '');
-      
+
       result.fold(
-        (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+        (failure) =>
+            state = state.copyWith(isLoading: false, error: failure.message),
         (tailors) {
-          final markers = tailors.map((t) => TailorMarker.fromProfile(t)).toList();
-          state = state.copyWith(isLoading: false, tailors: tailors, markers: markers);
+          final markers = tailors
+              .map((t) => TailorMarker.fromProfile(t))
+              .toList();
+          state = state.copyWith(
+            isLoading: false,
+            tailors: tailors,
+            markers: markers,
+          );
         },
       );
     } catch (e) {
@@ -181,7 +188,11 @@ class TailorFinderNotifier extends StateNotifier<TailorFinderState> {
   }
 
   void clearSelection() {
-    state = state.copyWith(selectedTailor: null, selectedServiceTier: null, currentQuote: null);
+    state = state.copyWith(
+      selectedTailor: null,
+      selectedServiceTier: null,
+      currentQuote: null,
+    );
   }
 
   void setUserLocation(LatLng location) {
@@ -189,16 +200,17 @@ class TailorFinderNotifier extends StateNotifier<TailorFinderState> {
   }
 }
 
-final tailorFinderProvider = StateNotifierProvider<TailorFinderNotifier, TailorFinderState>((ref) {
-  return TailorFinderNotifier(ref);
-});
+final tailorFinderProvider =
+    StateNotifierProvider<TailorFinderNotifier, TailorFinderState>((ref) {
+      return TailorFinderNotifier(ref);
+    });
 
 // For compatibility
-final tailorsProvider = FutureProvider.family<List<UserProfile>, String>((ref, query) async {
+final tailorsProvider = FutureProvider.family<List<UserProfile>, String>((
+  ref,
+  query,
+) async {
   final repo = ref.watch(profileRepositoryProvider);
   final result = await repo.searchMasters(query);
-  return result.fold(
-    (failure) => [],
-    (tailors) => tailors,
-  );
+  return result.fold((failure) => [], (tailors) => tailors);
 });

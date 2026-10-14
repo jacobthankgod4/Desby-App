@@ -10,18 +10,19 @@ class ClientOrderHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     if (orders.isEmpty) {
-      return const LuxuryGlassCard(
-        padding: EdgeInsets.all(32),
+      return LuxuryGlassCard(
+        padding: const EdgeInsets.all(32),
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.inventory_2_outlined, color: Colors.white10, size: 48),
-              SizedBox(height: 16),
+              Icon(Icons.inventory_2_outlined, color: colors.textMuted, size: 48),
+              const SizedBox(height: 16),
               Text(
                 'NO GARMENT HISTORY',
                 style: TextStyle(
-                  color: Colors.white24,
+                  color: colors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
@@ -36,10 +37,10 @@ class ClientOrderHistory extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'ORDER & LOGISTICS HISTORY',
           style: TextStyle(
-            color: Colors.white38,
+            color: colors.textMuted,
             fontSize: 10,
             fontWeight: FontWeight.w900,
             letterSpacing: 2,
@@ -61,10 +62,13 @@ class ClientOrderHistory extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: AppColors.amber.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.checkroom_rounded, color: AppColors.amber),
+                    child: const Icon(
+                      Icons.checkroom_rounded,
+                      color: AppColors.amber,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -72,9 +76,12 @@ class ClientOrderHistory extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          order.items.map((i) => i.garmentType).join(', ').toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          order.items
+                              .map((i) => i.garmentType)
+                              .join(', ')
+                              .toUpperCase(),
+                          style: TextStyle(
+                            color: colors.textPrimary,
                             fontSize: 12,
                             fontWeight: FontWeight.w900,
                           ),
@@ -99,8 +106,8 @@ class ClientOrderHistory extends StatelessWidget {
                     children: [
                       Text(
                         '₦${order.totalAmount.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: colors.textPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
                         ),
@@ -108,8 +115,8 @@ class ClientOrderHistory extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
-                        style: const TextStyle(
-                          color: Colors.white24,
+                        style: TextStyle(
+                          color: colors.textMuted,
                           fontSize: 9,
                         ),
                       ),
@@ -126,12 +133,18 @@ class ClientOrderHistory extends StatelessWidget {
 
   Color _getStatusColor(OrderStatus status) {
     switch (status) {
-      case OrderStatus.pending: return Colors.orange;
-      case OrderStatus.inProgress: return AppColors.amber;
-      case OrderStatus.ready: return Colors.blue;
-      case OrderStatus.delivered: return Colors.green;
-      case OrderStatus.cancelled: return Colors.red;
-      default: return Colors.white38;
+      case OrderStatus.pending:
+        return Colors.orange;
+      case OrderStatus.inProgress:
+        return AppColors.amber;
+      case OrderStatus.ready:
+        return Colors.blue;
+      case OrderStatus.delivered:
+        return Colors.green;
+      case OrderStatus.cancelled:
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 }

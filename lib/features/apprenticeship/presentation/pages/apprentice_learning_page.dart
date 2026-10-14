@@ -1,84 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../widgets/academy_card.dart';
 import '../widgets/curriculum_progress_hud.dart';
 import '../../domain/entities/apprentice_task.dart';
+import '../../domain/entities/apprentice_module.dart';
 import '../providers/apprenticeship_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import 'apprentice_lesson_detail_page.dart';
-import 'apprentice_task_submission_page.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/error_state_widget.dart';
+import '../../../../core/providers/navigation_provider.dart';
 
 class ApprenticeLearningPage extends ConsumerWidget {
   const ApprenticeLearningPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final currentUser = ref.watch(currentUserProvider);
     final apprenticeId = currentUser?.id ?? '';
-    final apprenticeshipAsync = ref.watch(apprenticeApprenticeshipProvider(apprenticeId));
+    final apprenticeshipAsync = ref.watch(
+      apprenticeApprenticeshipProvider(apprenticeId),
+    );
     final curriculumAsync = ref.watch(curriculumProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth > 1000;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: colors.scaffoldBg,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // 1. MODERN HERO HUD
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 24, bottom: 32),
               child: apprenticeshipAsync.when(
-                data: (app) => CurriculumProgressHud(
-                  progress: app?.progress ?? 0.0,
-                  level: 'Rank: Intermediate',
-                  nextTarget: 'Structural Draping',
-                ),
+                data: (app) {
+                  final level = app?.level ?? 'Beginner';
+                  final nextTarget = _computeNextTarget(app, curriculumAsync);
+                  return CurriculumProgressHud(
+                    progress: app?.progress ?? 0.0,
+                    level: 'Rank: $level',
+                    nextTarget: nextTarget,
+                  );
+                },
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => const SizedBox(),
               ),
             ),
           ),
-
-          // 2. CURRICULUM SECTION
-          _buildSliverHeader('ACADEMY SYLLABUS'),
+          _buildSliverHeader('ACADEMY SYLLABUS', colors),
           curriculumAsync.when(
-            data: (modules) => SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _ModernModuleCard(module: modules[index]),
-                  childCount: modules.length,
+            data: (modules) {
+              if (modules.isEmpty) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(48),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.menu_book_outlined,
+                            color: colors.textHint,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No modules yet',
+                            style: TextStyle(
+                              color: colors.textHint,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isWide ? 3 : 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.85,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _ModuleGridCard(module: modules[index]),
+                    childCount: modules.length,
+                  ),
                 ),
-              ),
+              );
+            },
+            loading: () => const SliverToBoxAdapter(
+              child: Center(child: CircularProgressIndicator()),
             ),
-            loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
-            error: (err, _) => const SliverToBoxAdapter(child: ErrorStateWidget(message: 'Could not load curriculum.')),
+            error: (err, _) => const SliverToBoxAdapter(
+              child: ErrorStateWidget(message: 'Could not load curriculum.'),
+            ),
           ),
-
-          // 3. TASKS SECTION
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
-          _buildSliverHeader('OPERATIONAL TASKS'),
+          _buildSliverHeader('OPERATIONAL TASKS', colors),
           _buildTasksSliver(ref, apprenticeId),
-          
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
   }
 
-  Widget _buildSliverHeader(String title) {
+  String _computeNextTarget(
+    dynamic app,
+    AsyncValue<List<ApprenticeModule>> curriculumAsync,
+  ) {
+    if (app == null || curriculumAsync is! AsyncData<List<ApprenticeModule>>)
+      return 'No curriculum loaded';
+    final modules = curriculumAsync.value;
+    if (modules.isEmpty) return 'No modules available';
+    final completedCount = (app.progress * modules.length).floor();
+    if (completedCount >= modules.length) return 'All modules completed!';
+    return modules[completedCount].title;
+  }
+
+  Widget _buildSliverHeader(String title, DesbyThemeColors colors) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
         child: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w900,
             letterSpacing: 2,
-            color: Colors.white24,
+            color: colors.textHint,
           ),
         ),
       ),
@@ -86,12 +139,16 @@ class ApprenticeLearningPage extends ConsumerWidget {
   }
 
   Widget _buildTasksSliver(WidgetRef ref, String apprenticeId) {
-    final apprenticeshipAsync = ref.watch(apprenticeApprenticeshipProvider(apprenticeId));
-
+    final apprenticeshipAsync = ref.watch(
+      apprenticeApprenticeshipProvider(apprenticeId),
+    );
     return apprenticeshipAsync.when(
       data: (apprenticeship) {
-        if (apprenticeship == null) return const SliverToBoxAdapter(child: SizedBox());
-        final tasksAsync = ref.watch(apprenticeshipTasksProvider(apprenticeship.id));
+        if (apprenticeship == null)
+          return const SliverToBoxAdapter(child: SizedBox());
+        final tasksAsync = ref.watch(
+          apprenticeshipTasksProvider(apprenticeship.id),
+        );
         return tasksAsync.when(
           data: (tasks) => SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -112,105 +169,314 @@ class ApprenticeLearningPage extends ConsumerWidget {
   }
 }
 
-class _ModernModuleCard extends StatelessWidget {
-  final dynamic module;
-  const _ModernModuleCard({required this.module});
+class _ModuleGridCard extends ConsumerWidget {
+  final ApprenticeModule module;
+  const _ModuleGridCard({required this.module});
 
   @override
-  Widget build(BuildContext context) {
-    return AcademyCard(
-      onTap: () {
-        if (module.lessonIds.isNotEmpty) {
-           Navigator.push(context, MaterialPageRoute(builder: (context) => ApprenticeLessonDetailPage(lessonId: module.lessonIds.first)));
-        }
-      },
-      child: Row(
-        children: [
-          Container(
-            height: 60, width: 60,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentUser = ref.watch(currentUserProvider);
+    final apprenticeId = currentUser?.id ?? '';
+    final apprenticeshipAsync = ref.watch(
+      apprenticeApprenticeshipProvider(apprenticeId),
+    );
+
+    return apprenticeshipAsync.when(
+      data: (app) {
+        final completedAsync = app != null
+            ? ref.watch(completedLessonsProvider(app.id))
+            : null;
+        final totalLessons = module.lessonIds.length;
+
+        return GestureDetector(
+          onTap: () => ref.pushShell('/module-detail', {'moduleId': module.id}),
+          child: Container(
             decoration: BoxDecoration(
-              color: AppColors.amber.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(Icons.menu_book_rounded, color: AppColors.amber),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(module.title.toUpperCase(), 
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
-                const SizedBox(height: 4),
-                Text(module.description, 
-                  maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white38, fontSize: 11, height: 1.4)),
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                if (!isDark) ...[
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                  BoxShadow(
+                    color: Colors.white,
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+                if (isDark) ...[
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ],
             ),
-          ),
-          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white10, size: 14),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModernTaskTile extends StatelessWidget {
-  final ApprenticeTask task;
-  const _ModernTaskTile({required this.task});
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isReview = task.status == ApprenticeTaskStatus.underReview;
-    final bool isCompleted = task.status == ApprenticeTaskStatus.completed;
-
-    return AcademyCard(
-      accentColor: isReview ? AppColors.amber : null,
-      isGlowing: isReview,
-      onTap: () {
-        if (!isCompleted && !isReview) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => ApprenticeTaskSubmissionPage(task: task)));
-        }
-      },
-      child: Row(
-        children: [
-          _buildStatusIndicator(task.status),
-          const SizedBox(width: 20),
-          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(task.title.toUpperCase(), 
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900, fontSize: 12, 
-                    decoration: isCompleted ? TextDecoration.lineThrough : null,
-                    color: isCompleted ? Colors.white24 : Colors.white,
-                  )),
-                const SizedBox(height: 4),
-                Text(
-                  isReview ? 'AWAITING MASTER VERIFICATION' : 'DEADLINE: ${task.dueDate.day}/${task.dueDate.month}',
-                  style: TextStyle(
-                    color: isReview ? AppColors.amber : Colors.white24, 
-                    fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5,
+                // Module icon header
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [
+                                AppColors.amber.withValues(alpha: 0.15),
+                                colors.surface,
+                              ]
+                            : [
+                                AppColors.amber.withValues(alpha: 0.08),
+                                colors.surface,
+                              ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.menu_book_rounded,
+                          color: AppColors.amber.withValues(alpha: 0.4),
+                          size: 44,
+                        ),
+                        if (completedAsync != null)
+                          completedAsync.when(
+                            data: (completed) {
+                              final done = module.lessonIds
+                                  .where((id) => completed.contains(id))
+                                  .length;
+                              if (done == totalLessons && totalLessons > 0) {
+                                return Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.successGreen,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                      child: Text(
+                                       'DONE',
+                                       style: TextStyle(
+                                         color: colors.textPrimary,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox();
+                            },
+                            loading: () => const SizedBox(),
+                            error: (_, __) => const SizedBox(),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Module info
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          module.title.toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            letterSpacing: 0.3,
+                            color: colors.textPrimary,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: Text(
+                            module.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colors.textMuted,
+                              fontSize: 10,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                        if (completedAsync != null && totalLessons > 0) ...[
+                          const SizedBox(height: 6),
+                          completedAsync.when(
+                            data: (completed) {
+                              final done = module.lessonIds
+                                  .where((id) => completed.contains(id))
+                                  .length;
+                              final isComplete = done == totalLessons;
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(3),
+                                      child: LinearProgressIndicator(
+                                        value: done / totalLessons,
+                                        backgroundColor: isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.06,
+                                              )
+                                            : colors.surfaceAlt,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          isComplete
+                                              ? AppColors.successGreen
+                                              : AppColors.amber,
+                                        ),
+                                        minHeight: 4,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '$done/$totalLessons',
+                                    style: TextStyle(
+                                      color: isComplete
+                                          ? AppColors.successGreen
+                                          : colors.textMuted,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                            loading: () => const SizedBox(),
+                            error: (_, __) => const SizedBox(),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          if (!isCompleted && !isReview)
-            const Icon(Icons.add_circle_outline_rounded, color: AppColors.amber, size: 20),
-        ],
+        );
+      },
+      loading: () => const SizedBox(),
+      error: (_, __) => const SizedBox(),
+    );
+  }
+}
+
+class _ModernTaskTile extends ConsumerWidget {
+  final ApprenticeTask task;
+  const _ModernTaskTile({required this.task});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final bool isReview = task.status == ApprenticeTaskStatus.underReview;
+    final bool isCompleted = task.status == ApprenticeTaskStatus.completed;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isReview
+            ? AppColors.amber.withValues(alpha: 0.05)
+            : colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isReview
+              ? AppColors.amber.withValues(alpha: 0.2)
+              : colors.borderDefault,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (!isCompleted && !isReview) {
+              ref.pushShell('/apprentice-task-submission', {'task': task});
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Row(
+            children: [
+              _buildStatusIndicator(task.status, colors),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title.toUpperCase(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: isCompleted
+                            ? colors.textHint
+                            : colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isReview
+                          ? 'AWAITING MENTOR VERIFICATION'
+                          : 'DEADLINE: ${task.dueDate.day}/${task.dueDate.month}',
+                      style: TextStyle(
+                        color: isReview ? AppColors.amber : colors.textHint,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isCompleted && !isReview)
+                const Icon(
+                  Icons.add_circle_outline_rounded,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildStatusIndicator(ApprenticeTaskStatus status) {
+  Widget _buildStatusIndicator(ApprenticeTaskStatus status, DesbyThemeColors colors) {
     IconData icon;
     Color color;
     switch (status) {
       case ApprenticeTaskStatus.completed:
         icon = Icons.check_circle_rounded;
-        color = const Color(0xFF00FF7F);
+        color = AppColors.successGreen;
         break;
       case ApprenticeTaskStatus.underReview:
         icon = Icons.hourglass_top_rounded;
@@ -218,11 +484,11 @@ class _ModernTaskTile extends StatelessWidget {
         break;
       default:
         icon = Icons.pending_actions_rounded;
-        color = Colors.white12;
+        color = colors.textMuted;
     }
-
     return Container(
-      height: 48, width: 48,
+      height: 48,
+      width: 48,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,

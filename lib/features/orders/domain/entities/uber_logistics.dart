@@ -16,12 +16,12 @@ class UberStructuredAddress extends Equatable {
   });
 
   Map<String, dynamic> toJson() => {
-        'street_address': streetAddress,
-        'city': city,
-        'state': state,
-        'zip_code': zipCode,
-        'country': country,
-      };
+    'street_address': streetAddress,
+    'city': city,
+    'state': state,
+    'zip_code': zipCode,
+    'country': country,
+  };
 
   @override
   List<Object?> get props => [streetAddress, city, state, zipCode, country];
@@ -39,10 +39,10 @@ class UberDimensions extends Equatable {
   });
 
   Map<String, dynamic> toJson() => {
-        'length': length,
-        'height': height,
-        'depth': depth,
-      };
+    'length': length,
+    'height': height,
+    'depth': depth,
+  };
 
   @override
   List<Object?> get props => [length, height, depth];
@@ -66,13 +66,13 @@ class UberManifestItem extends Equatable {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'quantity': quantity,
-        'size': size,
-        'dimensions': dimensions.toJson(),
-        'price': price,
-        'weight': weight,
-      };
+    'name': name,
+    'quantity': quantity,
+    'size': size,
+    'dimensions': dimensions.toJson(),
+    'price': price,
+    'weight': weight,
+  };
 
   @override
   List<Object?> get props => [name, quantity, size, dimensions, price, weight];
@@ -92,11 +92,11 @@ class UberVerificationRequirement extends Equatable {
   });
 
   Map<String, dynamic> toJson() => {
-        'signature': signature,
-        'picture': picture,
-        'identification': identification,
-        'barcodes': barcodes,
-      };
+    'signature': signature,
+    'picture': picture,
+    'identification': identification,
+    'barcodes': barcodes,
+  };
 
   @override
   List<Object?> get props => [signature, picture, identification, barcodes];
@@ -123,12 +123,12 @@ class UberDeliveryQuote extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        fee,
-        currencyType,
-        expiresAt,
-        pickupDuration,
-        totalDuration,
-        dropoffEta,
-      ];
+    id,
+    fee,
+    currencyType,
+    expiresAt,
+    pickupDuration,
+    totalDuration,
+    dropoffEta,
+  ];
 }

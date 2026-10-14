@@ -17,14 +17,14 @@ class OrderRemoteDatasourceImpl implements OrderRemoteDatasource {
   OrderRemoteDatasourceImpl(this.dio);
 
   @override
-  Future<List<OrderModel>> getOrders({OrderStatus? status, String? clientId}) async {
+  Future<List<OrderModel>> getOrders({
+    OrderStatus? status,
+    String? clientId,
+  }) async {
     try {
       final response = await dio.get(
         ApiEndpoints.ordersList,
-        queryParameters: {
-          'status': status?.name,
-          'clientId': clientId,
-        },
+        queryParameters: {'status': status?.name, 'clientId': clientId},
       );
       return (response.data as List)
           .map((json) => OrderModel.fromJson(json))

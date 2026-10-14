@@ -33,7 +33,10 @@ class BodyMeasurementService {
   /// 3. Auto-provision via partner endpoint
   Future<String?> _ensureApiKey() async {
     // Already have a key
-    if (_korra.hasApiKey) return null; // null means "already set"
+    if (_korra.hasApiKey) {
+      debugPrint('[SCAN-SERVICE] API key already set');
+      return null; // null means "already set"
+    }
 
     final partnerKey = Environment.current.korraPartnerKey;
     if (partnerKey.isEmpty) {
@@ -61,16 +64,15 @@ class BodyMeasurementService {
         }
 
         // Auto-provision via partner endpoint
-        final newKey = await _korra.provisionApiKey(
-          partnerUserId: user.id,
-        );
+        final newKey = await _korra.provisionApiKey(partnerUserId: user.id);
 
         if (newKey != null) {
           // Store in profile for future use
           try {
             await Supabase.instance.client
                 .from('users')
-                .update({'korra_api_key': newKey}).eq('id', user.id);
+                .update({'korra_api_key': newKey})
+                .eq('id', user.id);
             debugPrint('[KORRA] API key stored in profile');
           } catch (e) {
             debugPrint('[KORRA] Failed to store key in profile: $e');
@@ -104,12 +106,21 @@ class BodyMeasurementService {
     required double heightCm,
     String gender = 'male',
   }) async {
+    debugPrint(
+      '[SCAN-SERVICE] extractMeasurements called — front: ${frontImageBytes.lengthInBytes}B, side: ${sideImageBytes.lengthInBytes}B, height: $heightCm, gender: $gender',
+    );
     await _ensureApiKey();
+    debugPrint(
+      '[SCAN-SERVICE] _ensureApiKey done — hasApiKey: ${_korra.hasApiKey}',
+    );
     final korraResult = await _korra.extractMeasurements(
       frontImageBytes: frontImageBytes,
       sideImageBytes: sideImageBytes,
       heightCm: heightCm,
       gender: gender,
+    );
+    debugPrint(
+      '[SCAN-SERVICE] korraResult — success: ${korraResult.success}, error: ${korraResult.error}, measurements: ${korraResult.measurements?.length}',
     );
 
     return BodyMeasurementResult(

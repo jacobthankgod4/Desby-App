@@ -3,10 +3,7 @@ abstract class PaymentException implements Exception {
   final String message;
   final dynamic originalError;
 
-  PaymentException({
-    required this.message,
-    this.originalError,
-  });
+  PaymentException({required this.message, this.originalError});
 
   @override
   String toString() => 'PaymentException: $message';
@@ -14,13 +11,7 @@ abstract class PaymentException implements Exception {
 
 /// Exception thrown when payment initialization fails
 class PaymentInitializationException extends PaymentException {
-  PaymentInitializationException({
-    required String message,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+  PaymentInitializationException({required super.message, super.originalError});
 
   @override
   String toString() => 'PaymentInitializationException: $message';
@@ -31,13 +22,10 @@ class PaymentProcessingException extends PaymentException {
   final String? reference;
 
   PaymentProcessingException({
-    required String message,
+    required super.message,
     this.reference,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+    super.originalError,
+  });
 
   @override
   String toString() => 'PaymentProcessingException: $message (Ref: $reference)';
@@ -48,16 +36,14 @@ class PaymentVerificationException extends PaymentException {
   final String? reference;
 
   PaymentVerificationException({
-    required String message,
+    required super.message,
     this.reference,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+    super.originalError,
+  });
 
   @override
-  String toString() => 'PaymentVerificationException: $message (Ref: $reference)';
+  String toString() =>
+      'PaymentVerificationException: $message (Ref: $reference)';
 }
 
 /// Exception thrown when payment amount is invalid
@@ -65,16 +51,14 @@ class InvalidPaymentAmountException extends PaymentException {
   final double? amount;
 
   InvalidPaymentAmountException({
-    required String message,
+    required super.message,
     this.amount,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+    super.originalError,
+  });
 
   @override
-  String toString() => 'InvalidPaymentAmountException: $message (Amount: $amount)';
+  String toString() =>
+      'InvalidPaymentAmountException: $message (Amount: $amount)';
 }
 
 /// Exception thrown when currency is not supported
@@ -82,27 +66,19 @@ class UnsupportedCurrencyException extends PaymentException {
   final String? currency;
 
   UnsupportedCurrencyException({
-    required String message,
+    required super.message,
     this.currency,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+    super.originalError,
+  });
 
   @override
-  String toString() => 'UnsupportedCurrencyException: $message (Currency: $currency)';
+  String toString() =>
+      'UnsupportedCurrencyException: $message (Currency: $currency)';
 }
 
 /// Exception thrown when Paystack is not configured
 class PaystackNotConfiguredException extends PaymentException {
-  PaystackNotConfiguredException({
-    required String message,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+  PaystackNotConfiguredException({required super.message, super.originalError});
 
   @override
   String toString() => 'PaystackNotConfiguredException: $message';
@@ -110,13 +86,7 @@ class PaystackNotConfiguredException extends PaymentException {
 
 /// Exception thrown when network error occurs
 class PaymentNetworkException extends PaymentException {
-  PaymentNetworkException({
-    required String message,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+  PaymentNetworkException({required super.message, super.originalError});
 
   @override
   String toString() => 'PaymentNetworkException: $message';
@@ -124,13 +94,7 @@ class PaymentNetworkException extends PaymentException {
 
 /// Exception thrown when payment is cancelled by user
 class PaymentCancelledException extends PaymentException {
-  PaymentCancelledException({
-    required String message,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+  PaymentCancelledException({required super.message, super.originalError});
 
   @override
   String toString() => 'PaymentCancelledException: $message';
@@ -142,16 +106,12 @@ class PaystackApiException extends PaymentException {
   final Map<String, dynamic>? responseBody;
 
   PaystackApiException({
-    required String message,
+    required super.message,
     this.statusCode,
     this.responseBody,
-    dynamic originalError,
-  }) : super(
-    message: message,
-    originalError: originalError,
-  );
+    super.originalError,
+  });
 
   @override
-  String toString() =>
-      'PaystackApiException: $message (Status: $statusCode)';
+  String toString() => 'PaystackApiException: $message (Status: $statusCode)';
 }

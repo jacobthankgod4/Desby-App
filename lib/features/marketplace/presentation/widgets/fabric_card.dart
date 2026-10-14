@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/fabric.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 /// Fabric Card Widget
 ///
@@ -19,13 +20,14 @@ class FabricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: colors.borderSubtle),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,15 +36,16 @@ class FabricCard extends StatelessWidget {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
                     child: fabric.imageUrls.isNotEmpty
-                        ? Image.network(
-                            fabric.imageUrls.first,
-                            width: double.infinity,
+                        ? AppNetworkImage(
+                            url: fabric.imageUrls.first,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                            width: double.infinity,
                           )
-                        : _buildPlaceholder(),
+                        : _buildPlaceholder(context),
                   ),
                   if (onFavorite != null)
                     Positioned(
@@ -53,10 +56,16 @@ class FabricCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.darkNavy.withValues(alpha: 0.7),
+                            color: context.colors.scaffoldBg.withValues(
+                              alpha: 0.7,
+                            ),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.favorite_border, color: Colors.white, size: 18),
+                          child: Icon(
+                            Icons.favorite_border,
+                            color: colors.textPrimary,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
@@ -65,14 +74,21 @@ class FabricCard extends StatelessWidget {
                       top: 8,
                       left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.redAccent,
+                          color: colors.statusError,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'LOW STOCK',
-                          style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
+                        child: Text(
+                          'Only a few left',
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),
@@ -86,7 +102,12 @@ class FabricCard extends StatelessWidget {
                 children: [
                   Text(
                     fabric.name.toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -96,12 +117,18 @@ class FabricCard extends StatelessWidget {
                     children: [
                       Text(
                         '\u20A6${fabric.pricePerYard.toStringAsFixed(0)}/yd',
-                        style: const TextStyle(color: AppColors.amber, fontSize: 14, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          color: AppColors.amber,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       Text(
                         '${fabric.stockQuantity.toInt()} yds',
                         style: TextStyle(
-                          color: fabric.stockQuantity < 5 ? Colors.redAccent : Colors.white38,
+                          color: fabric.stockQuantity < 5
+                              ? colors.statusError
+                              : colors.textMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
@@ -117,12 +144,13 @@ class FabricCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(BuildContext context) {
+    final colors = context.colors;
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Colors.white.withValues(alpha: 0.05),
-      child: const Icon(Icons.texture_rounded, color: Colors.white24, size: 48),
+      color: colors.borderSubtle,
+      child: Icon(Icons.texture_rounded, color: colors.textMuted, size: 48),
     );
   }
 }

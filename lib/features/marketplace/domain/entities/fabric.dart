@@ -16,7 +16,13 @@ class FabricVariant extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, colorName, colorCode, stockQuantity, imageUrl];
+  List<Object?> get props => [
+    id,
+    colorName,
+    colorCode,
+    stockQuantity,
+    imageUrl,
+  ];
 
   FabricVariant copyWith({
     String? id,
@@ -58,13 +64,13 @@ class Fabric extends Equatable {
   final double stockQuantity;
   final String sellerId;
   final List<String> imageUrls;
-  
+
   // Professional Metadata
   final String? composition; // e.g. 100% Cotton
   final String? weight; // e.g. 200gsm
   final String? origin; // e.g. Milan, IT
   final List<String> availableColors;
-  
+
   // Advanced Features
   final List<FabricVariant> variants;
   final List<WholesaleTier> wholesaleTiers;
@@ -94,9 +100,22 @@ class Fabric extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, name, category, pricePerYard, stockQuantity, sellerId, 
-    imageUrls, composition, weight, origin, availableColors, 
-    variants, wholesaleTiers, isVisible, createdAt, updatedAt
+    id,
+    name,
+    category,
+    pricePerYard,
+    stockQuantity,
+    sellerId,
+    imageUrls,
+    composition,
+    weight,
+    origin,
+    availableColors,
+    variants,
+    wholesaleTiers,
+    isVisible,
+    createdAt,
+    updatedAt,
   ];
 
   Fabric copyWith({

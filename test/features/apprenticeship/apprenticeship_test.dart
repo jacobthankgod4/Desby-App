@@ -35,8 +35,11 @@ void main() {
         progress: 0.5,
         startDate: now,
       );
-      
-      final updated = a1.copyWith(progress: 0.8, status: ApprenticeshipStatus.completed);
+
+      final updated = a1.copyWith(
+        progress: 0.8,
+        status: ApprenticeshipStatus.completed,
+      );
 
       expect(updated.progress, 0.8);
       expect(updated.status, ApprenticeshipStatus.completed);

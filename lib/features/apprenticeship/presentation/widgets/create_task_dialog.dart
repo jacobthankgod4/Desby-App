@@ -47,7 +47,10 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text('Could not create task. Please try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -57,8 +60,9 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Dialog(
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: colors.dialogBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -66,19 +70,31 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('ASSIGN NEW TASK', 
-              style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const Text(
+              'ASSIGN NEW TASK',
+              style: TextStyle(
+                color: AppColors.amber,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
+            ),
             const SizedBox(height: 24),
             TextField(
               controller: _titleController,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              decoration: _inputDecoration('Task Title (e.g. Draft Trouser Block)'),
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+              decoration: _inputDecoration(
+                'Task Title (e.g. Draft Trouser Block)',
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _descController,
               maxLines: 3,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: colors.textPrimary),
               decoration: _inputDecoration('Detailed Instructions...'),
             ),
             const SizedBox(height: 24),
@@ -95,15 +111,25 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.03),
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_month_rounded, color: AppColors.amber, size: 20),
+                    const Icon(
+                      Icons.calendar_month_rounded,
+                      color: AppColors.amber,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
-                    Text('DUE DATE: ${_dueDate.day}/${_dueDate.month}/${_dueDate.year}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(
+                      'DUE DATE: ${_dueDate.day}/${_dueDate.month}/${_dueDate.year}',
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -117,11 +143,19 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.amber,
                   foregroundColor: AppColors.darkNavy,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
-                child: _isSaving 
-                  ? const CircularProgressIndicator(color: AppColors.darkNavy)
-                  : const Text('DEPLOY TASK', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                child: _isSaving
+                    ? CircularProgressIndicator(color: colors.iconPrimary)
+                    : const Text(
+                        'DEPLOY TASK',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
               ),
             ),
           ],
@@ -131,12 +165,16 @@ class _CreateTaskDialogState extends ConsumerState<CreateTaskDialog> {
   }
 
   InputDecoration _inputDecoration(String hint) {
+    final colors = context.colors;
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white10, fontSize: 13),
+      hintStyle: TextStyle(color: colors.textHint, fontSize: 13),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.03),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      fillColor: colors.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
     );
   }
 }

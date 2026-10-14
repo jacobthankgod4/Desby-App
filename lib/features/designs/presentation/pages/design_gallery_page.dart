@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../../theme/colors.dart';
+import '../../../../core/providers/navigation_provider.dart';
+import '../../../../core/providers/layout_provider.dart';
+import '../../domain/entities/design.dart';
+import '../providers/design_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/widgets/shell_scope.dart';
 
-// Design Gallery Page - Threadly Feature
-// Browse trending designs and garment styles
 class DesignGalleryPage extends ConsumerStatefulWidget {
   const DesignGalleryPage({super.key});
 
@@ -11,275 +17,443 @@ class DesignGalleryPage extends ConsumerStatefulWidget {
   ConsumerState<DesignGalleryPage> createState() => _DesignGalleryPageState();
 }
 
-class _DesignGalleryPageState extends ConsumerState<DesignGalleryPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _DesignGalleryPageState extends ConsumerState<DesignGalleryPage> {
+  String _selectedCategory = 'ALL';
   String _searchQuery = '';
-  final _searchController = TextEditingController();
 
-  // Threadly style categories + trending designs
-  static const List<String> categories = [
-    'All', 'Dress', 'Gown', 'Ankara', 'Aso Ebi', 
-    'Suits', 'Agbada', 'Kaftan', 'Senator', 'Jean'
+  static const List<String> _categories = [
+    'ALL',
+    'AGBADA',
+    'DRESS',
+    'GOWN',
+    'ANKARA',
+    'ASO EBI',
+    'SUITS',
+    'KAFTAN',
+    'SENATOR',
+    'BABARIGA',
+    'JEAN',
   ];
-
-  // Sample design data - should come from Firebase in production
-  final List<Map<String, dynamic>> _designs = [
-    {'id': '1', 'name': 'Emerald Silk Gown', 'category': 'Gown', 'image': 'assets/images/logo.png', 'tailor': 'Ada Fashion'},
-    {'id': '2', 'name': 'Ankara Maxi', 'category': 'Ankara', 'image': 'assets/images/logo.png', 'tailor': 'Nigerian Couture'},
-    {'id': '3', 'name': 'Classic Suit', 'category': 'Suits', 'image': 'assets/images/logo.png', 'tailor': 'Bespoke Tailors'},
-    {'id': '4', 'name': 'Agbada Elite', 'category': 'Agbada', 'image': 'assets/images/logo.png', 'tailor': 'Royal Threads'},
-    {'id': '5', 'name': 'Kaftan Modern', 'category': 'Kaftan', 'image': 'assets/images/logo.png', 'tailor': 'Elite Dressmakers'},
-    {'id': '6', 'name': 'Senator Gold', 'category': 'Senator', 'image': 'assets/images/logo.png', 'tailor': 'Ada Fashion'},
-    {'id': '7', 'name': 'Aso Ebi Style', 'category': 'Aso Ebi', 'image': 'assets/images/logo.png', 'tailor': 'Nigerian Couture'},
-    {'id': '8', 'name': 'Denim Jacket', 'category': 'Jean', 'image': 'assets/images/logo.png', 'tailor': 'Bespoke Tailors'},
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: categories.length, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final filteredDesigns = _getFilteredDesigns();
+    final colors = context.colors;
+    final isDesktop = ref.watch(isDesktopProvider);
+    final category = _selectedCategory == 'ALL' ? null : _selectedCategory;
+    final designsAsync = ref.watch(designListProvider(category));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1921),
-      appBar: AppBar(
-        title: const Text('DESIGN PORTFOLIO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1)),
-        backgroundColor: Colors.transparent, elevation: 0,
-leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18), onPressed: () => Navigator.pop(context)),
-      ),
+      backgroundColor: colors.scaffoldBg,
+      appBar: (isDesktop || ShellScope.isInside(context))
+          ? null
+          : AppBar(
+              title: Text(
+                'DESIGN PORTFOLIO',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  letterSpacing: 1,
+                ),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.amber,
+                  size: 18,
+                ),
+                onPressed: () => ref.popShell(),
+              ),
+            ),
       body: Column(
         children: [
-          _buildSearchBar(),
+          if (!isDesktop) _buildSearchBar(),
           _buildCategoryTabs(),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildDesignGrid(filteredDesigns),
-                _buildDesignGrid(filteredDesigns),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Dress').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Gown').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Ankara').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Aso Ebi').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Suits').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Agbada').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Kaftan').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Senator').toList()),
-                _buildDesignGrid(_designs.where((d) => d['category'] == 'Jean').toList()),
-              ],
+            child: designsAsync.when(
+              data: (designs) {
+                final filtered = _applySearch(designs);
+                if (filtered.isEmpty) return _buildEmptyState();
+                return _buildDesignGrid(filtered, isDesktop);
+              },
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.amber),
+              ),
+              error: (_, _) => _buildEmptyState(),
             ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => ref.pushShell('/design-upload'),
+        backgroundColor: AppColors.amber,
+        foregroundColor: AppColors.darkNavy,
+        icon: const Icon(Icons.add_photo_alternate_outlined),
+        label: const Text(
+          'UPLOAD',
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+        ),
+      ),
+    );
+  }
+
+  List<Design> _applySearch(List<Design> designs) {
+    if (_searchQuery.isEmpty) return designs;
+    final q = _searchQuery.toLowerCase();
+    return designs
+        .where(
+          (d) =>
+              d.title.toLowerCase().contains(q) ||
+              d.category.toLowerCase().contains(q) ||
+              d.tailorName.toLowerCase().contains(q),
+        )
+        .toList();
+  }
+
+  Widget _buildSearchBar() {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: TextField(
+        onChanged: (v) => setState(() => _searchQuery = v),
+        style: TextStyle(color: colors.textPrimary, fontSize: 13),
+        decoration: InputDecoration(
+          hintText: 'Search designs, fabrics, styles...',
+          hintStyle: TextStyle(color: colors.textMuted),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: colors.textMuted,
+            size: 20,
+          ),
+          filled: true,
+          fillColor: colors.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTabs() {
+    return SizedBox(
+      height: 52,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        itemCount: _categories.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final cat = _categories[index];
+          final isSelected = _selectedCategory == cat;
+          final colors = context.colors;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = cat),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.amber : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                border: isSelected ? null : Border.all(color: colors.divider),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                cat,
+                style: TextStyle(
+                  color: isSelected ? AppColors.darkNavy : colors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDesignGrid(List<Design> designs, bool isDesktop) {
+    final width = MediaQuery.of(context).size.width;
+    final isWide = width >= 1400;
+    final crossAxisCount = isWide
+        ? 5
+        : width >= 1100
+            ? 4
+            : width >= 820
+                ? 3
+                : width >= 560
+                    ? 2
+                    : 1;
+
+    return GridView.builder(
+      padding: EdgeInsets.all(isDesktop ? 24 : 12),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        mainAxisSpacing: isWide ? 14 : 16,
+        crossAxisSpacing: isWide ? 14 : 16,
+        childAspectRatio: isWide ? 0.74 : 0.72,
+      ),
+      itemCount: designs.length,
+      itemBuilder: (context, index) => _DesignCard(
+        design: designs[index],
+        onTap: () => _onDesignTap(designs[index]),
+        onBook: () => _onBookDesign(designs[index]),
+        onLike: () => _onLikeDesign(designs[index]),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final colors = context.colors;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.palette_outlined, color: colors.textMuted, size: 64),
+          const SizedBox(height: 16),
+          Text(
+            'No designs found',
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Designs will appear here once tailors upload them.',
+            style: TextStyle(color: colors.textMuted, fontSize: 12),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: _searchController,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: 'Search designs, fabrics, styles...',
-          hintStyle: const TextStyle(color: Colors.white38),
-          prefixIcon: const Icon(Icons.search, color: AppColors.amber),
-          filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.05),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
-      ),
-    );
+  void _onDesignTap(Design design) {
+    ref.pushShell('/design-details', {'design': design, 'origin': 'shop'});
   }
 
-  Widget _buildCategoryTabs() {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        indicatorColor: AppColors.amber,
-        labelColor: AppColors.amber,
-        unselectedLabelColor: Colors.white54,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11),
-        tabs: categories.map((cat) => Tab(text: cat.toUpperCase())).toList(),
-      ),
-    );
+  void _onBookDesign(Design design) {
+    ref.pushShell('/booking-cart', {
+      'id': design.tailorId,
+      'tailorId': design.tailorId,
+      'name': design.tailorName,
+      'designId': design.id,
+      'designTitle': design.title,
+      'designPrice': design.price,
+    });
   }
 
-List<Map<String, dynamic>> _getFilteredDesigns() {
-    if (_searchQuery.isEmpty) return _designs;
-    return _designs.where((d) {
-      final name = d['name'].toString().toLowerCase();
-      final category = d['category'].toString().toLowerCase();
-      final tailor = d['tailor'].toString().toLowerCase();
-      return name.contains(_searchQuery) || category.contains(_searchQuery) || tailor.contains(_searchQuery);
-    }).cast<Map<String, dynamic>>().toList();
-  }
-
-  Widget _buildDesignGrid(List<Map<String, dynamic>> designs) {
-    if (designs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off, size: 64, color: Colors.white24),
-            const SizedBox(height: 16),
-            Text('No designs found', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-          ],
-        ),
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 0.75,
-      ),
-      itemCount: designs.length,
-      itemBuilder: (context, index) {
-        final design = designs[index];
-        return _DesignCard(
-          design: design,
-          onTap: () => _viewDesignDetail(design),
-        );
-      },
-    );
-  }
-
-  void _viewDesignDetail(Map<String, dynamic> design) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0A1921),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80, height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.amber,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.checkroom, size: 40, color: AppColors.darkNavy),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              design['name'],
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${design['category']} • ${design['tailor']}',
-              style: const TextStyle(color: Colors.white54),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Navigate to booking with this design
-                  _bookThisDesign(design);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber,
-                  foregroundColor: AppColors.darkNavy,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('ORDER THIS DESIGN', style: TextStyle(fontWeight: FontWeight.w900)),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _bookThisDesign(Map<String, dynamic> design) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking ${design['name']} - Coming soon!'),
-        backgroundColor: AppColors.amber,
-      ),
-    );
+  void _onLikeDesign(Design design) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    await ref.read(designRepositoryProvider).toggleLike(design.id, user.id);
+    ref.invalidate(likedDesignIdsProvider);
   }
 }
 
-// Design Card Widget
-class _DesignCard extends StatelessWidget {
-  final Map<String, dynamic> design;
+class _DesignCard extends ConsumerWidget {
+  final Design design;
   final VoidCallback onTap;
+  final VoidCallback onBook;
+  final VoidCallback onLike;
 
-  const _DesignCard({required this.design, required this.onTap});
+  const _DesignCard({
+    required this.design,
+    required this.onTap,
+    required this.onBook,
+    required this.onLike,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.borderSubtle),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: const Center(
-                  child: Icon(Icons.checkroom, size: 48, color: Colors.white24),
+            design.imageUrls.isNotEmpty
+                ? AppNetworkImage(
+                    url: design.imageUrls.first,
+                    fit: BoxFit.cover,
+                  )
+                : _buildPlaceholder(context),
+            // Contrast treatment so overlay text stays readable on any image
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x66000000),
+                    Color(0x1A000000),
+                    Color(0xE6000000),
+                  ],
+                  stops: [0, 0.45, 1],
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(12),
+            // Category chip — top left
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.amber,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  design.category.toUpperCase(),
+                  style: const TextStyle(
+                    color: AppColors.darkNavy,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+            ),
+            // Likes — top right
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                color: Colors.black.withValues(alpha: 0.45),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onLike,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.favorite_rounded,
+                          color: colors.statusError.withValues(alpha: 0.9),
+                          size: 12,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${design.likesCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Metadata rail — bottom
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    design['name'],
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    design.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      shadows: [
+                        Shadow(color: Colors.black54, blurRadius: 6),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    design['tailor'],
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10),
+                  if (design.description != null &&
+                      design.description!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      design.description!.trim(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 10,
+                        height: 1.3,
+                        shadows: const [
+                          Shadow(color: Colors.black54, blurRadius: 6),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '₦${_formatPrice(design.price)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.amber,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            shadows: [
+                              Shadow(color: Colors.black87, blurRadius: 6),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 30,
+                        child: ElevatedButton(
+                          onPressed: onBook,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.darkNavy,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          child: const Text(
+                            'GET THIS MADE',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -288,5 +462,22 @@ class _DesignCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildPlaceholder(BuildContext context) {
+    final colors = context.colors;
+    return Container(
+      color: colors.surface,
+      child: Center(
+        child: Icon(Icons.checkroom_rounded, color: colors.textMuted, size: 48),
+      ),
+    );
+  }
+
+  String _formatPrice(double price) {
+    if (price >= 1000) {
+      return NumberFormat('#,##0').format(price.toInt());
+    }
+    return price.toInt().toString();
   }
 }

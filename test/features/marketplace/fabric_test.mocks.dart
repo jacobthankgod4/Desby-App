@@ -78,11 +78,13 @@ class MockFabricRepository extends _i1.Mock implements _i2.FabricRepository {
   _i3.Stream<List<_i5.Fabric>> streamCatalog({
     String? category,
     String? sellerId,
+    String? state,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#streamCatalog, [], {
               #category: category,
               #sellerId: sellerId,
+              #state: state,
             }),
             returnValue: _i3.Stream<List<_i5.Fabric>>.empty(),
           )

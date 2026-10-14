@@ -34,12 +34,12 @@ class NotificationModel with _$NotificationModel {
 
 extension NotificationModelX on NotificationModel {
   AppNotification toEntity() => AppNotification(
-        id: id,
-        title: title,
-        body: body,
-        type: NotificationType.values.byName(type),
-        timestamp: timestamp,
-        isRead: isRead,
-        data: data,
-      );
+    id: id,
+    title: title,
+    body: body,
+    type: NotificationType.values.byName(type),
+    timestamp: timestamp,
+    isRead: isRead,
+    data: data,
+  );
 }

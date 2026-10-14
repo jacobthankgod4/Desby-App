@@ -11,32 +11,34 @@ final shopRepositoryProvider = Provider<ShopRepository>((ref) {
 });
 
 /// Shop products provider for current tailor
-final shopProductsProvider = FutureProvider.family<List<ShopProduct>, String>((ref, tailorId) async {
+final shopProductsProvider = FutureProvider.family<List<ShopProduct>, String>((
+  ref,
+  tailorId,
+) async {
   final repository = ref.read(shopRepositoryProvider);
   final result = await repository.getProducts(tailorId);
-  
-  return result.fold(
-    (failure) => <ShopProduct>[],
-    (data) => data,
-  );
+
+  return result.fold((failure) => <ShopProduct>[], (data) => data);
 });
 
 /// Current shop products provider
-final currentShopProductsProvider = FutureProvider<List<ShopProduct>>((ref) async {
+final currentShopProductsProvider = FutureProvider<List<ShopProduct>>((
+  ref,
+) async {
   final currentUser = ref.watch(currentUserProvider);
   final tailorId = currentUser?.id ?? '';
-  
+
   if (tailorId.isEmpty) return [];
-  
+
   return ref.watch(shopProductsProvider(tailorId).future);
 });
 
 /// Add product usecase
 class AddProductUseCase {
   final ShopRepository _repository;
-  
+
   AddProductUseCase(this._repository);
-  
+
   Future<Result<ShopProduct>> call(ShopProduct product) {
     return _repository.createProduct(product);
   }
@@ -50,9 +52,9 @@ final addProductUseCaseProvider = Provider<AddProductUseCase>((ref) {
 /// Update product usecase
 class UpdateProductUseCase {
   final ShopRepository _repository;
-  
+
   UpdateProductUseCase(this._repository);
-  
+
   Future<Result<ShopProduct>> call(ShopProduct product) {
     return _repository.updateProduct(product);
   }
@@ -66,9 +68,9 @@ final updateProductUseCaseProvider = Provider<UpdateProductUseCase>((ref) {
 /// Delete product usecase
 class DeleteProductUseCase {
   final ShopRepository _repository;
-  
+
   DeleteProductUseCase(this._repository);
-  
+
   Future<Result<void>> call(String productId) {
     return _repository.deleteProduct(productId);
   }
@@ -82,34 +84,43 @@ final deleteProductUseCaseProvider = Provider<DeleteProductUseCase>((ref) {
 /// Toggle product visibility usecase
 class ToggleProductVisibilityUseCase {
   final ShopRepository _repository;
-  
+
   ToggleProductVisibilityUseCase(this._repository);
-  
+
   Future<Result<ShopProduct>> call(String productId, bool isVisible) {
     return _repository.toggleProductVisibility(productId, isVisible);
   }
 }
 
-final toggleProductVisibilityUseCaseProvider = Provider<ToggleProductVisibilityUseCase>((ref) {
-  final repository = ref.read(shopRepositoryProvider);
-  return ToggleProductVisibilityUseCase(repository);
-});
+final toggleProductVisibilityUseCaseProvider =
+    Provider<ToggleProductVisibilityUseCase>((ref) {
+      final repository = ref.read(shopRepositoryProvider);
+      return ToggleProductVisibilityUseCase(repository);
+    });
 
 /// Shop notifier for managing shop state
 class ShopNotifier extends StateNotifier<AsyncValue<List<ShopProduct>>> {
   final ShopRepository _repository;
   final String _tailorId;
-  
-  ShopNotifier(this._repository, this._tailorId) : super(const AsyncValue.loading()) {
+  final Ref _ref;
+
+  ShopNotifier(this._repository, this._tailorId, this._ref)
+    : super(const AsyncValue.loading()) {
     loadProducts();
   }
-  
+
+  void _invalidateDependentProviders() {
+    if (_tailorId.isNotEmpty) {
+      _ref.invalidate(shopProductsProvider(_tailorId));
+    }
+  }
+
   Future<void> loadProducts() async {
     if (_tailorId.isEmpty) {
       state = const AsyncValue.data([]);
       return;
     }
-    
+
     state = const AsyncValue.loading();
     final result = await _repository.getProducts(_tailorId);
     result.fold(
@@ -117,59 +128,55 @@ class ShopNotifier extends StateNotifier<AsyncValue<List<ShopProduct>>> {
       (data) => state = AsyncValue.data(data),
     );
   }
-  
+
   Future<bool> addProduct(ShopProduct product) async {
     final result = await _repository.createProduct(product);
-    return result.fold(
-      (failure) => false,
-      (data) {
-        loadProducts();
-        return true;
-      },
-    );
+    return result.fold((failure) => false, (data) {
+      loadProducts();
+      _invalidateDependentProviders();
+      return true;
+    });
   }
-  
+
   Future<bool> updateProduct(ShopProduct product) async {
     final result = await _repository.updateProduct(product);
-    return result.fold(
-      (failure) => false,
-      (data) {
-        loadProducts();
-        return true;
-      },
-    );
+    return result.fold((failure) => false, (data) {
+      loadProducts();
+      _invalidateDependentProviders();
+      return true;
+    });
   }
-  
+
   Future<bool> deleteProduct(String productId) async {
     final result = await _repository.deleteProduct(productId);
-    return result.fold(
-      (failure) => false,
-      (data) {
-        loadProducts();
-        return true;
-      },
-    );
+    return result.fold((failure) => false, (data) {
+      loadProducts();
+      _invalidateDependentProviders();
+      return true;
+    });
   }
-  
+
   Future<bool> toggleVisibility(String productId, bool isVisible) async {
-    final result = await _repository.toggleProductVisibility(productId, isVisible);
-    return result.fold(
-      (failure) => false,
-      (data) {
-        loadProducts();
-        return true;
-      },
+    final result = await _repository.toggleProductVisibility(
+      productId,
+      isVisible,
     );
+    return result.fold((failure) => false, (data) {
+      loadProducts();
+      _invalidateDependentProviders();
+      return true;
+    });
   }
 }
 
-final shopNotifierProvider = StateNotifierProvider<ShopNotifier, AsyncValue<List<ShopProduct>>>((ref) {
-  final repository = ref.read(shopRepositoryProvider);
-  final currentUser = ref.watch(currentUserProvider);
-  final tailorId = currentUser?.id ?? '';
-  
-  return ShopNotifier(repository, tailorId);
-});
+final shopNotifierProvider =
+    StateNotifierProvider<ShopNotifier, AsyncValue<List<ShopProduct>>>((ref) {
+      final repository = ref.read(shopRepositoryProvider);
+      final currentUser = ref.watch(currentUserProvider);
+      final tailorId = currentUser?.id ?? '';
+
+      return ShopNotifier(repository, tailorId, ref);
+    });
 
 /// Product form state for adding/editing products
 class ProductFormState {
@@ -179,7 +186,7 @@ class ProductFormState {
   final String category;
   final bool isLoading;
   final String? error;
-  
+
   const ProductFormState({
     this.name = '',
     this.description = '',
@@ -188,7 +195,7 @@ class ProductFormState {
     this.isLoading = false,
     this.error,
   });
-  
+
   ProductFormState copyWith({
     String? name,
     String? description,
@@ -206,42 +213,43 @@ class ProductFormState {
       error: error,
     );
   }
-  
+
   bool get isValid => name.isNotEmpty && price > 0;
 }
 
 class ProductFormNotifier extends StateNotifier<ProductFormState> {
   ProductFormNotifier() : super(const ProductFormState());
-  
+
   void setName(String name) {
     state = state.copyWith(name: name);
   }
-  
+
   void setDescription(String description) {
     state = state.copyWith(description: description);
   }
-  
+
   void setPrice(double price) {
     state = state.copyWith(price: price);
   }
-  
+
   void setCategory(String category) {
     state = state.copyWith(category: category);
   }
-  
+
   void setLoading(bool isLoading) {
     state = state.copyWith(isLoading: isLoading);
   }
-  
+
   void setError(String? error) {
     state = state.copyWith(error: error);
   }
-  
+
   void reset() {
     state = const ProductFormState();
   }
 }
 
-final productFormProvider = StateNotifierProvider<ProductFormNotifier, ProductFormState>((ref) {
-  return ProductFormNotifier();
-});
+final productFormProvider =
+    StateNotifierProvider<ProductFormNotifier, ProductFormState>((ref) {
+      return ProductFormNotifier();
+    });

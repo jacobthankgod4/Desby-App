@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../theme/colors.dart';
 
 /// A high-precision widget that displays anatomical guidance images.
 /// Features a 'Smart Extension Fallback' to ensure assets load correctly
@@ -15,10 +16,11 @@ class StaticGuidedCrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: Container(
-        color: const Color(0xFF0A1921),
+        color: colors.scaffoldBg,
         child: Stack(
           children: [
             // 1. SMART IMAGE LOADER
@@ -29,24 +31,24 @@ class StaticGuidedCrop extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   // Fallback 1: If .jpg.jpeg failed, try .jpg
-                  final String fallbackPath = imagePath.endsWith('.jpg.jpeg') 
+                  final String fallbackPath = imagePath.endsWith('.jpg.jpeg')
                       ? imagePath.replaceAll('.jpg.jpeg', '.jpg')
                       : imagePath;
-                      
+
                   return Image.asset(
                     fallbackPath,
                     fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => _buildMissingState(),
+                    errorBuilder: (c, e, s) => _buildMissingState(context),
                   );
                 },
               ),
             ),
-            
+
             // 2. HOLOGRAPHIC OVERLAY
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  border: Border.all(color: colors.borderSubtle),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -65,7 +67,8 @@ class StaticGuidedCrop extends StatelessWidget {
     );
   }
 
-  Widget _buildMissingState() {
+  Widget _buildMissingState(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -73,21 +76,34 @@ class StaticGuidedCrop extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: colors.borderSubtle,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
             ),
-            child: const Icon(Icons.add_photo_alternate_outlined, color: Colors.amber, size: 24),
+            child: const Icon(
+              Icons.add_photo_alternate_outlined,
+              color: Colors.amber,
+              size: 24,
+            ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'ASSET REQUIRED',
-            style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             imagePath.split('/').last,
-            style: const TextStyle(color: Colors.white24, fontSize: 7, fontFamily: 'Monospace'),
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 7,
+              fontFamily: 'Monospace',
+            ),
           ),
         ],
       ),

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help Center & FAQs — Desby</title>
+<meta name="description" content="Answers to common questions about Desby: accounts, orders, AI body scan, virtual try-on, the marketplace, deliveries and more.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1921; --navy-2:#0E2430; --navy-3:#123240;
+    --amber:#FFC107; --amber-deep:#E6A800; --amber-soft:#FFF3CC;
+    --paper:#F7F6F2; --muted:#5B6B74; --line:#E8E6DF;
+    --green:#0F9D76;
+    --shadow-sm:0 1px 3px rgba(10,25,33,.08);
+    --shadow-md:0 14px 38px rgba(10,25,33,.12);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.16;color:var(--navy)}
+  a{text-decoration:none;color:inherit}
+  .wrap{max-width:860px;margin:0 auto;padding:0 28px}
+  .btn{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:15px;border-radius:999px;padding:14px 28px;transition:.22s;border:none;cursor:pointer;font-family:'Inter'}
+  .btn-amber{background:var(--amber);color:#111;box-shadow:0 8px 24px rgba(255,193,7,.35)}
+  .btn-amber:hover{background:var(--amber-deep);transform:translateY(-2px)}
+  .btn-navy{background:var(--navy);color:#fff}
+  .btn-navy:hover{background:var(--navy-3);transform:translateY(-2px)}
+  
+
+  .hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 60%,var(--navy-3) 100%);color:#fff;padding:76px 0 64px;text-align:center;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.13),transparent 65%);top:-170px;right:-110px}
+  .hero h1{color:#fff;font-size:clamp(32px,4.8vw,52px);margin:18px 0 12px;position:relative;z-index:1}
+  .hero p{color:#B9CBD4;font-size:16.5px;max-width:520px;margin:0 auto;position:relative;z-index:1}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,193,7,.13);color:var(--amber);font-size:13px;font-weight:700;padding:8px 18px;border-radius:999px;border:1px solid rgba(255,193,7,.25);position:relative;z-index:1}
+  .search-wrap{position:relative;max-width:520px;margin:30px auto 0;z-index:1}
+  .search-wrap input{width:100%;border:none;border-radius:999px;padding:17px 24px 17px 54px;font-family:'Inter';font-size:15.5px;font-weight:500;background:#fff;color:var(--navy);box-shadow:var(--shadow-md);outline:none;transition:box-shadow .25s}
+  .search-wrap input:focus{box-shadow:0 0 0 3px rgba(255,193,7,.4),var(--shadow-md)}
+  .search-wrap .s-ico{position:absolute;left:20px;top:50%;transform:translateY(-50%);font-size:17px;opacity:.55}
+
+  .faq-body{padding:56px 0 110px}
+  .cat{margin-bottom:46px}
+  .cat-title{display:flex;align-items:center;gap:12px;font-size:21px;margin-bottom:18px}
+  .cat-ico{width:40px;height:40px;border-radius:12px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .faq-item{background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:12px;overflow:hidden;transition:box-shadow .3s,border-color .3s}
+  .faq-item.open{box-shadow:var(--shadow-sm);border-color:#D9D5C9}
+  .faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;text-align:left;background:none;border:none;padding:19px 24px;font-family:'Inter';font-size:15.5px;font-weight:700;color:var(--navy);cursor:pointer}
+  .faq-q .chev{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:12px;transition:transform .35s var(--ease-out),background .3s,color .3s;color:var(--muted)}
+  .faq-item.open .chev{transform:rotate(180deg);background:var(--amber);color:var(--navy)}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .45s var(--ease-out)}
+  .faq-a-inner{padding:0 24px 22px;color:var(--muted);font-size:14.5px}
+  .faq-a-inner a{color:var(--amber-deep);font-weight:600}
+  .no-results{display:none;text-align:center;padding:60px 20px;color:var(--muted)}
+  .no-results b{color:var(--navy);font-family:'Sora';font-size:18px;display:block;margin-bottom:8px}
+
+  .contact-band{background:linear-gradient(135deg,#123240 0%,var(--navy-2) 100%);border-radius:28px;color:#fff;text-align:center;padding:56px 34px;position:relative;overflow:hidden}
+  .contact-band::after{content:"";position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.16),transparent 65%);top:-140px;right:-100px}
+  .contact-band h2{color:#fff;font-size:clamp(24px,3.4vw,34px);margin-bottom:12px;position:relative;z-index:1}
+  .contact-band p{color:#B9CBD4;margin-bottom:28px;position:relative;z-index:1}
+  .contact-band .btn{position:relative;z-index:1}
+  .foot-base a{color:#9FB3BC;margin-left:18px}
+  .foot-base a:hover{color:var(--amber)}
+
+  header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:84px;max-width:1200px;margin:0 auto;padding:0 28px}
+  .logo{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:800;font-size:23px;color:var(--navy)}
+  .logo-mark{width:54px;height:54px;border-radius:14px;object-fit:cover;display:block}
+  .nav-links{display:flex;align-items:center;gap:30px;font-size:15px;font-weight:500;color:#3A4B54}
+  .nav-links a{transition:color .2s}
+  .nav-links a:hover{color:var(--navy)}
+  .nav-links a.active{color:var(--navy);font-weight:700;position:relative}
+  .nav-links a.active::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:2.5px;border-radius:2px;background:var(--amber)}
+  .nav-cta{display:flex;align-items:center;gap:16px}
+  .signin{font-weight:600;font-size:15px;color:var(--navy)}
+  .nav-cta .btn-amber{padding:12px 24px;font-size:14px}
+  .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;z-index:200}
+  .hamburger span{display:block;width:22px;height:2px;background:var(--navy);border-radius:2px;transition:.3s}
+  .mobile-menu{display:none;position:fixed;inset:0;background:#fff;z-index:150;padding:100px 28px 40px;flex-direction:column;gap:0}
+  .mobile-menu.open{display:flex}
+  .mobile-menu a{display:block;padding:16px 0;font-size:17px;font-weight:600;color:var(--navy);border-bottom:1px solid var(--line)}
+  .mobile-menu a:last-child{border-bottom:none}
+  .mobile-menu .mob-cta{margin-top:auto;padding-bottom:40px;display:flex;flex-direction:column;gap:12px}
+  .mobile-menu .mob-cta a{text-align:center;border:none;padding:14px;border-radius:999px;font-weight:700}
+  .mob-cta .btn-amber{background:var(--amber);color:#111}
+  .mob-cta .btn-navy{background:var(--navy);color:#fff}
+  .mobile-menu .mob-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--navy);z-index:160}
+  .mobile-menu .mob-close:hover{background:var(--line)}
+  @media(max-width:900px){.nav-links{display:none}.nav-cta{display:none}.hamburger{display:flex}}
+
+  footer{background:var(--navy);color:#9FB3BC;padding:70px 0 34px;font-size:14px}
+  .foot-inner{max-width:1200px;margin:0 auto;padding:0 28px}
+  .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:44px;margin-bottom:52px}
+  .foot-brand p{margin:18px 0 0;max-width:280px;color:#7E93A0}
+  footer h4{color:#fff;font-family:'Sora';font-size:13.5px;margin-bottom:20px;letter-spacing:.06em}
+  .foot-col a{display:block;margin-bottom:13px;transition:.2s;width:fit-content}
+  .foot-col a:hover{color:var(--amber);transform:translateX(4px)}
+  .foot-base{border-top:1px solid rgba(255,255,255,.09);padding-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;color:#7E93A0;font-size:13px}
+  @media(max-width:860px){.foot-grid{grid-template-columns:1fr 1fr}}
+
+  .socials{display:flex;gap:12px;margin-top:22px}
+  .socials a{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#CFE0E8;transition:.25s}
+  .socials a:hover{background:var(--amber);color:var(--navy);border-color:var(--amber);transform:translateY(-3px)}
+
+  .s-ico svg{width:18px;height:18px}
+  .chev svg{width:13px;height:13px}
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+    <div class="nav-links">
+      <a href="/#features">Features</a>
+      <a href="/shop">Shop</a>
+      <a href="/#about">About</a>
+      <a href="/help" class="active">Help</a>
+    </div>
+    <div class="nav-cta">
+      <a class="signin" href="#" onclick="return false">Sign in</a>
+      <a class="btn btn-amber header-cta-btn" href="/app" onclick="return false">Get started</a>
+    </div>
+    <button class="hamburger" onclick="document.getElementById('mobMenu').classList.add('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<div class="mobile-menu" id="mobMenu">
+  <button class="mob-close" onclick="document.getElementById('mobMenu').classList.remove('open')" aria-label="Close menu">&times;</button>
+  <a href="/#features" onclick="document.getElementById('mobMenu').classList.remove('open')">Features</a>
+  <a href="/shop" onclick="document.getElementById('mobMenu').classList.remove('open')">Shop</a>
+  <a href="/#about" onclick="document.getElementById('mobMenu').classList.remove('open')">About</a>
+  <a href="/help" onclick="document.getElementById('mobMenu').classList.remove('open')">Help</a>
+  <div class="mob-cta">
+    <a class="btn-amber mob-cta-btn" href="/app">Get started</a>
+    <a class="btn-navy" href="#" onclick="return false">Sign in</a>
+  </div>
+</div>
+<script>
+(function(){
+  var btns = document.querySelectorAll('.header-cta-btn, .mob-cta-btn');
+  var hasSession = false;
+  try { hasSession = !!localStorage.getItem('sb-aemumiyzowraoachzxtu-auth-token'); } catch(e){}
+  btns.forEach(function(b){
+    if(hasSession){ b.textContent='Dashboard'; b.href='/app'; }
+  });
+})();
+</script>
+
+
+
+
+<div class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Help Center</span>
+    <h1>How can we help?</h1>
+    <p>Quick answers to the questions tailors, clients, apprentices and fabric sellers ask most.</p>
+    <div class="search-wrap">
+      <span class="s-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <input type="text" id="faqSearch" placeholder="Search questions… e.g. try-on, delivery, price" autocomplete="off">
+    </div>
+  </div>
+</div>
+
+<div class="faq-body">
+  <div class="wrap" id="faqList"></div>
+  <div class="wrap">
+    <div class="no-results" id="noResults"><b>No matching questions</b>Try a different word, or reach us directly at <a href="mailto:hello@desby.app" style="color:var(--amber-deep);font-weight:600">hello@desby.app</a></div>
+    <div class="contact-band">
+      <h2>Still stuck? We reply fast.</h2>
+      <p>Send us a message and our support team will get back to you within one business day.</p>
+      <a class="btn btn-amber" href="mailto:hello@desby.app">Email hello@desby.app</a>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  const FAQS = [
+    { cat:'Getting Started', qs:[
+      { q:'What is Desby?', a:'Desby is a digital operating system for the fashion industry. It gives tailors, clothing brands, fabric sellers and apprentices one place to manage orders, clients, measurements, designs, learning and delivery — with AI tools like body scanning and virtual try-on built in.' },
+      { q:'How do I create an account?', a:'Tap “Open App” or “Create free account”, enter your email and password, then choose the role that fits you: tailor, client, apprentice or fabric seller. Your role decides which tools you see first — and you can always explore the others.' },
+      { q:'Is Desby free to use?', a:'Yes. Creating an account, browsing the shop, managing clients and taking AI body scans are free. Desby offers optional paid plans for advanced business features — you will always see the price clearly before any payment.' },
+      { q:'Which devices does Desby work on?', a:'Desby runs in any modern browser on desktop and mobile at desby.app, and the same account works across all your devices. Your data syncs automatically.' },
+    ]},
+    { cat:'Account & Profile', qs:[
+      { q:'How do I complete my tailor profile?', a:'After signing up as a tailor, the onboarding wizard walks you through your business name, services, location, working hours and pricing. A complete profile ranks higher when clients search for tailors near them.' },
+      { q:'How do I change my business details later?', a:'Go to Profile → Edit in the app to update your business name, address, services, working hours and profile photo at any time. Changes appear everywhere your profile is shown, including the public shop.' },
+      { q:'I forgot my password. What do I do?', a:'On the sign-in screen, tap “Forgot password” and enter your email. We will send you a reset link. If it does not arrive within a few minutes, check your spam folder or contact hello@desby.app.' },
+    ]},
+    { cat:'Orders & Clients', qs:[
+      { q:'How do orders work?', a:'When a client books a design or a tailor creates a booking, it appears in the order pipeline: from booking accepted, through measurement, cutting, stitching and fitting, to ready and delivered. Both you and your client can see the live status.' },
+      { q:'Where are my clients’ measurements stored?', a:'Every client has a permanent digital measurement ledger in your workspace. Measurements entered manually — or captured with the AI Body Scan — are saved to that client’s profile, so repeat orders never need re-measuring.' },
+      { q:'Can I price a job before accepting it?', a:'Yes. The price estimation tool builds an estimate from garment type, fabric and extras before you commit. The estimate can be shared with your client for approval.' },
+    ]},
+    { cat:'AI Body Scan & Virtual Try-On', qs:[
+      { q:'How accurate is the AI Body Scan?', a:'The scan uses dual-photo capture with pose guidance and extracts 27 body measurements with high accuracy for fitting purposes. For best results, follow the on-screen pose guide, stand against a plain background, and wear fitted clothing.' },
+      { q:'Do I need a tailor to take my measurements?', a:'No — that is the point. Clients scan themselves at home with a phone on a tripod or a friend’s help, and the measurements arrive in their tailor’s dashboard instantly.' },
+      { q:'What is Virtual Try-On?', a:'Virtual Try-On uses AI to render a design onto your photo so you can see the outfit before fabric is cut. It reduces surprises and makes approvals faster.' },
+      { q:'Why do I need an account to run a try-on?', a:'Try-on runs on your photo, and your photos plus results are private to you. A free account keeps that data tied to you alone — browsing the shop and viewing pieces never requires an account.' },
+      { q:'Are my body scan photos private?', a:'Yes. Scan photos and measurements are stored securely and are only visible to you and the tailor you explicitly book with. We never sell your data — see our Privacy Policy for the full detail.' },
+    ]},
+    { cat:'Shop & Marketplace', qs:[
+      { q:'Who lists the pieces in the shop?', a:'Every piece is listed by a verified tailor on Desby. What you see in the public shop is exactly what the tailor published — their photos, their prices, their descriptions.' },
+      { q:'How do I order a piece I like?', a:'Open the piece and tap “Order this look in the app”. You will pick your fabric options, confirm or scan your measurements, and the tailor receives the booking with live status tracking from there.' },
+      { q:'How do I list my own designs as a tailor?', a:'In the app, open your Design Portfolio, tap UPLOAD, add photos, a title, category, gender and price, then publish. Visible designs appear in the public shop automatically.' },
+      { q:'I am a fabric seller. How do I sell fabric?', a:'Fabric sellers get an inventory workspace with wholesale pricing tiers, stock tracking and buyer lead generation. Complete the fabric seller onboarding after signing up to open your storefront.' },
+    ]},
+    { cat:'Delivery & Logistics', qs:[
+      { q:'How does delivery work?', a:'Tailors can summon a rider for pickups and deliveries inside the app once an order is marked READY; a rider is dispatched automatically at that point, not when the booking is accepted. Clients get a live tracking link and proof of delivery — signature and photo — on completion.' },
+      { q:'Where does Desby deliver?', a:'Rider dispatch is rolling out across Lagos first, with nationwide courier options for finished pieces. Your available delivery options are shown at booking time.' },
+    ]},
+    { cat:'Privacy & Security', qs:[
+      { q:'How does Desby protect my data?', a:'Your data is stored with industry-standard encryption in transit and at rest, access is restricted to you and the people you choose to share with, and we comply with the Nigeria Data Protection Act 2023. Read the full Privacy Policy for details.' },
+      { q:'Can I delete my account and data?', a:'Yes. You can request deletion of your account and associated data at any time from Settings, or by emailing hello@desby.app. We will confirm once deletion is complete.' },
+    ]},
+  ];
+
+  const listEl = document.getElementById('faqList');
+  const searchEl = document.getElementById('faqSearch');
+  let openItem = null;
+
+  function build(){
+    listEl.innerHTML = FAQS.map((c,ci) => `
+      <div class="cat" data-cat="${ci}">
+        <div class="cat-title"><h2>${c.cat}</h2></div>
+        ${c.qs.map((f,qi) => `
+          <div class="faq-item" data-text="${(f.q+' '+f.a).toLowerCase()}">
+            <button class="faq-q" onclick="toggle(this)">${f.q}<span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
+            <div class="faq-a"><div class="faq-a-inner">${f.a}</div></div>
+          </div>`).join('')}
+      </div>`).join('');
+  }
+
+  function toggle(btn){
+    const item = btn.parentElement;
+    const body = item.querySelector('.faq-a');
+    if (openItem && openItem !== item){
+      openItem.classList.remove('open');
+      openItem.querySelector('.faq-a').style.maxHeight = '0px';
+    }
+    if (item.classList.contains('open')){
+      item.classList.remove('open'); body.style.maxHeight = '0px'; openItem = null;
+    } else {
+      item.classList.add('open'); body.style.maxHeight = body.scrollHeight + 'px'; openItem = item;
+    }
+  }
+
+  searchEl.addEventListener('input', () => {
+    const q = searchEl.value.trim().toLowerCase();
+    let any = false;
+    document.querySelectorAll('.faq-item').forEach(it => {
+      const match = !q || it.dataset.text.includes(q);
+      it.style.display = match ? '' : 'none';
+      if (match) any = true;
+    });
+    document.querySelectorAll('.cat').forEach(c => {
+      const visible = [...c.querySelectorAll('.faq-item')].some(it => it.style.display !== 'none');
+      c.style.display = visible ? '' : 'none';
+    });
+    document.getElementById('noResults').style.display = any ? 'none' : 'block';
+  });
+
+  build();
+</script>
+<footer>
+  <div class="foot-inner">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+        <p>The digital operating system for tailors, fashion entrepreneurs, apprentices and fabric sellers across Africa.</p>
+      </div>
+      <div class="foot-col">
+        <h4>PRODUCT</h4>
+        <a href="/shop">Shop all designs</a>
+        <a href="/#features">Tailor OS</a>
+        <a href="/#features">AI Body Scan</a>
+        <a href="/#features">Virtual Try-On</a>
+        <a href="/#features">Fabric Marketplace</a>
+        <a href="/#features">Smart Logistics</a>
+      </div>
+      <div class="foot-col">
+        <h4>COMPANY</h4>
+        <a href="/#about">About Desby</a>
+        <a href="/#stories">Stories</a>
+        <a href="/#how">Get started</a>
+        <a href="#" onclick="return false">Sign in</a>
+      </div>
+      <div class="foot-col">
+        <h4>SUPPORT</h4>
+        <a href="mailto:hello@desby.app">hello@desby.app</a>
+        <a href="/help">Help centre</a>
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of service</a>
+      </div>
+<div class="socials">
+        <a href="https://www.linkedin.com/company/desby-app/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></a>
+        <a href="https://www.instagram.com/desby_app" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.8" cy="6.2" r="1.4" fill="currentColor" stroke="none"/></svg></a>
+        <a href="https://www.facebook.com/profile.php?id=61567341441314" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.52 1.5-3.91 3.78-3.91 1.09 0 2.24.2 2.24.2v2.46H15.2c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.45 2.9h-2.33V22c4.78-.76 8.43-4.92 8.43-9.94z"/></svg></a>
+        <a href="https://x.com/desby_app" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M18.24 2.25h3.31l-7.23 8.26L22.83 21.75h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.83L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z"/></svg></a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Desby. All rights reserved.</span>
+      <span>Made with love for fashion</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

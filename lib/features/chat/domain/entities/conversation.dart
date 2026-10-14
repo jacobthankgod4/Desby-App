@@ -20,13 +20,13 @@ class Conversation extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        participantIds,
-        lastMessage,
-        unreadCount,
-        orderId,
-        metadata,
-      ];
+    id,
+    participantIds,
+    lastMessage,
+    unreadCount,
+    orderId,
+    metadata,
+  ];
 
   Conversation copyWith({
     String? id,

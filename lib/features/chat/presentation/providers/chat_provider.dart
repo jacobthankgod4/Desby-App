@@ -12,7 +12,9 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   return SupabaseChatRepository();
 });
 
-final getConversationsUsecaseProvider = Provider<GetConversationsUsecase>((ref) {
+final getConversationsUsecaseProvider = Provider<GetConversationsUsecase>((
+  ref,
+) {
   return GetConversationsUsecase(ref.watch(chatRepositoryProvider));
 });
 
@@ -20,7 +22,9 @@ final getChatMessagesUsecaseProvider = Provider<GetChatMessagesUsecase>((ref) {
   return GetChatMessagesUsecase(ref.watch(chatRepositoryProvider));
 });
 
-final getMessageStreamUsecaseProvider = Provider<GetMessageStreamUsecase>((ref) {
+final getMessageStreamUsecaseProvider = Provider<GetMessageStreamUsecase>((
+  ref,
+) {
   return GetMessageStreamUsecase(ref.watch(chatRepositoryProvider));
 });
 
@@ -35,16 +39,19 @@ final conversationsProvider = FutureProvider<List<Conversation>>((ref) async {
   );
 });
 
-final chatMessagesProvider = FutureProvider.family<List<ChatMessage>, String>((ref, conversationId) async {
+final chatMessagesProvider = FutureProvider.family<List<ChatMessage>, String>((
+  ref,
+  conversationId,
+) async {
   final usecase = ref.watch(getChatMessagesUsecaseProvider);
   final result = await usecase(conversationId);
-  return result.fold(
-    (failure) => throw failure,
-    (messages) => messages,
-  );
+  return result.fold((failure) => throw failure, (messages) => messages);
 });
 
-final chatMessageStreamProvider = StreamProvider.family<ChatMessage, String>((ref, conversationId) {
+final chatMessageStreamProvider = StreamProvider.family<ChatMessage, String>((
+  ref,
+  conversationId,
+) {
   final usecase = ref.watch(getMessageStreamUsecaseProvider);
   return usecase(conversationId);
 });

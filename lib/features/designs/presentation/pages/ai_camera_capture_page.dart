@@ -5,7 +5,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../../../../core/services/tts_service.dart';
+import '../../../../core/services/scan_guidance.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 import '../../../../theme/colors.dart';
@@ -18,9 +19,14 @@ class AiCameraCapturePage extends StatefulWidget {
 }
 
 class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
+  /// How far above the shoulders the wrists may sit before the front pose is
+  /// rejected, as a fraction of the frame height. A true T-pose puts the wrists
+  /// level with the shoulders, and landmark estimates jitter a few percent, so
+  /// a small tolerance is needed or alignment never locks on.
+  static const double _tPoseHeightTolerance = 0.06;
+
   CameraController? _cameraController;
   PoseDetector? _poseDetector;
-  final FlutterTts _tts = FlutterTts();
   bool _isProcessing = false;
   bool _isAligned = false;
   DateTime? _alignmentStartTime;
@@ -51,13 +57,16 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
         }
         return;
       }
-      final backCamera = cameras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.back,
+      final desiredDirection = widget.perspective == 'front'
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
+      final camera = cameras.firstWhere(
+        (c) => c.lensDirection == desiredDirection,
         orElse: () => cameras.first,
       );
-      debugPrint('[CAMERA] Found camera: ${backCamera.name}');
+      debugPrint('[CAMERA] Found camera: ${camera.name} (direction: ${camera.lensDirection})');
       _cameraController = CameraController(
-        backCamera,
+        camera,
         ResolutionPreset.high,
         enableAudio: false,
       );
@@ -95,31 +104,22 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
 
   void _initPoseDetector() {
     _poseDetector = PoseDetector(
-      options: PoseDetectorOptions(
-        mode: PoseDetectionMode.stream,
-      ),
+      options: PoseDetectorOptions(mode: PoseDetectionMode.stream),
     );
   }
 
   Future<void> _initTts() async {
-    if (kIsWeb) return;
-    try {
-      await _tts.setSpeechRate(0.5);
-      await _tts.setVolume(1.0);
-      await _tts.setPitch(1.0);
-    } catch (e) {
-      debugPrint('[CAMERA] TTS init error: $e');
-    }
+    await TtsService.instance.configure();
   }
 
+  /// Spoken guidance for the pose this capture screen validates. Uses the same
+  /// strings as the setup screen so the instruction never contradicts itself.
   void _speakStepGuidance() {
-    if (widget.perspective == 'front') {
-      _speakFeedback(
-          'Stand facing the camera. Spread your arms in an A-shape. Keep your head and feet visible.');
-    } else {
-      _speakFeedback(
-          'Turn sideways to the camera. Show your full profile. Keep your head and feet visible.');
-    }
+    _speakFeedback(
+      widget.perspective == 'front'
+          ? ScanGuidance.poseFront
+          : ScanGuidance.poseSide,
+    );
   }
 
   Future<void> _processCameraImage(CameraImage image) async {
@@ -197,42 +197,47 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
       feedback = 'Step back: Head and feet must be visible.';
       aligned = false;
     } else if (widget.perspective == 'front') {
-      // Front view A-pose check (Korra logic)
-      final bool handsDown = leftWrist != null &&
+      // Front view T-pose check.
+      //
+      // The previous check required the wrists to sit strictly below the
+      // shoulders, which is an A-pose and actively rejected a T-pose with
+      // "Move arms down" — the opposite of what the user was told to do.
+      // A small upward tolerance now allows wrists at roughly shoulder height,
+      // which is the neutral pose SMPL measurements are taken in.
+      final bool armsNotRaised =
+          leftWrist != null &&
           rightWrist != null &&
           leftShoulder != null &&
           rightShoulder != null &&
-          leftWrist.y > leftShoulder.y &&
-          rightWrist.y > rightShoulder.y;
+          leftWrist.y > leftShoulder.y - _tPoseHeightTolerance &&
+          rightWrist.y > rightShoulder.y - _tPoseHeightTolerance;
 
-      if (!handsDown) {
-        feedback = 'A-POSE: Move arms down.';
+      if (!armsNotRaised) {
+        feedback = 'T-POSE: Bring your arms down to shoulder height.';
         aligned = false;
       } else if (leftHip == null ||
           rightHip == null ||
           (leftWrist.x - leftHip.x).abs() < 0.15 ||
           (rightWrist.x - rightHip.x).abs() < 0.15) {
-        feedback = 'A-POSE: Spread arms.';
+        feedback = 'T-POSE: Spread your arms straight out to the sides.';
         aligned = false;
       }
     } else if (widget.perspective == 'side') {
       // Side view check (Korra yaw estimation logic)
-      final bool bothShouldersVisible = leftShoulder != null &&
+      final bool bothShouldersVisible =
+          leftShoulder != null &&
           rightShoulder != null &&
           leftShoulder.likelihood > 0.5 &&
           rightShoulder.likelihood > 0.5 &&
           leftHip != null;
 
       if (leftShoulder != null && rightShoulder != null && leftHip != null) {
-        final double xDelta =
-            (leftShoulder.x - rightShoulder.x).abs();
-        final double yDelta =
-            (leftShoulder.y - leftHip.y).abs();
+        final double xDelta = (leftShoulder.x - rightShoulder.x).abs();
+        final double yDelta = (leftShoulder.y - leftHip.y).abs();
         final double sideRatio = yDelta > 0 ? xDelta / yDelta : 1.0;
 
         if (bothShouldersVisible) {
-          final double zDelta =
-              (leftShoulder.z - rightShoulder.z).abs();
+          final double zDelta = (leftShoulder.z - rightShoulder.z).abs();
           final double yawRad = atan2(zDelta, xDelta);
           if (yawRad < 1.45 || sideRatio >= 0.1) {
             feedback = 'Turn Side: Face fully side.';
@@ -249,7 +254,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
     if (aligned) {
       if (_alignmentStartTime == null) {
         _alignmentStartTime = DateTime.now();
-        _speakFeedback('Hold still.', force: true);
+        _speakFeedback(ScanGuidance.holdStill, force: true);
       } else {
         final elapsed = DateTime.now().difference(_alignmentStartTime!);
         if (elapsed.inMilliseconds >= 1500) {
@@ -279,12 +284,8 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
         now.difference(_lastSpokenTime!).inSeconds < 3) {
       return;
     }
-    if (!force) {
-      final speaking = await _tts.awaitSpeakCompletion(true);
-      if (speaking) return;
-    }
-    if (force) await _tts.stop();
-    await _tts.speak(text);
+    if (force) await TtsService.instance.stop();
+    await TtsService.instance.speak(text);
     _lastSpokenText = text;
     _lastSpokenTime = now;
   }
@@ -293,7 +294,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
     if (_isReviewing || _capturedImageBytes != null) return;
 
     HapticFeedback.heavyImpact();
-    await _speakFeedback('Captured.', force: true);
+    await _speakFeedback(ScanGuidance.captured, force: true);
 
     try {
       final XFile file = await _cameraController!.takePicture();
@@ -324,13 +325,17 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
     if (!kIsWeb) {
       try {
         _cameraController?.stopImageStream();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[CAMERA] Error stopping image stream: $e');
+      }
     }
     _cameraController?.dispose();
     try {
       _poseDetector?.close();
-    } catch (_) {}
-    _tts.stop();
+    } catch (e) {
+      debugPrint('[CAMERA] Error closing pose detector: $e');
+    }
+    TtsService.instance.stop();
     super.dispose();
   }
 
@@ -338,7 +343,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
   Widget build(BuildContext context) {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: context.colors.scaffoldBg,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -349,14 +354,14 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
               Text(
                 _statusMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                style: TextStyle(color: context.colors.textMuted, fontSize: 14),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.amber,
-                  foregroundColor: Colors.black,
+                  foregroundColor: context.colors.textPrimary,
                 ),
                 child: const Text('GO BACK'),
               ),
@@ -367,7 +372,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.colors.scaffoldBg,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -392,17 +397,16 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
             right: 24,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               decoration: BoxDecoration(
                 color: _isAligned
                     ? const Color(0xFF76FF03)
-                    : Colors.black.withValues(alpha: 0.8),
+                    : context.colors.scaffoldBg,
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
                   color: _isAligned
                       ? const Color(0xFF76FF03)
-                      : Colors.white.withValues(alpha: 0.1),
+                      : context.colors.borderSubtle,
                   width: 2,
                 ),
               ),
@@ -410,7 +414,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
                 _statusMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: _isAligned ? Colors.black : Colors.white,
+                  color: _isAligned ? Colors.black : context.colors.textPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.05,
@@ -429,13 +433,13 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: context.colors.scaffoldBg,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1)),
+                    color: context.colors.borderSubtle,
+                  ),
                 ),
-                child:
-                    const Icon(Icons.close, color: Colors.white, size: 20),
+                child: Icon(Icons.close, color: context.colors.textPrimary, size: 20),
               ),
             ),
           ),
@@ -444,7 +448,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
           if (_isReviewing && _capturedImageBytes != null)
             Positioned.fill(
               child: Container(
-                color: Colors.black,
+                color: context.colors.scaffoldBg,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -459,16 +463,14 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
                             child: ElevatedButton(
                               onPressed: _retakePhoto,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white
-                                    .withValues(alpha: 0.1),
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(
-                                    color: Colors.white24),
+                                backgroundColor: context.colors.borderSubtle,
+                                foregroundColor: context.colors.textPrimary,
+                                side: BorderSide(color: context.colors.borderSubtle),
                                 padding: const EdgeInsets.symmetric(
-                                    vertical: 16),
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                               child: const Text(
@@ -489,10 +491,10 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
                                 backgroundColor: AppColors.amber,
                                 foregroundColor: Colors.black,
                                 padding: const EdgeInsets.symmetric(
-                                    vertical: 16),
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
                               child: const Text(
@@ -527,10 +529,11 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: _isAligned
-                              ? const Color(0xFF76FF03)
-                              : AppColors.amber,
-                          width: 6),
+                        color: _isAligned
+                            ? const Color(0xFF76FF03)
+                            : AppColors.amber,
+                        width: 6,
+                      ),
                     ),
                     child: Stack(
                       alignment: Alignment.center,
@@ -542,8 +545,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
                             shape: BoxShape.circle,
                             color: _isAligned
                                 ? const Color(0xFF76FF03)
-                                : Colors.white
-                                    .withValues(alpha: 0.2),
+                                : context.colors.surface,
                           ),
                         ),
                         if (_isAligned)
@@ -555,8 +557,7 @@ class _AiCameraCapturePageState extends State<AiCameraCapturePage> {
                                   ? min(
                                       1.0,
                                       DateTime.now()
-                                              .difference(
-                                                  _alignmentStartTime!)
+                                              .difference(_alignmentStartTime!)
                                               .inMilliseconds /
                                           1500.0,
                                     )

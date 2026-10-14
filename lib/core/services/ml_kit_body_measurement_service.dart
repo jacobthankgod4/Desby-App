@@ -3,13 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 /// ML Kit Body Measurement Service
-/// 
+///
 /// Uses Google ML Kit Pose Detection for client-side body measurements.
 /// Works completely offline - no server dependency!
-/// 
+///
 /// IMPORTANT: First time use requires downloading the pose model (~8MB).
 /// After that, it works offline with cached models.
-/// 
+///
 /// Accuracy: ±3-5cm with good lighting and full body in frame
 
 class MLKitBodyMeasurementService {
@@ -24,22 +24,21 @@ class MLKitBodyMeasurementService {
   Future<bool> initialize() async {
     if (_isInitialized) return true;
     if (_isDownloading) return false;
-    
+
     _isDownloading = true;
-    
+
     try {
       // Create pose detector with options for accurate detection
       final options = PoseDetectorOptions(
         mode: PoseDetectionMode.single, // Single person mode
       );
-      
+
       _poseDetector = PoseDetector(options: options);
       _isInitialized = true;
       _isDownloading = false;
-      
+
       debugPrint('✅ ML Kit Pose Detection initialized');
       return true;
-      
     } catch (e) {
       debugPrint('❌ Failed to initialize ML Kit: $e');
       _isDownloading = false;
@@ -54,12 +53,12 @@ class MLKitBodyMeasurementService {
   }
 
   /// Extract body measurements from an image
-  /// 
+  ///
   /// [image] - The image file (front or side view)
   /// [userHeightCm] - User's height in cm for scaling
   /// [gender] - 'male' or 'female' for different ratios
   /// [viewType] - 'front' or 'side' for better accuracy
-  /// 
+  ///
   /// For best accuracy: use dual photos (front & side)
   Future<MLKitMeasurementResult> extractMeasurements({
     required File image,
@@ -73,27 +72,27 @@ class MLKitBodyMeasurementService {
         return MLKitMeasurementResult.error('ML Kit not initialized');
       }
     }
-    
+
     try {
       // Process image
       final inputImage = InputImage.fromFilePath(image.path);
       final poses = await _poseDetector!.processImage(inputImage);
-      
+
       if (poses.isEmpty) {
         return MLKitMeasurementResult.error('No person detected in image');
       }
-      
+
       // Get the first (most prominent) pose
       final pose = poses.first;
-      
+
       // Extract landmarks
       final landmarks = pose.landmarks;
-      
+
       // Check if we have required landmarks
       if (landmarks.isEmpty) {
         return MLKitMeasurementResult.error('No pose landmarks detected');
       }
-      
+
       // Calculate measurements using anthropometric ratios + landmark positions
       final measurements = _calculateMeasurements(
         landmarks: landmarks,
@@ -102,14 +101,13 @@ class MLKitBodyMeasurementService {
         gender: gender,
         viewType: viewType,
       );
-      
+
       return MLKitMeasurementResult.success(
         measurements: measurements,
         imagePath: image.path,
         gender: gender,
         userHeightCm: userHeightCm,
       );
-      
     } catch (e) {
       debugPrint('ML Kit extraction error: $e');
       return MLKitMeasurementResult.error('Extraction failed: $e');
@@ -130,23 +128,23 @@ class MLKitBodyMeasurementService {
       gender: gender,
       viewType: 'front',
     );
-    
+
     final sideResult = await extractMeasurements(
       image: sideImage,
       userHeightCm: userHeightCm,
       gender: gender,
       viewType: 'side',
     );
-    
+
     // If both succeeded, merge measurements
     if (frontResult.success && sideResult.success) {
       final merged = <String, double>{};
-      
+
       // Front-derived measurements
       if (frontResult.measurements != null) {
         merged.addAll(frontResult.measurements!);
       }
-      
+
       // Side-derived measurements (these are more accurate for depth)
       if (sideResult.measurements != null) {
         // Prefer side for certain measurements
@@ -162,7 +160,7 @@ class MLKitBodyMeasurementService {
         // Use front for these measurements
         merged['Shoulder'] = frontResult.measurements?['Shoulder'] ?? 0;
       }
-      
+
       return MLKitMeasurementResult.success(
         measurements: merged,
         imagePath: '${frontImage.path} + ${sideImage.path}',
@@ -171,7 +169,7 @@ class MLKitBodyMeasurementService {
         dualMode: true,
       );
     }
-    
+
     // Fallback to single photo
     if (frontResult.success) {
       return frontResult;
@@ -179,9 +177,9 @@ class MLKitBodyMeasurementService {
     if (sideResult.success) {
       return sideResult;
     }
-    
+
     return MLKitMeasurementResult.error(
-      frontResult.error ?? sideResult.error ?? 'Both extractions failed'
+      frontResult.error ?? sideResult.error ?? 'Both extractions failed',
     );
   }
 
@@ -207,11 +205,11 @@ class MLKitBodyMeasurementService {
     // final rightElbow = landmarks[PoseLandmarkType.rightElbow];
     // final leftWrist = landmarks[PoseLandmarkType.leftWrist];
     // final rightWrist = landmarks[PoseLandmarkType.rightWrist];
-    
+
     // Calculate scale factor from image (assuming full body in frame)
     // In production, you'd use actual pixel-to-cm ratio
     final double pixelsPerCm;
-    
+
     if (leftAnkle != null && nose != null) {
       final bodyPixelHeight = (nose.y - leftAnkle.y).abs();
       pixelsPerCm = bodyPixelHeight / userHeightCm;
@@ -219,36 +217,36 @@ class MLKitBodyMeasurementService {
       // Fallback: assume image is ~180cm tall in pixels
       pixelsPerCm = 180.0 / 500.0; // Will be recalculated
     }
-    
+
     final measurements = <String, double>{};
-    
+
     // Calculate key measurements
     if (leftShoulder != null && rightShoulder != null) {
       final shoulderWidth = (rightShoulder.x - leftShoulder.x).abs();
       // Account for both sides
       measurements['Shoulder'] = (shoulderWidth * 2) / pixelsPerCm;
     }
-    
+
     // Chest, waist, hip from hips (front view is better)
     if (leftHip != null && rightHip != null) {
       final hipWidth = (rightHip.x - leftHip.x).abs();
       final hipInches = hipWidth / pixelsPerCm;
-      
+
       measurements['Chest Round'] = hipInches * 2.0;
       measurements['Waist Round'] = hipInches * 1.8;
       measurements['Hip Round'] = hipInches * 2.1;
     }
-    
+
     // Full body proportions (gender-specific ratios)
     final ratios = gender == 'male' ? _maleRatios : _femaleRatios;
-    
+
     // Fill in missing measurements using ratios
     for (final entry in ratios.entries) {
       if (!measurements.containsKey(entry.key)) {
         measurements[entry.key] = entry.value * userHeightCm;
       }
     }
-    
+
     return measurements;
   }
 
@@ -258,11 +256,11 @@ class MLKitBodyMeasurementService {
     _poseDetector = null;
     _isInitialized = false;
   }
-  
+
   // ==========================================================================
   // Anthropometric Ratios (for fallback)
   // ==========================================================================
-  
+
   static const _maleRatios = {
     'Neck Round': 0.224,
     'Chest Round': 0.588,
@@ -310,7 +308,7 @@ class MLKitMeasurementResult {
   final String? gender;
   final double? userHeightCm;
   final bool dualMode;
-  
+
   MLKitMeasurementResult({
     required this.success,
     this.measurements,
@@ -320,7 +318,7 @@ class MLKitMeasurementResult {
     this.userHeightCm,
     this.dualMode = false,
   });
-  
+
   factory MLKitMeasurementResult.success({
     required Map<String, double> measurements,
     required String imagePath,
@@ -337,11 +335,8 @@ class MLKitMeasurementResult {
       dualMode: dualMode,
     );
   }
-  
+
   factory MLKitMeasurementResult.error(String error) {
-    return MLKitMeasurementResult(
-      success: false,
-      error: error,
-    );
+    return MLKitMeasurementResult(success: false, error: error);
   }
 }

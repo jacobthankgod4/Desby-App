@@ -61,30 +61,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     final emailError = validateEmail(email);
     if (emailError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(emailError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(emailError)));
       return;
     }
 
     if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password is required')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Password is required')));
       return;
     }
 
-    await ref.read(authStateProvider.notifier).login(
-      email,
-      password,
-      rememberMe: _rememberMe,
-    );
+    await ref
+        .read(authStateProvider.notifier)
+        .login(email, password, rememberMe: _rememberMe);
 
     if (mounted) await Future.delayed(const Duration(milliseconds: 150));
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final authState = ref.watch(authStateProvider);
     final isLoading = authState.maybeMap(
       loading: (_) => true,
@@ -94,11 +93,30 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     ref.listen(authStateProvider, (previous, next) {
       next.maybeMap(
         authenticated: (auth) {
+          // Only navigate if we transitioned from loading (i.e., user actually pressed login)
+          // Don't navigate on state flickers from _restoreAuthenticatedState
+          final wasLoading =
+              previous?.maybeMap(loading: (_) => true, orElse: () => false) ??
+              false;
+          if (!wasLoading) return;
+
           final userType = auth.authResponse.user.userType;
-          final tailorDone = localStorage.get(StorageKeys.tailorOnboardingComplete, defaultValue: false);
-          final apprenticeDone = localStorage.get(StorageKeys.apprenticeOnboardingComplete, defaultValue: false);
-          final clientDone = localStorage.get(StorageKeys.clientOnboardingComplete, defaultValue: false);
-          final fabricSellerDone = localStorage.get(StorageKeys.fabricSellerOnboardingComplete, defaultValue: false);
+          final tailorDone = localStorage.get(
+            StorageKeys.tailorOnboardingComplete,
+            defaultValue: false,
+          );
+          final apprenticeDone = localStorage.get(
+            StorageKeys.apprenticeOnboardingComplete,
+            defaultValue: false,
+          );
+          final clientDone = localStorage.get(
+            StorageKeys.clientOnboardingComplete,
+            defaultValue: false,
+          );
+          final fabricSellerDone = localStorage.get(
+            StorageKeys.fabricSellerOnboardingComplete,
+            defaultValue: false,
+          );
 
           String route;
           if (userType == UserType.tailor.value && !tailorDone) {
@@ -107,18 +125,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             route = '/apprentice-onboarding';
           } else if (userType == UserType.client.value && !clientDone) {
             route = '/client-onboarding';
-          } else if (userType == UserType.fabricSeller.value && !fabricSellerDone) {
+          } else if (userType == UserType.fabricSeller.value &&
+              !fabricSellerDone) {
             route = '/fabric-seller-onboarding';
           } else {
             route = '/main';
           }
-          Navigator.of(context).pushNamedAndRemoveUntil(route, (route) => false);
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(route, (route) => false);
         },
         error: (error) {
+          // Only show error if we were loading (i.e., user actually pressed login)
+          final wasLoading =
+              previous?.maybeMap(loading: (_) => true, orElse: () => false) ??
+              false;
+          if (!wasLoading) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(error.message),
-              backgroundColor: Colors.red,
+              content: Text(
+                error.message.isEmpty
+                    ? 'Something went wrong. Please try again.'
+                    : error.message,
+              ),
+              backgroundColor: colors.statusError,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 8),
             ),
@@ -136,6 +167,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Widget _buildForm(bool isLoading) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -144,20 +176,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         const SizedBox(height: 32),
         Text(
           'Welcome Back',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: colors.textPrimary,
             letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 6),
         Text(
           'Sign in to your Desby account',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.5),
-          ),
+          style: TextStyle(fontSize: 14, color: colors.textSecondary),
         ),
         const SizedBox(height: 28),
         _buildLabel('EMAIL'),
@@ -165,7 +194,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         TextFormField(
           controller: _emailController,
           enabled: !isLoading,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: TextStyle(color: colors.textPrimary, fontSize: 14),
           decoration: _inputDecoration('name@email.com'),
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
@@ -179,15 +208,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           controller: _passwordController,
           enabled: !isLoading,
           obscureText: _obscurePassword,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: TextStyle(color: colors.textPrimary, fontSize: 14),
           decoration: _inputDecoration('Enter your password').copyWith(
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                color: Colors.white.withOpacity(0.4),
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: colors.textMuted,
                 size: 20,
               ),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
           textInputAction: TextInputAction.done,
@@ -206,7 +238,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     value: _rememberMe,
                     onChanged: (v) => setState(() => _rememberMe = v ?? false),
                     activeColor: AppColors.amber,
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: colors.borderDefault),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -215,10 +247,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(width: 8),
                 Text(
                   'Remember me',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withOpacity(0.5),
-                  ),
+                  style: TextStyle(fontSize: 13, color: colors.textSecondary),
                 ),
               ],
             ),
@@ -243,21 +272,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             onPressed: isLoading ? null : _handleLogin,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.amber,
-              foregroundColor: Colors.black,
+              foregroundColor: colors.textOnAmber,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 0,
             ),
             child: isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.black,
-                    ),
-                  )
+                        color: colors.textOnAmber,
+                      ),
+                    )
                 : const Text(
                     'Sign In',
                     style: TextStyle(
@@ -271,14 +300,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         const SizedBox(height: 16),
         Center(
           child: GestureDetector(
-            onTap: () => Navigator.of(context).pushReplacementNamed('/register'),
+            onTap: () =>
+                Navigator.of(context).pushReplacementNamed('/register'),
             child: Text.rich(
               TextSpan(
                 text: "Don't have an account? ",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withOpacity(0.5),
-                ),
+                style: TextStyle(fontSize: 13, color: colors.textSecondary),
                 children: [
                   TextSpan(
                     text: 'Sign up',
@@ -297,31 +324,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Widget _buildLabel(String text) {
+    final colors = context.colors;
     return Text(
       text,
       style: TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w900,
-        color: Colors.white.withOpacity(0.4),
+        color: colors.textMuted,
         letterSpacing: 0.15,
       ),
     );
   }
 
   InputDecoration _inputDecoration(String hint) {
+    final colors = context.colors;
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
+      hintStyle: TextStyle(color: colors.textHint, fontSize: 14),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.05),
+      fillColor: colors.borderSubtle,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: colors.borderDefault),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: colors.borderDefault),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

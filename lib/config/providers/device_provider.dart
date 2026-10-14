@@ -8,10 +8,10 @@ import '../../core/logging/logger.dart';
 final deviceInfoProvider = FutureProvider<DeviceInfo>((ref) async {
   try {
     logger.debug('Fetching device information');
-    
+
     final deviceInfoPlugin = DeviceInfoPlugin();
     final packageInfo = await PackageInfo.fromPlatform();
-    
+
     return DeviceInfo(
       packageInfo: packageInfo,
       deviceInfoPlugin: deviceInfoPlugin,
@@ -55,10 +55,7 @@ class DeviceInfo {
   final PackageInfo packageInfo;
   final DeviceInfoPlugin deviceInfoPlugin;
 
-  DeviceInfo({
-    required this.packageInfo,
-    required this.deviceInfoPlugin,
-  });
+  DeviceInfo({required this.packageInfo, required this.deviceInfoPlugin});
 
   String get appName => packageInfo.appName;
   String get packageName => packageInfo.packageName;
@@ -67,7 +64,8 @@ class DeviceInfo {
   String get buildSignature => packageInfo.buildSignature;
 
   @override
-  String toString() => '''
+  String toString() =>
+      '''
 DeviceInfo(
   appName: $appName,
   packageName: $packageName,
@@ -81,7 +79,7 @@ DeviceInfo(
 final appMetadataProvider = FutureProvider<AppMetadata>((ref) async {
   try {
     final deviceInfo = await ref.watch(deviceInfoProvider.future);
-    
+
     return AppMetadata(
       appName: deviceInfo.appName,
       packageName: deviceInfo.packageName,
@@ -118,7 +116,8 @@ class AppMetadata {
   String get versionString => '$version+$buildNumber';
 
   @override
-  String toString() => '''
+  String toString() =>
+      '''
 AppMetadata(
   appName: $appName,
   packageName: $packageName,

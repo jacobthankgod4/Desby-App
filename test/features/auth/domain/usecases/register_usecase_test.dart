@@ -17,7 +17,9 @@ void main() {
   setUp(() {
     mockRepository = MockAuthRepository();
     usecase = RegisterUsecase(mockRepository);
-    provideDummy<Result<AuthResponse>>(Failure(ServerFailure(message: 'dummy')));
+    provideDummy<Result<AuthResponse>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
   });
 
   group('RegisterUsecase', () {
@@ -36,38 +38,47 @@ void main() {
       expiresIn: 3600,
     );
 
-    test('should return AuthResponse when registration is successful', () async {
-      when(mockRepository.register(
-        'test@example.com',
-        'password',
-        'Test User',
-        'tailor',
-      )).thenAnswer((_) async => Success(tAuthResponse));
+    test(
+      'should return AuthResponse when registration is successful',
+      () async {
+        when(
+          mockRepository.register(
+            'test@example.com',
+            'password',
+            'Test User',
+            'tailor',
+          ),
+        ).thenAnswer((_) async => Success(tAuthResponse));
 
-      final result = await usecase(
-        'test@example.com',
-        'password',
-        'Test User',
-        'tailor',
-      );
+        final result = await usecase(
+          'test@example.com',
+          'password',
+          'Test User',
+          'tailor',
+        );
 
-      expect(result, isA<Success>());
-      verify(mockRepository.register(
-        'test@example.com',
-        'password',
-        'Test User',
-        'tailor',
-      )).called(1);
-    });
+        expect(result, isA<Success>());
+        verify(
+          mockRepository.register(
+            'test@example.com',
+            'password',
+            'Test User',
+            'tailor',
+          ),
+        ).called(1);
+      },
+    );
 
     test('should return Failure when registration fails', () async {
       final tFailure = ServerFailure(message: 'Registration failed');
-      when(mockRepository.register(
-        'test@example.com',
-        'password',
-        'Test User',
-        'tailor',
-      )).thenAnswer((_) async => Failure(tFailure));
+      when(
+        mockRepository.register(
+          'test@example.com',
+          'password',
+          'Test User',
+          'tailor',
+        ),
+      ).thenAnswer((_) async => Failure(tFailure));
 
       final result = await usecase(
         'test@example.com',

@@ -25,47 +25,27 @@ class AppLogger {
   }
 
   /// Log debug message
-  void debug(
-    String message, {
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {
+  void debug(String message, {dynamic error, StackTrace? stackTrace}) {
     _logger.d(message, error: error, stackTrace: stackTrace);
   }
 
   /// Log info message
-  void info(
-    String message, {
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {
+  void info(String message, {dynamic error, StackTrace? stackTrace}) {
     _logger.i(message, error: error, stackTrace: stackTrace);
   }
 
   /// Log warning message
-  void warning(
-    String message, {
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {
+  void warning(String message, {dynamic error, StackTrace? stackTrace}) {
     _logger.w(message, error: error, stackTrace: stackTrace);
   }
 
   /// Log error message
-  void error(
-    String message, {
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {
+  void error(String message, {dynamic error, StackTrace? stackTrace}) {
     _logger.e(message, error: error, stackTrace: stackTrace);
   }
 
   /// Log fatal error
-  void fatal(
-    String message, {
-    dynamic error,
-    StackTrace? stackTrace,
-  }) {
+  void fatal(String message, {dynamic error, StackTrace? stackTrace}) {
     _logger.f(message, error: error, stackTrace: stackTrace);
   }
 
@@ -76,13 +56,7 @@ class AppLogger {
     Map<String, dynamic>? headers,
     dynamic body,
   }) {
-    info(
-      '→ $method $url',
-      error: {
-        'headers': headers,
-        'body': body,
-      },
-    );
+    info('→ $method $url', error: {'headers': headers, 'body': body});
   }
 
   /// Log network response
@@ -106,11 +80,7 @@ class AppLogger {
     dynamic error, {
     StackTrace? stackTrace,
   }) {
-    this.error(
-      '✗ $method $url',
-      error: error,
-      stackTrace: stackTrace,
-    );
+    this.error('✗ $method $url', error: error, stackTrace: stackTrace);
   }
 
   /// Log API call
@@ -121,10 +91,7 @@ class AppLogger {
   }) {
     info(
       'API Call: $endpoint',
-      error: {
-        'params': params,
-        'response': response,
-      },
+      error: {'params': params, 'response': response},
     );
   }
 
@@ -159,14 +126,8 @@ class AppLogger {
   }
 
   /// Log analytics event
-  void logAnalyticsEvent(
-    String eventName, {
-    Map<String, dynamic>? parameters,
-  }) {
-    info(
-      'Analytics Event: $eventName',
-      error: parameters,
-    );
+  void logAnalyticsEvent(String eventName, {Map<String, dynamic>? parameters}) {
+    info('Analytics Event: $eventName', error: parameters);
   }
 
   /// Close logger

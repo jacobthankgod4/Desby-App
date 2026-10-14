@@ -13,8 +13,9 @@ class GeminiImagenService {
     try {
       // Using Pollinations free AI image generation
       final encodedPrompt = Uri.encodeComponent(prompt);
-      final url = 'https://image.pollinations.ai/prompt/$encodedPrompt?width=1024&height=1024&nologo=true';
-      
+      final url =
+          'https://image.pollinations.ai/prompt/$encodedPrompt?width=1024&height=1024&nologo=true';
+
       // Return the URL directly - the image will be generated on load
       // If the service is down, callers should handle the error with a placeholder
       return url;
@@ -28,30 +29,35 @@ class GeminiImagenService {
   Future<String?> generateFashionConcept(String userPrompt) async {
     // Enrich the prompt with Nigerian fashion context
     final enrichedPrompt = _enrichPrompt(userPrompt);
-    
+
     return generateImage(enrichedPrompt);
   }
 
   /// Nigerian Fashion Context Enrichment
   String _enrichPrompt(String input) {
     final lowerInput = input.toLowerCase();
-    
+
     String garmentDescription = '';
-    
+
     if (lowerInput.contains('agbada')) {
-      garmentDescription = 'Nigerian Agbada traditional wear, flowing robes, geometric embroidery, Yoruba style';
+      garmentDescription =
+          'Nigerian Agbada traditional wear, flowing robes, geometric embroidery, Yoruba style';
     } else if (lowerInput.contains('senator')) {
-      garmentDescription = 'Modern Nigerian Senator suit, tailored tunic, mandarin collar';
+      garmentDescription =
+          'Modern Nigerian Senator suit, tailored tunic, mandarin collar';
     } else if (lowerInput.contains('kaftan')) {
-      garmentDescription = 'African Kaftan, luxury tunic, silk fabric, elegant embroidery';
+      garmentDescription =
+          'African Kaftan, luxury tunic, silk fabric, elegant embroidery';
     } else if (lowerInput.contains('babariga')) {
-      garmentDescription = 'Traditional Babariga, Hausa royal robes, intricate patterns';
+      garmentDescription =
+          'Traditional Babariga, Hausa royal robes, intricate patterns';
     } else if (lowerInput.contains('iro') || lowerInput.contains('buba')) {
       garmentDescription = 'Iro and Buba, wrapper skirt, African blouse';
     } else if (lowerInput.contains('lace')) {
       garmentDescription = 'Nigerian lace fabric, floral patterns, luxury silk';
     } else if (lowerInput.contains('ankara')) {
-      garmentDescription = 'Ankara wax print, vibrant African patterns, bold colors';
+      garmentDescription =
+          'Ankara wax print, vibrant African patterns, bold colors';
     } else if (lowerInput.contains('suit')) {
       garmentDescription = 'Bespoke suit, tailored fit, premium wool';
     } else {
@@ -59,7 +65,7 @@ class GeminiImagenService {
     }
 
     // Photography context
-    final postContext = 
+    final postContext =
         '$garmentDescription. Professional fashion photography, full-length portrait, '
         'neutral studio background, cinematic lighting, 4K quality, photorealistic.';
 

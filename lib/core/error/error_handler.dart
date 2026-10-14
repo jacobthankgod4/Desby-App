@@ -8,14 +8,20 @@ class ErrorHandler {
   static FailureType mapExceptionToFailure(dynamic exception) {
     // Handle Supabase exceptions
     if (exception is sb.AuthException) {
-      if (exception.message.contains('SyntaxError') || exception.message.contains('JSON')) {
-        return const AuthFailure(message: 'Login service handshake failed. Check your internet connection or Supabase project status.');
+      if (exception.message.contains('SyntaxError') ||
+          exception.message.contains('JSON')) {
+        return const AuthFailure(
+          message:
+              'Login service handshake failed. Check your internet connection or Supabase project status.',
+        );
       }
       return AuthFailure(message: exception.message);
     }
-    
+
     if (exception is FormatException) {
-      return const AuthFailure(message: 'Malformed response from authentication server.');
+      return const AuthFailure(
+        message: 'Malformed response from authentication server.',
+      );
     }
     if (exception is sb.PostgrestException) {
       return ServerFailure(message: exception.message);
@@ -30,42 +36,38 @@ class ErrorHandler {
     }
 
     // Default unknown failure
-    return UnknownFailure(
-      message: exception.toString(),
-    );
+    return UnknownFailure(message: exception.toString());
   }
 
   /// Map app exception to failure
   static FailureType _mapAppException(local_ex.AppException exception) {
     return switch (exception) {
       local_ex.NetworkException(:final message) => NetworkFailure(
-          message: message,
-        ),
+        message: message,
+      ),
       local_ex.ServerException(:final message, :final code) => ServerFailure(
-          message: message,
-          code: code,
-        ),
-      local_ex.CacheException(:final message) => CacheFailure(
-          message: message,
-        ),
+        message: message,
+        code: code,
+      ),
+      local_ex.CacheException(:final message) => CacheFailure(message: message),
       local_ex.ValidationException(:final message) => ValidationFailure(
-          message: message,
-        ),
+        message: message,
+      ),
       local_ex.AuthenticationException(:final message) => AuthFailure(
-          message: message,
-        ),
+        message: message,
+      ),
       local_ex.AuthorizationException(:final message) => AuthorizationFailure(
-          message: message,
-        ),
+        message: message,
+      ),
       local_ex.StorageException(:final message) => StorageFailure(
-          message: message,
-        ),
+        message: message,
+      ),
       local_ex.TimeoutException(:final message) => TimeoutFailure(
-          message: message,
-        ),
+        message: message,
+      ),
       local_ex.UnknownException(:final message) => UnknownFailure(
-          message: message,
-        ),
+        message: message,
+      ),
       _ => UnknownFailure(message: exception.toString()),
     };
   }

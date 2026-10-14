@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/uber_card.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../core/widgets/tracking_progress.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/order.dart';
 import '../providers/order_provider.dart';
@@ -37,8 +38,9 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: colors.scaffoldBg,
       body: Column(
         children: [
           // Custom App Bar
@@ -56,7 +58,7 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
           ),
         ],
       ),
-// No FAB - new orders created via other flows
+      // No FAB - new orders created via other flows
       // floatingActionButton: _buildFAB(),
     );
   }
@@ -88,10 +90,7 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
                 SizedBox(height: 4),
                 Text(
                   'Real-time logistics dashboard',
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                 ),
               ],
             ),
@@ -108,7 +107,7 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
       height: 50,
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDark.withValues(alpha: 0.5),
+        color: AppColors.deepBlue.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(25),
       ),
       child: TabBar(
@@ -122,10 +121,7 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
         ),
         labelColor: AppColors.darkNavy,
         unselectedLabelColor: AppColors.textMuted,
-        labelStyle: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
         tabs: _filterChips
             .map((chip) => Tab(text: chip.toUpperCase()))
             .toList(),
@@ -182,7 +178,7 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppColors.surfaceDark.withValues(alpha: 0.5),
+              color: AppColors.deepBlue.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -205,10 +201,7 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
           const SizedBox(height: 8),
           const Text(
             'Your orders will appear here',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textMuted, fontSize: 14),
           ),
         ],
       ),
@@ -237,10 +230,7 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
           const SizedBox(height: 8),
           Text(
             error,
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ],
@@ -248,13 +238,13 @@ class _OrderListPageUberState extends ConsumerState<OrderListPageUber>
     );
   }
 
-Widget _buildIconButton(IconData icon) {
+  Widget _buildIconButton(IconData icon) {
     return Container(
       width: 44,
       height: 44,
       margin: const EdgeInsets.only(left: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDark.withValues(alpha: 0.5),
+        color: AppColors.deepBlue.withValues(alpha: 0.5),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: AppColors.textPrimary, size: 20),
@@ -264,7 +254,7 @@ Widget _buildIconButton(IconData icon) {
   // FAB removed - new orders created via other flows (Add Client -> Create Order)
 
   void _openOrderDetail(String orderId) {
-    Navigator.pushNamed(context, '/order-detail', arguments: orderId);
+    ref.pushShell('/order-detail', {'orderId': orderId});
   }
 }
 
@@ -273,10 +263,7 @@ class _UberOrderCard extends StatelessWidget {
   final OrderEntity order;
   final VoidCallback onTap;
 
-  const _UberOrderCard({
-    required this.order,
-    required this.onTap,
-  });
+  const _UberOrderCard({required this.order, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

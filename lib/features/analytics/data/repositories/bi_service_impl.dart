@@ -8,21 +8,24 @@ class BIServiceImpl implements BIService {
       const Recommendation(
         id: 'r1',
         title: 'Trending: Velvet Suit',
-        description: 'Velvet suits are gaining popularity in your area. Consider adding a sample to your gallery.',
+        description:
+            'Velvet suits are gaining popularity in your area. Consider adding a sample to your gallery.',
         type: RecommendationType.design,
         confidenceScore: 0.85,
       ),
       const Recommendation(
         id: 'r2',
         title: 'Optimize Pricing',
-        description: 'Your pricing for alterations is 15% lower than the market average. Consider a slight increase.',
+        description:
+            'Your pricing for alterations is 15% lower than the market average. Consider a slight increase.',
         type: RecommendationType.pricing,
         confidenceScore: 0.92,
       ),
       const Recommendation(
         id: 'r3',
         title: 'Re-engage Client',
-        description: 'Client John Doe hasn\'t ordered in 6 months. Send a personalized follow-up.',
+        description:
+            'Client John Doe hasn\'t ordered in 6 months. Send a personalized follow-up.',
         type: RecommendationType.marketing,
         confidenceScore: 0.78,
       ),

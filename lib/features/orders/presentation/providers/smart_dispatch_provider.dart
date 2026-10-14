@@ -2,9 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/order.dart';
 import 'logistics_provider.dart';
 
-final smartDispatchProvider = StateNotifierProvider<SmartDispatchNotifier, AsyncValue<String>>((ref) {
-  return SmartDispatchNotifier(ref);
-});
+final smartDispatchProvider =
+    StateNotifierProvider<SmartDispatchNotifier, AsyncValue<String>>((ref) {
+      return SmartDispatchNotifier(ref);
+    });
 
 class SmartDispatchNotifier extends StateNotifier<AsyncValue<String>> {
   final Ref _ref;
@@ -13,12 +14,12 @@ class SmartDispatchNotifier extends StateNotifier<AsyncValue<String>> {
 
   Future<void> dispatchRider(OrderEntity order) async {
     state = const AsyncValue.loading();
-    
+
     try {
       // 1. Determine Geography
       final address = order.deliveryAddress?.toLowerCase() ?? '';
       final isLagos = address.contains('lagos');
-      
+
       if (isLagos) {
         // TRIGGER UBER DISPATCH (Mocking for now as we await scope activation)
         // In reality, this would call uberLogisticsRepository.createDelivery
@@ -28,9 +29,10 @@ class SmartDispatchNotifier extends StateNotifier<AsyncValue<String>> {
         // TRIGGER FEZ DISPATCH
         final repo = _ref.read(logisticsRepositoryProvider);
         final result = await repo.summonRider(order);
-        
+
         result.fold(
-          (failure) => state = AsyncValue.error(failure.message, StackTrace.current),
+          (failure) =>
+              state = AsyncValue.error(failure.message, StackTrace.current),
           (waybill) => state = AsyncValue.data('FEZ_WAYBILL: $waybill'),
         );
       }

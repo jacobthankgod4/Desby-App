@@ -10,7 +10,7 @@ Desby OS will implement a centralized `UberLogisticsService` that acts as a secu
 
 ### Core Objectives:
 - **Real-time Quotes**: Instant delivery cost estimation during the booking process.
-- **Automated Dispatch**: Summoning riders automatically when a tailor accepts a booking.
+- **Automated Dispatch**: Summoning riders automatically when an order is marked READY.
 - **Precision Tracking**: Real-time GPS updates for clients on their fabric or garment transit.
 - **Proof of Delivery**: Integration of signature and photo verification into the order history.
 

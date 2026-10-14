@@ -78,13 +78,13 @@ class FocusFeatureFlags {
 
   /// Get all flag states (for debugging/UI)
   static Map<String, dynamic> get allFlags => {
-        'focus_v2_registry': _focusV2RegistryEnabled,
-        'focus_quality_scorer': _focusQualityScorerEnabled,
-        'focus_auto_fallback': _focusAutoFallbackEnabled,
-        'focus_rig_overlay': _focusRigOverlayEnabled,
-        'show_debug_overlay': _showDebugOverlay,
-        'telemetry_enabled': focusTelemetryEnabled,
-      };
+    'focus_v2_registry': _focusV2RegistryEnabled,
+    'focus_quality_scorer': _focusQualityScorerEnabled,
+    'focus_auto_fallback': _focusAutoFallbackEnabled,
+    'focus_rig_overlay': _focusRigOverlayEnabled,
+    'show_debug_overlay': _showDebugOverlay,
+    'telemetry_enabled': focusTelemetryEnabled,
+  };
 
   static void _logFlagChange(String flag, bool value) {
     debugPrint('[FLAGS] $flag = $value');

@@ -1,12 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum ApprenticeTaskStatus {
-  todo,
-  inProgress,
-  underReview,
-  completed,
-  failed
-}
+enum ApprenticeTaskStatus { todo, inProgress, underReview, completed, failed }
 
 class ApprenticeTask extends Equatable {
   final String id;
@@ -37,18 +31,18 @@ class ApprenticeTask extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        apprenticeshipId,
-        title,
-        description,
-        status,
-        dueDate,
-        completedAt,
-        feedback,
-        score,
-        proofImageUrls,
-        submissionNotes,
-      ];
+    id,
+    apprenticeshipId,
+    title,
+    description,
+    status,
+    dueDate,
+    completedAt,
+    feedback,
+    score,
+    proofImageUrls,
+    submissionNotes,
+  ];
 
   ApprenticeTask copyWith({
     String? id,

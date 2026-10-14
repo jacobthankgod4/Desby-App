@@ -9,25 +9,18 @@ final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) {
   return SupabaseSubscriptionRepository();
 });
 
-final getAvailablePlansUsecaseProvider = Provider<GetAvailablePlansUsecase>((ref) {
+final getAvailablePlansUsecaseProvider = Provider<GetAvailablePlansUsecase>((
+  ref,
+) {
   return GetAvailablePlansUsecase(ref.watch(subscriptionRepositoryProvider));
 });
 
-final availablePlansProvider = FutureProvider<List<SubscriptionPlan>>((ref) async {
+final availablePlansProvider = FutureProvider<List<SubscriptionPlan>>((
+  ref,
+) async {
   final user = ref.watch(currentUserProvider);
   final userType = user?.userType ?? 'tailor';
   final usecase = ref.watch(getAvailablePlansUsecaseProvider);
-  var result = await usecase(userType);
-  return result.fold(
-    (failure) => throw failure.message,
-    (plans) async {
-      if (plans.isEmpty) {
-        final repo = ref.read(subscriptionRepositoryProvider) as SupabaseSubscriptionRepository;
-        await repo.seedPlans();
-        final freshResult = await usecase(userType);
-        return freshResult.fold((f) => throw f.message, (p) => p);
-      }
-      return plans;
-    },
-  );
+  final result = await usecase(userType);
+  return result.fold((failure) => throw failure.message, (plans) => plans);
 });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../theme/colors.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 /// Garment Favourite Card Widget
 /// Displays a saved Ready-to-Wear garment card in favorites grid
@@ -18,15 +19,14 @@ class GarmentFavouriteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.amber.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,40 +39,21 @@ class GarmentFavouriteCard extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(16),
                     ),
-                    child: garment['imageUrl'] != null && 
-                           garment['imageUrl'].toString().isNotEmpty
-                        ? Image.network(
-                            garment['imageUrl'],
+                    child:
+                        garment['imageUrl'] != null &&
+                            garment['imageUrl'].toString().isNotEmpty
+                        ? AppNetworkImage(
+                            url: garment['imageUrl'],
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: double.infinity,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: AppColors.surfaceDark,
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.amber,
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: AppColors.surfaceDark,
-                              child: const Icon(
-                                Icons.checkroom_rounded,
-                                color: AppColors.textMuted,
-                                size: 32,
-                              ),
-                            ),
                           )
                         : Container(
-                            color: AppColors.surfaceDark,
-                            child: const Center(
+                            color: colors.surfaceHover,
+                            child: Center(
                               child: Icon(
                                 Icons.checkroom_rounded,
-                                color: AppColors.textMuted,
+                                color: colors.textMuted,
                                 size: 32,
                               ),
                             ),
@@ -88,7 +69,7 @@ class GarmentFavouriteCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: colors.scaffoldBg,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -113,10 +94,10 @@ class GarmentFavouriteCard extends StatelessWidget {
                           color: Colors.red.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
+                        child: Text(
                           'SOLD',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: colors.textPrimary,
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
                           ),
@@ -134,9 +115,11 @@ class GarmentFavouriteCard extends StatelessWidget {
                 children: [
                   // Garment type
                   Text(
-                    (garment['garmentType'] ?? 'Style').toString().toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    (garment['garmentType'] ?? 'Style')
+                        .toString()
+                        .toUpperCase(),
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -147,10 +130,7 @@ class GarmentFavouriteCard extends StatelessWidget {
                   // Tailor name
                   Text(
                     garment['tailorName'] ?? 'Tailor',
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 10,
-                    ),
+                    style: TextStyle(color: colors.textMuted, fontSize: 10),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -174,7 +154,7 @@ class GarmentFavouriteCard extends StatelessWidget {
   }
 
   String _formatPrice(dynamic price) {
-    if (price == null) return '₦0';
+    if (price == null) return '\u20A60';
     double parsed;
     if (price is double) {
       parsed = price;
@@ -184,7 +164,7 @@ class GarmentFavouriteCard extends StatelessWidget {
     // Use intl NumberFormat for proper currency formatting
     final formatter = NumberFormat.currency(
       locale: 'en_NG',
-      symbol: '₦',
+      symbol: '\u20A6',
       decimalDigits: 0,
     );
     return formatter.format(parsed);
@@ -206,16 +186,15 @@ class GarmentFavouriteListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.amber.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -225,29 +204,18 @@ class GarmentFavouriteListCard extends StatelessWidget {
               child: SizedBox(
                 width: 70,
                 height: 70,
-                child: garment['imageUrl'] != null && 
-                       garment['imageUrl'].toString().isNotEmpty
-                    ? Image.network(
-                        garment['imageUrl'],
+                child:
+                    garment['imageUrl'] != null &&
+                        garment['imageUrl'].toString().isNotEmpty
+                    ? AppNetworkImage(
+                        url: garment['imageUrl'],
                         fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(color: AppColors.surfaceDark);
-                        },
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: AppColors.surfaceDark,
-                          child: const Icon(
-                            Icons.checkroom_rounded,
-                            color: AppColors.textMuted,
-                            size: 24,
-                          ),
-                        ),
                       )
                     : Container(
-                        color: AppColors.surfaceDark,
-                        child: const Icon(
+                        color: colors.surfaceHover,
+                        child: Icon(
                           Icons.checkroom_rounded,
-                          color: AppColors.textMuted,
+                          color: colors.textMuted,
                           size: 24,
                         ),
                       ),
@@ -260,9 +228,11 @@ class GarmentFavouriteListCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    (garment['garmentType'] ?? 'Style').toString().toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    (garment['garmentType'] ?? 'Style')
+                        .toString()
+                        .toUpperCase(),
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -270,17 +240,17 @@ class GarmentFavouriteListCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_outline_rounded,
-                        color: AppColors.textMuted,
+                        color: colors.textMuted,
                         size: 12,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           garment['tailorName'] ?? 'Tailor',
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
+                          style: TextStyle(
+                            color: colors.textMuted,
                             fontSize: 11,
                           ),
                           maxLines: 1,
@@ -305,11 +275,7 @@ class GarmentFavouriteListCard extends StatelessWidget {
             if (onRemove != null)
               IconButton(
                 onPressed: onRemove,
-                icon: const Icon(
-                  Icons.favorite,
-                  color: Colors.red,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.favorite, color: Colors.red, size: 20),
               )
             else
               const Icon(
@@ -324,7 +290,7 @@ class GarmentFavouriteListCard extends StatelessWidget {
   }
 
   String _formatPrice(dynamic price) {
-    if (price == null) return '₦0';
+    if (price == null) return '\u20A60';
     double parsed;
     if (price is double) {
       parsed = price;
@@ -334,7 +300,7 @@ class GarmentFavouriteListCard extends StatelessWidget {
     // Use intl NumberFormat for proper currency formatting
     final formatter = NumberFormat.currency(
       locale: 'en_NG',
-      symbol: '₦',
+      symbol: '\u20A6',
       decimalDigits: 0,
     );
     return formatter.format(parsed);

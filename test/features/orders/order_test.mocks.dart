@@ -39,12 +39,14 @@ class MockOrderRepository extends _i1.Mock implements _i2.OrderRepository {
     _i5.OrderStatus? status,
     String? clientId,
     String? tailorId,
+    String? fabricSellerId,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getOrders, [], {
               #status: status,
               #clientId: clientId,
               #tailorId: tailorId,
+              #fabricSellerId: fabricSellerId,
             }),
             returnValue: _i3.Future<_i4.Result<List<_i5.OrderEntity>>>.value(
               _i6.dummyValue<_i4.Result<List<_i5.OrderEntity>>>(
@@ -53,6 +55,7 @@ class MockOrderRepository extends _i1.Mock implements _i2.OrderRepository {
                   #status: status,
                   #clientId: clientId,
                   #tailorId: tailorId,
+                  #fabricSellerId: fabricSellerId,
                 }),
               ),
             ),

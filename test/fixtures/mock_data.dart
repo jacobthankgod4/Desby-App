@@ -28,11 +28,7 @@ class MockData {
     'name': mockClientName,
     'email': mockClientEmail,
     'phone': mockClientPhone,
-    'measurements': {
-      'chest': 38,
-      'waist': 32,
-      'length': 30,
-    },
+    'measurements': {'chest': 38, 'waist': 32, 'length': 30},
     'createdAt': '2024-01-01T00:00:00Z',
   };
 
@@ -43,11 +39,7 @@ class MockData {
       'name': 'Jane Smith',
       'email': 'jane@example.com',
       'phone': '+1-555-0789',
-      'measurements': {
-        'chest': 34,
-        'waist': 28,
-        'length': 28,
-      },
+      'measurements': {'chest': 34, 'waist': 28, 'length': 28},
       'createdAt': '2024-01-02T00:00:00Z',
     },
   ];
@@ -62,18 +54,8 @@ class MockData {
     'clientId': mockClientId,
     'status': mockOrderStatus,
     'items': [
-      {
-        'id': 'item_1',
-        'name': 'Shirt',
-        'quantity': 1,
-        'price': 50.00,
-      },
-      {
-        'id': 'item_2',
-        'name': 'Pants',
-        'quantity': 1,
-        'price': 100.00,
-      },
+      {'id': 'item_1', 'name': 'Shirt', 'quantity': 1, 'price': 50.00},
+      {'id': 'item_2', 'name': 'Pants', 'quantity': 1, 'price': 100.00},
     ],
     'total': mockOrderTotal,
     'createdAt': '2024-01-01T00:00:00Z',
@@ -87,12 +69,7 @@ class MockData {
       'clientId': 'client_124',
       'status': 'completed',
       'items': [
-        {
-          'id': 'item_3',
-          'name': 'Dress',
-          'quantity': 1,
-          'price': 120.00,
-        },
+        {'id': 'item_3', 'name': 'Dress', 'quantity': 1, 'price': 120.00},
       ],
       'total': 120.00,
       'createdAt': '2024-01-02T00:00:00Z',
@@ -145,9 +122,7 @@ class MockData {
     'success': false,
     'message': 'An error occurred',
     'code': 'ERROR_CODE',
-    'errors': {
-      'field': 'Field error message',
-    },
+    'errors': {'field': 'Field error message'},
   };
 
   // Mock Pagination Response
@@ -155,12 +130,7 @@ class MockData {
     'success': true,
     'data': {
       'items': mockClientsList,
-      'pagination': {
-        'page': 1,
-        'pageSize': 20,
-        'total': 2,
-        'totalPages': 1,
-      },
+      'pagination': {'page': 1, 'pageSize': 20, 'total': 2, 'totalPages': 1},
     },
   };
 
@@ -187,9 +157,7 @@ class MockData {
     'title': mockNotificationTitle,
     'body': mockNotificationBody,
     'type': 'order_update',
-    'data': {
-      'orderId': mockOrderId,
-    },
+    'data': {'orderId': mockOrderId},
     'createdAt': '2024-01-01T00:00:00Z',
     'read': false,
   };

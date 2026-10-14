@@ -5,30 +5,28 @@ sealed class Result<T> extends Equatable {
   const Result();
 
   /// Map success or failure to a new value
-  R fold<R>(
-    R Function(FailureType) onFailure,
-    R Function(T) onSuccess,
-  ) {
-    return switch (this) {
-      Success<T>(:final data) => onSuccess(data),
-      Failure<T>(:final failure) => onFailure(failure),
-    };
+  R fold<R>(R Function(FailureType) onFailure, R Function(T) onSuccess) {
+    final self = this;
+    if (self is Success<T>) {
+      return onSuccess(self.data);
+    } else if (self is Failure<T>) {
+      return onFailure(self.failure);
+    }
+    throw StateError('Invalid Result state');
   }
 
   /// Get data or null
   T? getOrNull() {
-    return switch (this) {
-      Success<T>(:final data) => data,
-      Failure<T>() => null,
-    };
+    final self = this;
+    if (self is Success<T>) return self.data;
+    return null;
   }
 
   /// Get failure or null
   Failure<T>? getFailureOrNull() {
-    return switch (this) {
-      Success<T>() => null,
-      Failure<T>() => this as Failure<T>,
-    };
+    final self = this;
+    if (self is Failure<T>) return self;
+    return null;
   }
 
   /// Check if result is success
@@ -63,10 +61,7 @@ abstract class FailureType extends Equatable {
   final String message;
   final String? code;
 
-  const FailureType({
-    required this.message,
-    this.code,
-  });
+  const FailureType({required this.message, this.code});
 
   @override
   String toString() => message;
@@ -74,10 +69,7 @@ abstract class FailureType extends Equatable {
 
 /// Network failure
 class NetworkFailure extends FailureType {
-  const NetworkFailure({
-    required super.message,
-    super.code = 'NETWORK_ERROR',
-  });
+  const NetworkFailure({required super.message, super.code = 'NETWORK_ERROR'});
 
   @override
   List<Object?> get props => [message, code];
@@ -99,10 +91,7 @@ class ServerFailure extends FailureType {
 
 /// Authentication failure
 class AuthFailure extends FailureType {
-  const AuthFailure({
-    required super.message,
-    super.code = 'AUTH_ERROR',
-  });
+  const AuthFailure({required super.message, super.code = 'AUTH_ERROR'});
 
   @override
   List<Object?> get props => [message, code];
@@ -135,10 +124,7 @@ class ValidationFailure extends FailureType {
 
 /// Cache failure
 class CacheFailure extends FailureType {
-  const CacheFailure({
-    required super.message,
-    super.code = 'CACHE_ERROR',
-  });
+  const CacheFailure({required super.message, super.code = 'CACHE_ERROR'});
 
   @override
   List<Object?> get props => [message, code];
@@ -146,10 +132,7 @@ class CacheFailure extends FailureType {
 
 /// Timeout failure
 class TimeoutFailure extends FailureType {
-  const TimeoutFailure({
-    required super.message,
-    super.code = 'TIMEOUT_ERROR',
-  });
+  const TimeoutFailure({required super.message, super.code = 'TIMEOUT_ERROR'});
 
   @override
   List<Object?> get props => [message, code];
@@ -157,10 +140,7 @@ class TimeoutFailure extends FailureType {
 
 /// Unknown failure
 class UnknownFailure extends FailureType {
-  const UnknownFailure({
-    required super.message,
-    super.code = 'UNKNOWN_ERROR',
-  });
+  const UnknownFailure({required super.message, super.code = 'UNKNOWN_ERROR'});
 
   @override
   List<Object?> get props => [message, code];
@@ -168,10 +148,7 @@ class UnknownFailure extends FailureType {
 
 /// Storage failure
 class StorageFailure extends FailureType {
-  const StorageFailure({
-    required super.message,
-    super.code = 'STORAGE_ERROR',
-  });
+  const StorageFailure({required super.message, super.code = 'STORAGE_ERROR'});
 
   @override
   List<Object?> get props => [message, code];

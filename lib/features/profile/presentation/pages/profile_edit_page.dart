@@ -7,7 +7,9 @@ import '../../domain/entities/user_profile.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/services/image_upload_service.dart';
 import '../../../../core/constants/tailor_data.dart';
+import '../../../../config/nigerian_banks.dart';
 import '../providers/profile_provider.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
 
 class ProfileEditPage extends ConsumerStatefulWidget {
   final String userId;
@@ -30,7 +32,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   late TextEditingController _businessNameController;
   late TextEditingController _businessPhoneController;
   late TextEditingController _businessAddressController;
-  
+  late TextEditingController _bankNameController;
+  late TextEditingController _bankAccountController;
+  String? _selectedBankCode;
+  String? _selectedBankName;
+
   // Onboarding-specific fields for tailors
   List<String> _selectedServices = [];
   String? _selectedState;
@@ -39,22 +45,70 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
 
   // Operating hours for each day
   final Map<String, bool> _dayOpen = {
-    'monday': true, 'tuesday': true, 'wednesday': true, 'thursday': true, 'friday': true, 'saturday': true, 'sunday': false,
+    'monday': true,
+    'tuesday': true,
+    'wednesday': true,
+    'thursday': true,
+    'friday': true,
+    'saturday': true,
+    'sunday': false,
   };
   final Map<String, TimeOfDay> _openTimes = {
-    'monday': const TimeOfDay(hour: 9, minute: 0), 'tuesday': const TimeOfDay(hour: 9, minute: 0), 'wednesday': const TimeOfDay(hour: 9, minute: 0), 'thursday': const TimeOfDay(hour: 9, minute: 0), 'friday': const TimeOfDay(hour: 9, minute: 0), 'saturday': const TimeOfDay(hour: 9, minute: 0), 'sunday': const TimeOfDay(hour: 10, minute: 0),
+    'monday': const TimeOfDay(hour: 9, minute: 0),
+    'tuesday': const TimeOfDay(hour: 9, minute: 0),
+    'wednesday': const TimeOfDay(hour: 9, minute: 0),
+    'thursday': const TimeOfDay(hour: 9, minute: 0),
+    'friday': const TimeOfDay(hour: 9, minute: 0),
+    'saturday': const TimeOfDay(hour: 9, minute: 0),
+    'sunday': const TimeOfDay(hour: 10, minute: 0),
   };
   final Map<String, TimeOfDay> _closeTimes = {
-    'monday': const TimeOfDay(hour: 18, minute: 0), 'tuesday': const TimeOfDay(hour: 18, minute: 0), 'wednesday': const TimeOfDay(hour: 18, minute: 0), 'thursday': const TimeOfDay(hour: 18, minute: 0), 'friday': const TimeOfDay(hour: 18, minute: 0), 'saturday': const TimeOfDay(hour: 18, minute: 0), 'sunday': const TimeOfDay(hour: 17, minute: 0),
+    'monday': const TimeOfDay(hour: 18, minute: 0),
+    'tuesday': const TimeOfDay(hour: 18, minute: 0),
+    'wednesday': const TimeOfDay(hour: 18, minute: 0),
+    'thursday': const TimeOfDay(hour: 18, minute: 0),
+    'friday': const TimeOfDay(hour: 18, minute: 0),
+    'saturday': const TimeOfDay(hour: 18, minute: 0),
+    'sunday': const TimeOfDay(hour: 17, minute: 0),
   };
 
   // Nigerian states for profile
   static const List<String> _nigerianStates = [
-    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
-    'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe',
-    'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara',
-    'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau',
-    'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
+    'Abia',
+    'Adamawa',
+    'Akwa Ibom',
+    'Anambra',
+    'Bauchi',
+    'Bayelsa',
+    'Benue',
+    'Borno',
+    'Cross River',
+    'Delta',
+    'Ebonyi',
+    'Edo',
+    'Ekiti',
+    'Enugu',
+    'Gombe',
+    'Imo',
+    'Jigawa',
+    'Kaduna',
+    'Kano',
+    'Katsina',
+    'Kebbi',
+    'Kogi',
+    'Kwara',
+    'Lagos',
+    'Nasarawa',
+    'Niger',
+    'Ogun',
+    'Ondo',
+    'Osun',
+    'Oyo',
+    'Plateau',
+    'Sokoto',
+    'Taraba',
+    'Yobe',
+    'Zamfara',
   ];
 
   @override
@@ -68,6 +122,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     _businessNameController = TextEditingController();
     _businessPhoneController = TextEditingController();
     _businessAddressController = TextEditingController();
+    _bankNameController = TextEditingController();
+    _bankAccountController = TextEditingController();
   }
 
   @override
@@ -84,28 +140,46 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   Future<void> _pickProfileImage() async {
+    final colors = context.colors;
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0A1921),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: colors.scaffoldBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('SELECT IMAGE SOURCE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+            Text(
+              'SELECT IMAGE SOURCE',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+            ),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildSourceOption(Icons.photo_library_rounded, 'GALLERY', () async {
-                  final file = await _imageService.pickImageFromGallery();
-                  if (file != null) setState(() => _pickedImage = file);
-                }),
-                _buildSourceOption(Icons.camera_alt_rounded, 'CAMERA', () async {
-                  final file = await _imageService.pickImageFromCamera();
-                  if (file != null) setState(() => _pickedImage = file);
-                }),
+                _buildSourceOption(
+                  Icons.photo_library_rounded,
+                  'GALLERY',
+                  () async {
+                    final file = await _imageService.pickImageFromGallery();
+                    if (file != null) setState(() => _pickedImage = file);
+                  },
+                ),
+                _buildSourceOption(
+                  Icons.camera_alt_rounded,
+                  'CAMERA',
+                  () async {
+                    final file = await _imageService.pickImageFromCamera();
+                    if (file != null) setState(() => _pickedImage = file);
+                  },
+                ),
               ],
             ),
           ],
@@ -115,13 +189,32 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   Widget _buildSourceOption(IconData icon, String label, VoidCallback onTap) {
+    final colors = context.colors;
     return InkWell(
-      onTap: () { Navigator.pop(context); onTap(); },
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
       child: Column(
         children: [
-          Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle), child: Icon(icon, color: AppColors.amber, size: 28)),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.amber, size: 28),
+          ),
           const SizedBox(height: 12),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          Text(
+            label,
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
         ],
       ),
     );
@@ -136,8 +229,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     _businessNameController.text = profile.businessName ?? '';
     _businessPhoneController.text = profile.businessPhone ?? '';
     _businessAddressController.text = profile.businessAddress ?? '';
+    _bankNameController.text = profile.bankName ?? '';
+    _bankAccountController.text = profile.bankAccountNumber ?? '';
+    _selectedBankCode = profile.bankCode;
+    _selectedBankName = profile.bankName;
     _selectedState = profile.state ?? profile.businessState;
-    
+
     // Initialize working hours from existing profile data
     if (profile.workingHoursByDay != null) {
       final wh = profile.workingHoursByDay!;
@@ -148,22 +245,36 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       _dayOpen['friday'] = wh.fridayOpen != null;
       _dayOpen['saturday'] = wh.saturdayOpen != null;
       _dayOpen['sunday'] = wh.sundayOpen != null;
-      
-      if (wh.mondayOpen != null) _openTimes['monday'] = _parseTime(wh.mondayOpen!);
-      if (wh.tuesdayOpen != null) _openTimes['tuesday'] = _parseTime(wh.tuesdayOpen!);
-      if (wh.wednesdayOpen != null) _openTimes['wednesday'] = _parseTime(wh.wednesdayOpen!);
-      if (wh.thursdayOpen != null) _openTimes['thursday'] = _parseTime(wh.thursdayOpen!);
-      if (wh.fridayOpen != null) _openTimes['friday'] = _parseTime(wh.fridayOpen!);
-      if (wh.saturdayOpen != null) _openTimes['saturday'] = _parseTime(wh.saturdayOpen!);
-      if (wh.sundayOpen != null) _openTimes['sunday'] = _parseTime(wh.sundayOpen!);
-      
-      if (wh.mondayClose != null) _closeTimes['monday'] = _parseTime(wh.mondayClose!);
-      if (wh.tuesdayClose != null) _closeTimes['tuesday'] = _parseTime(wh.tuesdayClose!);
-      if (wh.wednesdayClose != null) _closeTimes['wednesday'] = _parseTime(wh.wednesdayClose!);
-      if (wh.thursdayClose != null) _closeTimes['thursday'] = _parseTime(wh.thursdayClose!);
-      if (wh.fridayClose != null) _closeTimes['friday'] = _parseTime(wh.fridayClose!);
-      if (wh.saturdayClose != null) _closeTimes['saturday'] = _parseTime(wh.saturdayClose!);
-      if (wh.sundayClose != null) _closeTimes['sunday'] = _parseTime(wh.sundayClose!);
+
+      if (wh.mondayOpen != null)
+        _openTimes['monday'] = _parseTime(wh.mondayOpen!);
+      if (wh.tuesdayOpen != null)
+        _openTimes['tuesday'] = _parseTime(wh.tuesdayOpen!);
+      if (wh.wednesdayOpen != null)
+        _openTimes['wednesday'] = _parseTime(wh.wednesdayOpen!);
+      if (wh.thursdayOpen != null)
+        _openTimes['thursday'] = _parseTime(wh.thursdayOpen!);
+      if (wh.fridayOpen != null)
+        _openTimes['friday'] = _parseTime(wh.fridayOpen!);
+      if (wh.saturdayOpen != null)
+        _openTimes['saturday'] = _parseTime(wh.saturdayOpen!);
+      if (wh.sundayOpen != null)
+        _openTimes['sunday'] = _parseTime(wh.sundayOpen!);
+
+      if (wh.mondayClose != null)
+        _closeTimes['monday'] = _parseTime(wh.mondayClose!);
+      if (wh.tuesdayClose != null)
+        _closeTimes['tuesday'] = _parseTime(wh.tuesdayClose!);
+      if (wh.wednesdayClose != null)
+        _closeTimes['wednesday'] = _parseTime(wh.wednesdayClose!);
+      if (wh.thursdayClose != null)
+        _closeTimes['thursday'] = _parseTime(wh.thursdayClose!);
+      if (wh.fridayClose != null)
+        _closeTimes['friday'] = _parseTime(wh.fridayClose!);
+      if (wh.saturdayClose != null)
+        _closeTimes['saturday'] = _parseTime(wh.saturdayClose!);
+      if (wh.sundayClose != null)
+        _closeTimes['sunday'] = _parseTime(wh.sundayClose!);
     }
     _selectedServices = List<String>.from(profile.services ?? []);
     _selectedFabrics = List<String>.from(profile.availableFabrics ?? []);
@@ -171,34 +282,23 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final profileAsync = ref.watch(userProfileProvider(widget.userId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-        backgroundColor: const Color(0xFF0A1921),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () {
-            if (ref.canPopShell) {
-              ref.popShell();
-            } else {
-              ref.setShell('/main');
-            }
-          },
-        ),
-      ),
-      backgroundColor: const Color(0xFF0A1921),
+      appBar: shellAppBar(context, title: 'Edit Profile'),
+      backgroundColor: colors.scaffoldBg,
       body: profileAsync.when(
         data: (profile) {
           if (profile == null) {
-            return const Center(
-              child: Text('Profile not found. Please complete onboarding first.',
-                style: TextStyle(color: Colors.white)),
+            return Center(
+              child: Text(
+                'Profile not found. Please complete onboarding first.',
+                style: TextStyle(color: colors.textPrimary),
+              ),
             );
           }
-          
+
           if (_nameController.text.isEmpty && _emailController.text.isEmpty) {
             _initializeControllers(profile);
           }
@@ -216,26 +316,38 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                       children: [
                         CircleAvatar(
                           radius: 60,
-                          backgroundColor: AppColors.amber.withValues(alpha: 0.1),
-                          backgroundImage: _pickedImage != null 
+                          backgroundColor: AppColors.amber.withValues(
+                            alpha: 0.1,
+                          ),
+                          backgroundImage: _pickedImage != null
                               ? null // Handled by child for memory support
                               : profile.profileImage != null
-                                  ? NetworkImage(profile.profileImage!)
-                                  : null,
+                              ? NetworkImage(profile.profileImage!)
+                              : null,
                           child: _pickedImage != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(60),
                                   child: FutureBuilder<Uint8List>(
                                     future: _pickedImage!.readAsBytes(),
                                     builder: (context, snapshot) {
-                                      if (snapshot.hasData) return Image.memory(snapshot.data!, fit: BoxFit.cover, width: 120, height: 120);
+                                      if (snapshot.hasData)
+                                        return Image.memory(
+                                          snapshot.data!,
+                                          fit: BoxFit.cover,
+                                          width: 120,
+                                          height: 120,
+                                        );
                                       return const CircularProgressIndicator();
                                     },
                                   ),
                                 )
                               : (profile.profileImage == null)
-                                  ? const Icon(Icons.person, size: 60, color: AppColors.amber)
-                                  : null,
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: AppColors.amber,
+                                )
+                              : null,
                         ),
                         Positioned(
                           bottom: 0,
@@ -246,8 +358,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                               color: AppColors.amber,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.camera_alt, 
-                              size: 20, color: Color(0xFF0A1921)),
+                            child: Icon(
+                              Icons.camera_alt,
+                              size: 20,
+                              color: context.colors.textOnAmber,
+                            ),
                           ),
                         ),
                       ],
@@ -318,7 +433,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   const SizedBox(height: 32),
                 ],
 
-                if (profile.userType == 'tailor' || profile.userType == 'fabric_seller') ...[
+                if (profile.userType == 'tailor' ||
+                    profile.userType == 'fabric_seller') ...[
                   _buildSectionTitle('Business Information'),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -342,15 +458,40 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   const SizedBox(height: 16),
                   _buildWorkingHoursSection(),
                   const SizedBox(height: 32),
+
+                  _buildSectionTitle('Bank Details'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Used for receiving payouts when clients confirm delivery.',
+                    style: TextStyle(color: colors.textMuted, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'Account Name',
+                    controller: _bankNameController,
+                    icon: Icons.person_outline_rounded,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'Account Number',
+                    controller: _bankAccountController,
+                    icon: Icons.numbers_rounded,
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildBankSearchField(colors),
+                  const SizedBox(height: 32),
                 ],
 
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : () => _saveProfile(profile),
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => _saveProfile(profile),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.amber,
-                      foregroundColor: const Color(0xFF0A1921),
+                      foregroundColor: AppColors.darkNavy,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -383,10 +524,63 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.sync_problem_rounded,
+                  color: AppColors.error,
+                  size: 40,
+                ),
+              ),
               const SizedBox(height: 16),
-              Text('Error: $error',
-                style: const TextStyle(color: Colors.white)),
+              Text(
+                'SYNC ERROR',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Could not load profile',
+                style: TextStyle(color: colors.textMuted, fontSize: 11),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () {
+                  final nav = ref.read(navigationStackProvider.notifier);
+                  if (nav.canPop) {
+                    nav.pop();
+                  } else {
+                    nav.set('/main');
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.amber,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'GO BACK',
+                    style: TextStyle(
+                      color: AppColors.darkNavy,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -415,27 +609,28 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     String? hint,
     bool enabled = true,
   }) {
+    final colors = context.colors;
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       enabled: enabled,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: colors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: const TextStyle(color: Colors.white54),
-        hintStyle: const TextStyle(color: Colors.white24),
+        labelStyle: TextStyle(color: colors.textSecondary),
+        hintStyle: TextStyle(color: colors.textHint),
         prefixIcon: Icon(icon, color: AppColors.amber, size: 20),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: colors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: colors.borderDefault),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: colors.borderDefault),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -445,40 +640,112 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     );
   }
 
+  Widget _buildBankSearchField(DesbyThemeColors colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'SELECT YOUR BANK',
+          style: TextStyle(
+            color: colors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final bank = await showBankSearchDialog(context);
+            if (bank != null) {
+              setState(() {
+                _selectedBankCode = bank.code;
+                _selectedBankName = bank.name;
+              });
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _selectedBankCode != null
+                    ? AppColors.amber
+                    : colors.borderDefault,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.account_balance_outlined,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _selectedBankName != null
+                        ? _selectedBankName!
+                        : 'Tap to search and select your bank',
+                    style: TextStyle(
+                      color: _selectedBankName != null
+                          ? colors.textPrimary
+                          : colors.textMuted,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(Icons.search_rounded, color: colors.textMuted, size: 18),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDropdown({
     required String label,
     required String? value,
     required List<String> items,
     required void Function(String?) onChanged,
   }) {
+    final colors = context.colors;
     return DropdownButtonFormField<String>(
       initialValue: value,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.amber, size: 20),
+        labelStyle: TextStyle(color: colors.textSecondary),
+        prefixIcon: const Icon(
+          Icons.location_on_outlined,
+          color: AppColors.amber,
+          size: 20,
+        ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: colors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: colors.borderDefault),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: colors.borderDefault),
         ),
       ),
-      dropdownColor: const Color(0xFF1A2B3C),
-      style: const TextStyle(color: Colors.white),
-      items: items.map((state) => DropdownMenuItem(
-        value: state,
-        child: Text(state),
-      )).toList(),
+      dropdownColor: colors.dropdownBg,
+      style: TextStyle(color: colors.textPrimary),
+      items: items
+          .map((state) => DropdownMenuItem(value: state, child: Text(state)))
+          .toList(),
       onChanged: onChanged,
     );
   }
 
   Widget _buildServicesSelection() {
+    final colors = context.colors;
     final services = TailorServices.all;
     return Wrap(
       spacing: 8,
@@ -499,9 +766,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           },
           selectedColor: AppColors.amber.withValues(alpha: 0.3),
           checkmarkColor: AppColors.amber,
-          backgroundColor: Colors.white.withValues(alpha: 0.05),
+          backgroundColor: colors.surface,
           labelStyle: TextStyle(
-            color: isSelected ? AppColors.amber : Colors.white70,
+            color: isSelected ? AppColors.amber : colors.textSecondary,
             fontSize: 12,
           ),
         );
@@ -510,6 +777,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   Widget _buildFabricsSelection() {
+    final colors = context.colors;
     final fabrics = FabricTypes.all;
     return Wrap(
       spacing: 8,
@@ -530,9 +798,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           },
           selectedColor: Colors.blue.withValues(alpha: 0.3),
           checkmarkColor: Colors.blue.shade300,
-          backgroundColor: Colors.white.withValues(alpha: 0.05),
+          backgroundColor: colors.surface,
           labelStyle: TextStyle(
-            color: isSelected ? Colors.blue.shade300 : Colors.white70,
+            color: isSelected ? Colors.blue.shade300 : colors.textSecondary,
             fontSize: 12,
           ),
         );
@@ -541,7 +809,15 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   Widget _buildWorkingHoursSection() {
-    final days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    final days = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday',
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -553,22 +829,46 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   Widget _buildDayRow(String day) {
+    final colors = context.colors;
     final isOpen = _dayOpen[day] ?? false;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         children: [
-          Switch.adaptive(value: isOpen, activeTrackColor: AppColors.amber, onChanged: (v) => setState(() => _dayOpen[day] = v)),
+          Switch.adaptive(
+            value: isOpen,
+            activeThumbColor: AppColors.amber,
+            activeTrackColor: AppColors.amber.withValues(alpha: 0.3),
+            onChanged: (v) => setState(() => _dayOpen[day] = v),
+          ),
           const SizedBox(width: 8),
-          Text(day.toUpperCase().substring(0, 3), style: TextStyle(color: isOpen ? Colors.white : Colors.white24, fontWeight: FontWeight.w900, fontSize: 12)),
+          Text(
+            day.toUpperCase().substring(0, 3),
+            style: TextStyle(
+              color: isOpen ? colors.textPrimary : colors.textMuted,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
           const Spacer(),
           if (isOpen) ...[
             _buildTimeChip(day, true),
-            const Text(' - ', style: TextStyle(color: Colors.white24)),
+            Text(' - ', style: TextStyle(color: colors.textMuted)),
             _buildTimeChip(day, false),
-          ] else const Text('CLOSED', style: TextStyle(color: Colors.white12, fontSize: 10, fontWeight: FontWeight.bold)),
+          ] else
+            Text(
+              'CLOSED',
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
         ],
       ),
     );
@@ -580,7 +880,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
 
     return GestureDetector(
       onTap: () async {
-        final picked = await showTimePicker(context: context, initialTime: time);
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: time,
+        );
         if (picked != null) {
           setState(() {
             if (isStart) {
@@ -593,8 +896,18 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-        child: Text(time.format(context), style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 11)),
+        decoration: BoxDecoration(
+          color: AppColors.amber.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          time.format(context),
+          style: TextStyle(
+            color: AppColors.amber,
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+          ),
+        ),
       ),
     );
   }
@@ -604,8 +917,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       final format = timeStr.toLowerCase();
       final isPm = format.contains('pm');
       final isAm = format.contains('am');
-      var hour = int.parse(format.split(':').first.replaceAll(RegExp(r'[^0-9]'), ''));
-      final minute = int.parse(format.split(':').last.replaceAll(RegExp(r'[^0-9]'), ''));
+      var hour = int.parse(
+        format.split(':').first.replaceAll(RegExp(r'[^0-9]'), ''),
+      );
+      final minute = int.parse(
+        format.split(':').last.replaceAll(RegExp(r'[^0-9]'), ''),
+      );
       if (isPm && hour != 12) hour += 12;
       if (isAm && hour == 12) hour = 0;
       return TimeOfDay(hour: hour, minute: minute);
@@ -615,7 +932,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   String _getHoursSummary() {
-    final openDays = _dayOpen.entries.where((e) => e.value).map((e) => e.key).toList();
+    final openDays = _dayOpen.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
     if (openDays.isEmpty) return 'Closed';
     if (openDays.length == 7) return 'Mon-Sun (Daily)';
     return openDays.map((d) => d.substring(0, 3).toUpperCase()).join(', ');
@@ -625,34 +945,89 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final monO = _dayOpen['monday']! ? _openTimes['monday']!.format(context) : null;
-      final monC = _dayOpen['monday']! ? _closeTimes['monday']!.format(context) : null;
-      final tueO = _dayOpen['tuesday']! ? _openTimes['tuesday']!.format(context) : null;
-      final tueC = _dayOpen['tuesday']! ? _closeTimes['tuesday']!.format(context) : null;
-      final wedO = _dayOpen['wednesday']! ? _openTimes['wednesday']!.format(context) : null;
-      final wedC = _dayOpen['wednesday']! ? _closeTimes['wednesday']!.format(context) : null;
-      final thuO = _dayOpen['thursday']! ? _openTimes['thursday']!.format(context) : null;
-      final thuC = _dayOpen['thursday']! ? _closeTimes['thursday']!.format(context) : null;
-      final friO = _dayOpen['friday']! ? _openTimes['friday']!.format(context) : null;
-      final friC = _dayOpen['friday']! ? _closeTimes['friday']!.format(context) : null;
-      final satO = _dayOpen['saturday']! ? _openTimes['saturday']!.format(context) : null;
-      final satC = _dayOpen['saturday']! ? _closeTimes['saturday']!.format(context) : null;
-      final sunO = _dayOpen['sunday']! ? _openTimes['sunday']!.format(context) : null;
-      final sunC = _dayOpen['sunday']! ? _closeTimes['sunday']!.format(context) : null;
+      final monO = _dayOpen['monday']!
+          ? _openTimes['monday']!.format(context)
+          : null;
+      final monC = _dayOpen['monday']!
+          ? _closeTimes['monday']!.format(context)
+          : null;
+      final tueO = _dayOpen['tuesday']!
+          ? _openTimes['tuesday']!.format(context)
+          : null;
+      final tueC = _dayOpen['tuesday']!
+          ? _closeTimes['tuesday']!.format(context)
+          : null;
+      final wedO = _dayOpen['wednesday']!
+          ? _openTimes['wednesday']!.format(context)
+          : null;
+      final wedC = _dayOpen['wednesday']!
+          ? _closeTimes['wednesday']!.format(context)
+          : null;
+      final thuO = _dayOpen['thursday']!
+          ? _openTimes['thursday']!.format(context)
+          : null;
+      final thuC = _dayOpen['thursday']!
+          ? _closeTimes['thursday']!.format(context)
+          : null;
+      final friO = _dayOpen['friday']!
+          ? _openTimes['friday']!.format(context)
+          : null;
+      final friC = _dayOpen['friday']!
+          ? _closeTimes['friday']!.format(context)
+          : null;
+      final satO = _dayOpen['saturday']!
+          ? _openTimes['saturday']!.format(context)
+          : null;
+      final satC = _dayOpen['saturday']!
+          ? _closeTimes['saturday']!.format(context)
+          : null;
+      final sunO = _dayOpen['sunday']!
+          ? _openTimes['sunday']!.format(context)
+          : null;
+      final sunC = _dayOpen['sunday']!
+          ? _closeTimes['sunday']!.format(context)
+          : null;
 
       final whMap = BusinessHours(
-        mondayOpen: monO, mondayClose: monC,
-        tuesdayOpen: tueO, tuesdayClose: tueC,
-        wednesdayOpen: wedO, wednesdayClose: wedC,
-        thursdayOpen: thuO, thursdayClose: thuC,
-        fridayOpen: friO, fridayClose: friC,
-        saturdayOpen: satO, saturdayClose: satC,
-        sundayOpen: sunO, sundayClose: sunC,
+        mondayOpen: monO,
+        mondayClose: monC,
+        tuesdayOpen: tueO,
+        tuesdayClose: tueC,
+        wednesdayOpen: wedO,
+        wednesdayClose: wedC,
+        thursdayOpen: thuO,
+        thursdayClose: thuC,
+        fridayOpen: friO,
+        fridayClose: friC,
+        saturdayOpen: satO,
+        saturdayClose: satC,
+        sundayOpen: sunO,
+        sundayClose: sunC,
       );
 
       String? imageUrl = originalProfile.profileImage;
       if (_pickedImage != null) {
-        imageUrl = await _imageService.uploadImage(_pickedImage!, originalProfile.id, 'profiles');
+        try {
+          imageUrl = await _imageService.uploadImage(
+            _pickedImage!,
+            originalProfile.id,
+            'profiles',
+          );
+          if (imageUrl == null) {
+            throw const ImageUploadException('Upload returned no URL');
+          }
+        } on ImageUploadException catch (e) {
+          debugPrint('Profile image upload failed: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Image upload failed — please try again'),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+          }
+          return;
+        }
       }
 
       final updatedProfile = originalProfile.copyWith(
@@ -670,6 +1045,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         availableFabrics: _selectedFabrics,
         workingHours: _getHoursSummary(),
         workingHoursByDay: whMap,
+        bankName: _selectedBankName ?? '',
+        bankAccountNumber: _bankAccountController.text.trim(),
+        bankCode: _selectedBankCode,
       );
 
       if (!mounted) return;
@@ -677,7 +1055,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
 
       final usecase = ref.read(updateProfileUsecaseProvider);
       final result = await usecase(updatedProfile);
-      
+
       // REFRESH: Clear cached empty or stale profile
       ref.invalidate(userProfileProvider(widget.userId));
       await ref.read(userProfileProvider(widget.userId).future);
@@ -699,7 +1077,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               backgroundColor: AppColors.amber,
             ),
           );
-          
+
           if (ref.canPopShell) {
             ref.popShell();
           } else {

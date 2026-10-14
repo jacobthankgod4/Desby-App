@@ -5,7 +5,8 @@ enum NotificationType {
   newMessage,
   apprenticeTask,
   paymentReceived,
-  system
+  clientInvite,
+  system,
 }
 
 class AppNotification extends Equatable {

@@ -69,9 +69,19 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
       ]);
       if (!mounted) return;
       setState(() {
-        _insights = results[0] as Map<String, dynamic>;
-        _monthlyRevenue = results[1] as List<Map<String, dynamic>>;
-        _categoryDistribution = results[2] as Map<String, int>;
+        _insights = results[0] is Map<String, dynamic>
+            ? results[0] as Map<String, dynamic>
+            : <String, dynamic>{};
+        _monthlyRevenue = results[1] is List
+            ? (results[1] as List)
+                  .map(
+                    (e) => e is Map<String, dynamic> ? e : <String, dynamic>{},
+                  )
+                  .toList()
+            : <Map<String, dynamic>>[];
+        _categoryDistribution = results[2] is Map
+            ? Map<String, int>.from(results[2] as Map)
+            : <String, int>{};
         _isLoading = false;
       });
       _fadeController.forward(from: 0);
@@ -119,26 +129,30 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.amber,
-            size: 18,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
+        leading: MediaQuery.of(context).size.width > 1000
+            ? const SizedBox.shrink()
+            : IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.amber,
+                  size: 18,
+                ),
+                onPressed: () => ref.popShell(),
+              ),
+        automaticallyImplyLeading: MediaQuery.of(context).size.width <= 1000,
+        title: Text(
           'BUSINESS INTELLIGENCE',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w900,
-            color: Colors.white,
+            color: colors.textPrimary,
             letterSpacing: 2,
           ),
         ),
@@ -152,7 +166,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
             onPressed: () => ref.pushShell('/ai-insights'),
           ),
           IconButton(
-            icon: const Icon(Icons.description_outlined, color: Colors.white38),
+            icon: Icon(Icons.description_outlined, color: colors.iconMuted),
             onPressed: () => ref.pushShell('/reports'),
           ),
         ],
@@ -164,10 +178,11 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
   }
 
   Widget _buildContent() {
+    final colors = context.colors;
     return RefreshIndicator(
       onRefresh: _onRefresh,
       color: AppColors.amber,
-      backgroundColor: AppColors.deepBlue,
+      backgroundColor: colors.surface,
       child: FadeTransition(
         opacity: _fadeController,
         child: SingleChildScrollView(
@@ -198,7 +213,8 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
   }
 
   Widget _buildHeaderSection() {
-    return const Column(
+    final colors = context.colors;
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -206,15 +222,15 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w900,
-            color: Colors.white,
+            color: colors.textPrimary,
             letterSpacing: -0.5,
           ),
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         Text(
           'Real-time analytics for your bespoke empire.',
           style: TextStyle(
-            color: Colors.white38,
+            color: colors.textMuted,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -266,6 +282,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
     required String label,
     required Color color,
   }) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
@@ -292,8 +309,8 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
               children: [
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
@@ -303,7 +320,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: colors.textMuted,
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
@@ -408,6 +425,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
     required Color accentColor,
     required Gradient gradient,
   }) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -465,10 +483,10 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: colors.textPrimary,
               height: 1.1,
             ),
             maxLines: 1,
@@ -480,7 +498,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
-              color: Colors.white.withValues(alpha: 0.38),
+              color: colors.textMuted,
               letterSpacing: 0.8,
             ),
           ),
@@ -490,13 +508,14 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
   }
 
   Widget _buildRevenueChartSection() {
+    final colors = context.colors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.025),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: colors.borderDefault),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,7 +547,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
                     _monthlyRevenue.last['revenue'] as double? ?? 0,
                   ),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: colors.textSecondary,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -548,6 +567,8 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
                   painter: _RevenueChartPainter(
                     monthlyRevenue: _monthlyRevenue,
                     animation: _chartController.value,
+                    gridColor: colors.borderSubtle,
+                    labelColor: colors.textMuted,
                   ),
                 ),
               ),
@@ -558,22 +579,19 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
   }
 
   Widget _buildEmptyChartState() {
+    final colors = context.colors;
     return SizedBox(
       height: 160,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.show_chart_rounded,
-              size: 48,
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
+            Icon(Icons.show_chart_rounded, size: 48, color: colors.iconMuted),
             const SizedBox(height: 12),
             Text(
               'No revenue data yet',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: colors.textMuted,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -581,10 +599,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
             const SizedBox(height: 4),
             Text(
               'Start completing orders to see trends',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.15),
-                fontSize: 11,
-              ),
+              style: TextStyle(color: colors.textHint, fontSize: 11),
             ),
           ],
         ),
@@ -593,6 +608,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
   }
 
   Widget _buildOrderCategoriesSection() {
+    final colors = context.colors;
     final totalItems = _categoryDistribution.values.fold<int>(
       0,
       (sum, v) => sum + v,
@@ -602,9 +618,9 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.025),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: colors.borderDefault),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,6 +642,9 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
                   totalItems: totalItems,
                   animation: _chartController.value,
                   barColor: AppColors.amber,
+                  labelColor: colors.textMuted,
+                  valueColor: colors.textPrimary,
+                  percentColor: colors.textMuted,
                 ),
               ),
             ),
@@ -635,6 +654,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
   }
 
   Widget _buildEmptyDistributionState() {
+    final colors = context.colors;
     return SizedBox(
       height: 120,
       child: Center(
@@ -644,13 +664,13 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
             Icon(
               Icons.pie_chart_outline_rounded,
               size: 48,
-              color: Colors.white.withValues(alpha: 0.1),
+              color: colors.iconMuted,
             ),
             const SizedBox(height: 12),
             Text(
               'No category data yet',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: colors.textMuted,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -658,10 +678,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
             const SizedBox(height: 4),
             Text(
               'Add garments to see distribution',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.15),
-                fontSize: 11,
-              ),
+              style: TextStyle(color: colors.textHint, fontSize: 11),
             ),
           ],
         ),
@@ -692,14 +709,6 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
                 route: '/reports',
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.add_rounded,
-                label: 'New Order',
-                route: '/order-create',
-              ),
-            ),
           ],
         ),
       ],
@@ -711,6 +720,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
     required String label,
     required String route,
   }) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -743,8 +753,8 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
                 const SizedBox(height: 10),
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -826,6 +836,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
   }
 
   Widget _shimmerBlock({double? height, double? width, double radius = 14}) {
+    final colors = context.colors;
     return AnimatedBuilder(
       animation: _pulseController,
       builder: (context, _) {
@@ -834,7 +845,7 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
           height: height,
           width: width,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: opacity),
+            color: colors.surface.withValues(alpha: opacity),
             borderRadius: BorderRadius.circular(radius),
           ),
         );
@@ -846,8 +857,15 @@ class _InsightsDashboardState extends ConsumerState<InsightsDashboard>
 class _RevenueChartPainter extends CustomPainter {
   final List<Map<String, dynamic>> monthlyRevenue;
   final double animation;
+  final Color gridColor;
+  final Color labelColor;
 
-  _RevenueChartPainter({required this.monthlyRevenue, required this.animation});
+  _RevenueChartPainter({
+    required this.monthlyRevenue,
+    required this.animation,
+    required this.gridColor,
+    required this.labelColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -864,11 +882,11 @@ class _RevenueChartPainter extends CustomPainter {
     final chartHeight = size.height - padding.top - padding.bottom;
 
     final gridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.04)
+      ..color = gridColor
       ..strokeWidth = 1;
 
     final labelStyle = TextStyle(
-      color: Colors.white.withValues(alpha: 0.35),
+      color: labelColor,
       fontSize: 9,
       fontWeight: FontWeight.w700,
     );
@@ -896,7 +914,7 @@ class _RevenueChartPainter extends CustomPainter {
     final points = <Offset>[];
     for (int i = 0; i < count; i++) {
       final x = padding.left + stepWidth * i;
-      final normalized = revenues[i] / maxRevenue;
+      final normalized = maxRevenue == 0 ? 0.0 : revenues[i] / maxRevenue;
       final y =
           padding.top + chartHeight - (normalized * chartHeight * animation);
       points.add(Offset(x, y));
@@ -1011,12 +1029,18 @@ class _BarChartPainter extends CustomPainter {
   final int totalItems;
   final double animation;
   final Color barColor;
+  final Color labelColor;
+  final Color valueColor;
+  final Color percentColor;
 
   _BarChartPainter({
     required this.distribution,
     required this.totalItems,
     required this.animation,
     required this.barColor,
+    required this.labelColor,
+    required this.valueColor,
+    required this.percentColor,
   });
 
   @override
@@ -1034,17 +1058,17 @@ class _BarChartPainter extends CustomPainter {
     final barMaxWidth = size.width - leftLabelWidth - rightLabelWidth - 16;
 
     final labelStyle = TextStyle(
-      color: Colors.white.withValues(alpha: 0.65),
+      color: labelColor,
       fontSize: 11,
       fontWeight: FontWeight.w700,
     );
     final valueStyle = TextStyle(
-      color: Colors.white,
+      color: valueColor,
       fontSize: 12,
       fontWeight: FontWeight.w800,
     );
     final percentStyle = TextStyle(
-      color: Colors.white.withValues(alpha: 0.4),
+      color: percentColor,
       fontSize: 9,
       fontWeight: FontWeight.w700,
     );
@@ -1052,7 +1076,7 @@ class _BarChartPainter extends CustomPainter {
     for (int i = 0; i < entries.length; i++) {
       final entry = entries[i];
       final y = i * (barHeight + barGap);
-      final fraction = entry.value / maxValue;
+      final fraction = maxValue == 0 ? 0.0 : entry.value / maxValue;
       final animatedWidth = barMaxWidth * fraction * animation;
       final percentage = (entry.value / totalItems) * 100;
 

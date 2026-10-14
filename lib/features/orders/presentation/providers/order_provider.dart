@@ -4,7 +4,6 @@ import '../../domain/repositories/order_repository.dart';
 import '../../domain/usecases/order_usecases.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-
 import '../../domain/entities/order.dart';
 
 import '../../data/repositories/supabase_order_repository.dart';
@@ -29,17 +28,28 @@ final updateOrderStatusUsecaseProvider = Provider((ref) {
   return UpdateOrderStatusUsecase(ref.watch(orderRepositoryProvider));
 });
 
-final ordersProvider = FutureProvider.family<List<OrderEntity>, OrderStatus?>((ref, status) async {
+final ordersProvider = FutureProvider.family<List<OrderEntity>, OrderStatus?>((
+  ref,
+  status,
+) async {
   final usecase = ref.watch(getOrdersUsecaseProvider);
   final user = ref.watch(currentUserProvider);
-  
+
   if (user == null) return [];
 
-  // Role-based filtering
+  // Role-based filtering. Anything that is not a tailor or a fabric seller is
+  // treated as a client, because a user with an unexpected `userType` string
+  // previously fell through every branch and saw the unfiltered list — or, once
+  // the client filter was applied, none of their own orders.
+  final role = user.userType;
+  final isTailor = role == 'tailor';
+  final isFabricSeller = role == 'fabric_seller';
+
   final result = await usecase(
     status: status,
-    clientId: user.userType == 'client' ? user.id : null,
-    tailorId: user.userType == 'tailor' ? user.id : null,
+    clientId: (!isTailor && !isFabricSeller) ? user.id : null,
+    tailorId: isTailor ? user.id : null,
+    fabricSellerId: isFabricSeller ? user.id : null,
   );
 
   return result.fold(
@@ -48,7 +58,10 @@ final ordersProvider = FutureProvider.family<List<OrderEntity>, OrderStatus?>((r
   );
 });
 
-final orderDetailProvider = FutureProvider.family<OrderEntity, String>((ref, id) async {
+final orderDetailProvider = FutureProvider.family<OrderEntity, String>((
+  ref,
+  id,
+) async {
   final usecase = ref.watch(getOrderByIdUsecaseProvider);
   final result = await usecase(id);
   return result.fold(

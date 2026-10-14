@@ -27,7 +27,8 @@ class ApiEndpoints {
   static const String authRefreshToken = '$_authPath/refresh-token';
   static const String authLogout = '$_authPath/logout';
   static const String authPasswordReset = '$_authPath/password-reset';
-  static const String authPasswordResetConfirm = '$_authPath/password-reset/confirm';
+  static const String authPasswordResetConfirm =
+      '$_authPath/password-reset/confirm';
   static const String authTwoFactorSetup = '$_authPath/two-factor-setup';
   static const String authTwoFactorVerify = '$_authPath/two-factor-verify';
 
@@ -103,8 +104,10 @@ class ApiEndpoints {
       '$_apprenticeshipsPath/$apprenticeId';
   static String apprenticeshipTasks(String apprenticeId) =>
       '$_apprenticeshipsPath/$apprenticeId/tasks';
-  static String apprenticeshipTaskComplete(String apprenticeId, String taskId) =>
-      '$_apprenticeshipsPath/$apprenticeId/tasks/$taskId/complete';
+  static String apprenticeshipTaskComplete(
+    String apprenticeId,
+    String taskId,
+  ) => '$_apprenticeshipsPath/$apprenticeId/tasks/$taskId/complete';
   static String apprenticeshipSkills(String apprenticeId) =>
       '$_apprenticeshipsPath/$apprenticeId/skills';
   static String apprenticeshipContract(String apprenticeId) =>
@@ -118,10 +121,14 @@ class ApiEndpoints {
       '$_conversationsPath/$conversationId/messages';
   static String conversationMessageSend(String conversationId) =>
       '$_conversationsPath/$conversationId/messages';
-  static String conversationMessageEdit(String conversationId, String messageId) =>
-      '$_conversationsPath/$conversationId/messages/$messageId';
-  static String conversationMessageDelete(String conversationId, String messageId) =>
-      '$_conversationsPath/$conversationId/messages/$messageId';
+  static String conversationMessageEdit(
+    String conversationId,
+    String messageId,
+  ) => '$_conversationsPath/$conversationId/messages/$messageId';
+  static String conversationMessageDelete(
+    String conversationId,
+    String messageId,
+  ) => '$_conversationsPath/$conversationId/messages/$messageId';
   static String conversationTyping(String conversationId) =>
       '$_conversationsPath/$conversationId/typing';
 
@@ -131,7 +138,8 @@ class ApiEndpoints {
   static String notificationMarkRead(String notificationId) =>
       '$_notificationsPath/$notificationId';
   static const String notificationsMarkAllRead = '$_notificationsPath/read-all';
-  static const String notificationsPreferences = '$_notificationsPath/preferences';
+  static const String notificationsPreferences =
+      '$_notificationsPath/preferences';
   static const String deviceRegisterToken = '$_devicePath/register-token';
 
   // Analytics & Reporting Endpoints

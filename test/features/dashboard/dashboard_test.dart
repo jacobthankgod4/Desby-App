@@ -16,7 +16,9 @@ void main() {
   setUp(() {
     mockRepository = MockDashboardRepository();
     usecase = GetDashboardStatsUsecase(mockRepository);
-    provideDummy<Result<DashboardStats>>(Failure(ServerFailure(message: 'dummy')));
+    provideDummy<Result<DashboardStats>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
   });
 
   final tStats = DashboardStats(
@@ -34,23 +36,28 @@ void main() {
   );
 
   group('GetDashboardStatsUsecase', () {
-    test('should return DashboardStats when repository call succeeds', () async {
-      when(mockRepository.getDashboardStats(any))
-          .thenAnswer((_) async => Success(tStats));
+    test(
+      'should return DashboardStats when repository call succeeds',
+      () async {
+        when(
+          mockRepository.getDashboardStats(any),
+        ).thenAnswer((_) async => Success(tStats));
 
-      final result = await usecase('user1');
+        final result = await usecase('user1');
 
-      expect(result, isA<Success>());
-      result.fold(
-        (failure) => fail('Should not return failure'),
-        (stats) => expect(stats.totalOrders, 10),
-      );
-      verify(mockRepository.getDashboardStats('user1')).called(1);
-    });
+        expect(result, isA<Success>());
+        result.fold(
+          (failure) => fail('Should not return failure'),
+          (stats) => expect(stats.totalOrders, 10),
+        );
+        verify(mockRepository.getDashboardStats('user1')).called(1);
+      },
+    );
 
     test('should return Failure when repository call fails', () async {
-      when(mockRepository.getDashboardStats(any))
-          .thenAnswer((_) async => Failure(ServerFailure(message: 'Server error')));
+      when(mockRepository.getDashboardStats(any)).thenAnswer(
+        (_) async => Failure(ServerFailure(message: 'Server error')),
+      );
 
       final result = await usecase('user1');
 

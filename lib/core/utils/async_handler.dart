@@ -14,7 +14,8 @@ mixin AsyncHandler {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -26,7 +27,10 @@ mixin AsyncHandler {
 
       if (successMessage != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text(successMessage),
+            backgroundColor: Colors.green,
+          ),
         );
       }
 
@@ -39,7 +43,7 @@ mixin AsyncHandler {
       if (context.mounted) {
         final failure = ErrorHandler.mapExceptionToFailure(e);
         final message = ErrorHandler.getUserMessage(failure);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),

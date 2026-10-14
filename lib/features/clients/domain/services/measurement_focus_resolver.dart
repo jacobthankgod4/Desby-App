@@ -19,7 +19,7 @@ class MeasurementFocusResolver {
     // Use the complete normalize pipeline from MeasurementNormalizer
     final normalizeResult = MeasurementNormalizer.normalize(label);
     final key = normalizeResult.key;
-    
+
     if (_profiles.containsKey(key)) {
       return ResolveResult(
         profile: _profiles[key]!,
@@ -29,7 +29,7 @@ class MeasurementFocusResolver {
         usedFallback: false,
       );
     }
-    
+
     // No profile found for resolved key - return fallback with context
     return ResolveResult(
       profile: fallbackProfile,

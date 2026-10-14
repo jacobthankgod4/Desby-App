@@ -17,7 +17,7 @@ class MeasurementNormalizer {
   /// Confidence threshold for fuzzy matching (0.0 to 1.0)
   static const double fuzzyThreshold = 0.70;
 
-/// Family fallback map when no exact match found
+  /// Family fallback map when no exact match found
   static const Map<String, String> familyFallbacks = {
     'upper_body': MeasurementKey.neckRound, // Default to neck for upper body
     'torso': MeasurementKey.waistRound,
@@ -34,7 +34,7 @@ class MeasurementNormalizer {
   /// Get the resolution method used in last call
   static String? get lastResolutionMethod => _lastResolutionMethod;
 
-/// Main normalize function implementing Section 5.3 resolver chain
+  /// Main normalize function implementing Section 5.3 resolver chain
   static NormalizeResult normalize(String label) {
     final input = label.trim().toLowerCase();
     // Normalize: replace all non-alphanumeric with underscore
@@ -136,7 +136,8 @@ class MeasurementNormalizer {
 
   /// Find fuzzy alias match using Levenshtein distance
   static ({MeasurementAlias alias, double confidence})? _findFuzzyAlias(
-      String label) {
+    String label,
+  ) {
     MeasurementAlias? bestMatch;
     double bestConfidence = 0.0;
 
@@ -158,8 +159,14 @@ class MeasurementNormalizer {
   /// Uses token-set ratio for robustness
   static double _computeSimilarity(String a, String b) {
     // Token-set ratio: split into tokens and compute overlap
-    final tokensA = a.split(RegExp(r'[_\s]+')).where((t) => t.isNotEmpty).toSet();
-    final tokensB = b.split(RegExp(r'[_\s]+')).where((t) => t.isNotEmpty).toSet();
+    final tokensA = a
+        .split(RegExp(r'[_\s]+'))
+        .where((t) => t.isNotEmpty)
+        .toSet();
+    final tokensB = b
+        .split(RegExp(r'[_\s]+'))
+        .where((t) => t.isNotEmpty)
+        .toSet();
 
     if (tokensA.isEmpty || tokensB.isEmpty) return 0.0;
 
@@ -169,7 +176,10 @@ class MeasurementNormalizer {
     final tokenScore = intersection / union;
 
     // Also compute Levenshtein on full strings
-    final levScore = 1.0 - (_levenshteinDistance(a, b) / (a.length > b.length ? a.length : b.length));
+    final levScore =
+        1.0 -
+        (_levenshteinDistance(a, b) /
+            (a.length > b.length ? a.length : b.length));
 
     // Return weighted combination
     return (tokenScore * 0.7) + (levScore * 0.3);
@@ -208,10 +218,43 @@ class MeasurementNormalizer {
 
   /// Detect measurement family from label keywords
   static String? _detectFamily(String label) {
-    final upperBodyKeywords = ['shoulder', 'neck', 'bust', 'chest', 'arm', 'sleeve', 'wrist', 'elbow', 'bicep'];
+    final upperBodyKeywords = [
+      'shoulder',
+      'neck',
+      'bust',
+      'chest',
+      'arm',
+      'sleeve',
+      'wrist',
+      'elbow',
+      'bicep',
+    ];
     final torsoKeywords = ['waist', 'stomach', 'front', 'back', 'half'];
-    final hipLegsKeywords = ['hip', 'thigh', 'knee', 'calf', 'ankle', 'trouser', 'inseam', 'rise', 'crotch', 'seat'];
-    final garmentKeywords = ['dress', 'skirt', 'wrapper', 'senator', 'kaftan', 'agbada', 'jacket', 'vest', 'shirt', 'top', 'lapel'];
+    final hipLegsKeywords = [
+      'hip',
+      'thigh',
+      'knee',
+      'calf',
+      'ankle',
+      'trouser',
+      'inseam',
+      'rise',
+      'crotch',
+      'seat',
+    ];
+    final garmentKeywords = [
+      'dress',
+      'skirt',
+      'wrapper',
+      'senator',
+      'kaftan',
+      'agbada',
+      'jacket',
+      'vest',
+      'shirt',
+      'top',
+      'lapel',
+    ];
     final corsetKeywords = ['corset', 'cup'];
 
     for (final kw in upperBodyKeywords) {

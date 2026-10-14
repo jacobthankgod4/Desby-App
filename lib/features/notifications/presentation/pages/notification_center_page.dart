@@ -4,57 +4,60 @@ import '../providers/notification_provider.dart';
 import '../../domain/entities/notification.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../theme/colors.dart';
-import '../../../../core/providers/navigation_provider.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
 
 class NotificationCenterPage extends ConsumerWidget {
   const NotificationCenterPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final notificationsAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
-        title: const Text('Notifications', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () => ref.popShell(),
-        ),
-        backgroundColor: AppColors.darkNavy,
-        elevation: 0,
+      backgroundColor: colors.scaffoldBg,
+      appBar: shellAppBar(
+        context,
+        title: 'Notifications',
         actions: [
           TextButton(
             onPressed: () async {
               final user = ref.read(currentUserProvider);
               if (user != null) {
-                await ref.read(markAllAsReadProvider(user.id));
+                await ref.read(markAllAsReadProvider(user.id).future);
                 ref.invalidate(notificationsProvider);
               }
             },
-            child: const Text('Mark all read', style: TextStyle(color: AppColors.amber, fontSize: 12)),
+            child: const Text(
+              'Mark all read',
+              style: TextStyle(color: AppColors.amber, fontSize: 12),
+            ),
           ),
         ],
       ),
       body: notificationsAsync.when(
         data: (notifications) => notifications.isEmpty
-            ? _buildEmptyState()
+            ? _buildEmptyState(context)
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: notifications.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final notification = notifications[index];
                   return _NotificationCard(notification: notification);
                 },
               ),
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-        error: (error, _) => _buildErrorState(ref),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.amber),
+        ),
+        error: (error, _) => _buildErrorState(context, ref),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -65,18 +68,33 @@ class NotificationCenterPage extends ConsumerWidget {
               color: AppColors.amber.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.notifications_none_outlined, size: 48, color: AppColors.amber.withValues(alpha: 0.5)),
+            child: Icon(
+              Icons.notifications_none_outlined,
+              size: 48,
+              color: AppColors.amber.withValues(alpha: 0.5),
+            ),
           ),
           const SizedBox(height: 20),
-          const Text('All caught up!', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w900)),
+          Text(
+            'All caught up!',
+            style: TextStyle(
+              fontSize: 18,
+              color: colors.textPrimary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('No notifications yet', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.4))),
+          Text(
+            'No notifications yet',
+            style: TextStyle(fontSize: 13, color: colors.textMuted),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(WidgetRef ref) {
+  Widget _buildErrorState(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -87,21 +105,45 @@ class NotificationCenterPage extends ConsumerWidget {
               color: Colors.redAccent.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.notifications_off_rounded, size: 48, color: Colors.redAccent),
+            child: const Icon(
+              Icons.notifications_off_rounded,
+              size: 48,
+              color: Colors.redAccent,
+            ),
           ),
           const SizedBox(height: 20),
-          const Text('NOTIFICATIONS UNAVAILABLE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
+          Text(
+            'NOTIFICATIONS UNAVAILABLE',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+              letterSpacing: 2,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Notifications will appear here once set up', style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.4))),
+          Text(
+            'Notifications will appear here once set up',
+            style: TextStyle(fontSize: 13, color: colors.textMuted),
+          ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () => ref.invalidate(notificationsProvider),
             icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text('RETRY', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+            label: const Text(
+              'RETRY',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                letterSpacing: 1,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.amber,
               foregroundColor: AppColors.darkNavy,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
           ),
@@ -118,15 +160,16 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
         color: notification.isRead
-            ? Colors.white.withValues(alpha: 0.03)
+            ? colors.surface
             : AppColors.amber.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: notification.isRead
-              ? Colors.white.withValues(alpha: 0.06)
+              ? colors.borderDefault
               : AppColors.amber.withValues(alpha: 0.2),
         ),
       ),
@@ -143,7 +186,7 @@ class _NotificationCard extends StatelessWidget {
         title: Text(
           notification.title,
           style: TextStyle(
-            color: Colors.white,
+            color: colors.textPrimary,
             fontWeight: notification.isRead ? FontWeight.w600 : FontWeight.w900,
             fontSize: 13,
           ),
@@ -154,12 +197,12 @@ class _NotificationCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               notification.body,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             ),
             const SizedBox(height: 8),
             Text(
               '${notification.timestamp.hour}:${notification.timestamp.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.3)),
+              style: TextStyle(fontSize: 11, color: colors.textMuted),
             ),
           ],
         ),
@@ -187,6 +230,8 @@ class _NotificationCard extends StatelessWidget {
         return Icons.school_outlined;
       case NotificationType.paymentReceived:
         return Icons.payments_outlined;
+      case NotificationType.clientInvite:
+        return Icons.person_add_outlined;
       case NotificationType.system:
         return Icons.settings_outlined;
     }
@@ -197,13 +242,15 @@ class _NotificationCard extends StatelessWidget {
       case NotificationType.orderUpdate:
         return Colors.blueAccent;
       case NotificationType.newMessage:
-        return const Color(0xFF00FF7F);
+        return AppColors.successGreen;
       case NotificationType.apprenticeTask:
         return AppColors.amber;
       case NotificationType.paymentReceived:
         return Colors.purpleAccent;
+      case NotificationType.clientInvite:
+        return AppColors.amber;
       case NotificationType.system:
-        return Colors.white54;
+        return AppColors.textMuted;
     }
   }
 }

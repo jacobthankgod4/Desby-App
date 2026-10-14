@@ -52,7 +52,8 @@ class MarketplaceFilter extends Equatable {
       selectedPriceRanges: selectedPriceRanges ?? this.selectedPriceRanges,
       selectedOrigins: selectedOrigins ?? this.selectedOrigins,
       selectedColors: selectedColors ?? this.selectedColors,
-      selectedCertifications: selectedCertifications ?? this.selectedCertifications,
+      selectedCertifications:
+          selectedCertifications ?? this.selectedCertifications,
       selectedFilterChips: selectedFilterChips ?? this.selectedFilterChips,
       searchQuery: searchQuery ?? this.searchQuery,
       searchType: searchType ?? this.searchType,
@@ -91,20 +92,20 @@ class MarketplaceFilter extends Equatable {
 
   @override
   List<Object?> get props => [
-        category,
-        selectedPriceRanges,
-        selectedOrigins,
-        selectedColors,
-        selectedCertifications,
-        selectedFilterChips,
-        searchQuery,
-        searchType,
-        sortBy,
-        minPrice,
-        maxPrice,
-        selectedState,
-        selectedLga,
-      ];
+    category,
+    selectedPriceRanges,
+    selectedOrigins,
+    selectedColors,
+    selectedCertifications,
+    selectedFilterChips,
+    searchQuery,
+    searchType,
+    sortBy,
+    minPrice,
+    maxPrice,
+    selectedState,
+    selectedLga,
+  ];
 }
 
 /// Price range options for filtering
@@ -113,11 +114,7 @@ class PriceRange {
   final int? minPrice;
   final int? maxPrice;
 
-  const PriceRange({
-    required this.label,
-    this.minPrice,
-    this.maxPrice,
-  });
+  const PriceRange({required this.label, this.minPrice, this.maxPrice});
 
   static const List<PriceRange> options = [
     PriceRange(label: 'Under ₦5,000', maxPrice: 5000),

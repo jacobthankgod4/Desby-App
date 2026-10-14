@@ -6,7 +6,7 @@ enum ChatMessageType {
   file,
   location,
   measurementRequest, // NEW: Elite Master Tool
-  designProposal      // NEW: Professional Proposal
+  designProposal, // NEW: Professional Proposal
 }
 
 class ChatMessage extends Equatable {
@@ -34,16 +34,16 @@ class ChatMessage extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        conversationId,
-        senderId,
-        content,
-        timestamp,
-        type,
-        isRead,
-        orderId,
-        metadata,
-      ];
+    id,
+    conversationId,
+    senderId,
+    content,
+    timestamp,
+    type,
+    isRead,
+    orderId,
+    metadata,
+  ];
 
   ChatMessage copyWith({
     String? id,

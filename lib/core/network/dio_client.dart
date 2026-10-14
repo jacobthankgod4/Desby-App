@@ -20,24 +20,20 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         // On web, allow overriding via dart-define; otherwise fall back.
-        baseUrl: _getEnv('API_BASE_URL') ?? const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000/api'),
+        baseUrl:
+            _getEnv('API_BASE_URL') ??
+            const String.fromEnvironment(
+              'API_BASE_URL',
+              defaultValue: 'http://localhost:3000/api',
+            ),
         connectTimeout: Duration(
-          seconds: int.tryParse(
-                _getEnv('API_TIMEOUT_SECONDS') ?? '30',
-              ) ??
-              30,
+          seconds: int.tryParse(_getEnv('API_TIMEOUT_SECONDS') ?? '30') ?? 30,
         ),
         receiveTimeout: Duration(
-          seconds: int.tryParse(
-                _getEnv('API_TIMEOUT_SECONDS') ?? '30',
-              ) ??
-              30,
+          seconds: int.tryParse(_getEnv('API_TIMEOUT_SECONDS') ?? '30') ?? 30,
         ),
         sendTimeout: Duration(
-          seconds: int.tryParse(
-                _getEnv('API_TIMEOUT_SECONDS') ?? '30',
-              ) ??
-              30,
+          seconds: int.tryParse(_getEnv('API_TIMEOUT_SECONDS') ?? '30') ?? 30,
         ),
         contentType: 'application/json',
         responseType: ResponseType.json,

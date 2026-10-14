@@ -18,13 +18,14 @@ class FabricVariantModel with _$FabricVariantModel {
   factory FabricVariantModel.fromJson(Map<String, dynamic> json) =>
       _$FabricVariantModelFromJson(json);
 
-  factory FabricVariantModel.fromEntity(FabricVariant entity) => FabricVariantModel(
-    id: entity.id,
-    colorName: entity.colorName,
-    colorCode: entity.colorCode,
-    stockQuantity: entity.stockQuantity,
-    imageUrl: entity.imageUrl,
-  );
+  factory FabricVariantModel.fromEntity(FabricVariant entity) =>
+      FabricVariantModel(
+        id: entity.id,
+        colorName: entity.colorName,
+        colorCode: entity.colorCode,
+        stockQuantity: entity.stockQuantity,
+        imageUrl: entity.imageUrl,
+      );
 }
 
 extension FabricVariantModelX on FabricVariantModel {
@@ -49,19 +50,17 @@ class WholesaleTierModel with _$WholesaleTierModel {
   factory WholesaleTierModel.fromJson(Map<String, dynamic> json) =>
       _$WholesaleTierModelFromJson(json);
 
-  factory WholesaleTierModel.fromEntity(WholesaleTier entity) => WholesaleTierModel(
-    id: entity.id,
-    minQuantity: entity.minQuantity,
-    unitPrice: entity.unitPrice,
-  );
+  factory WholesaleTierModel.fromEntity(WholesaleTier entity) =>
+      WholesaleTierModel(
+        id: entity.id,
+        minQuantity: entity.minQuantity,
+        unitPrice: entity.unitPrice,
+      );
 }
 
 extension WholesaleTierModelX on WholesaleTierModel {
-  WholesaleTier toEntity() => WholesaleTier(
-    id: id,
-    minQuantity: minQuantity,
-    unitPrice: unitPrice,
-  );
+  WholesaleTier toEntity() =>
+      WholesaleTier(id: id, minQuantity: minQuantity, unitPrice: unitPrice);
 }
 
 @freezed
@@ -101,8 +100,12 @@ class FabricModel with _$FabricModel {
     weight: fabric.weight,
     origin: fabric.origin,
     availableColors: fabric.availableColors,
-    variants: fabric.variants.map((v) => FabricVariantModel.fromEntity(v)).toList(),
-    wholesaleTiers: fabric.wholesaleTiers.map((t) => WholesaleTierModel.fromEntity(t)).toList(),
+    variants: fabric.variants
+        .map((v) => FabricVariantModel.fromEntity(v))
+        .toList(),
+    wholesaleTiers: fabric.wholesaleTiers
+        .map((t) => WholesaleTierModel.fromEntity(t))
+        .toList(),
     isVisible: fabric.isVisible,
     createdAt: fabric.createdAt,
     updatedAt: fabric.updatedAt,

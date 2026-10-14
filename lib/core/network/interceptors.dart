@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-
+import '../../config/environment.dart';
 import '../error/exceptions.dart';
 import '../logging/logger.dart';
 import '../storage/secure_storage.dart';
@@ -62,14 +62,26 @@ class AuthInterceptor extends Interceptor {
         if (refreshToken != null) {
           final dio = Dio();
           final response = await dio.post(
-            'https://api.supabase.com/v1/auth/token',
-            data: {'grant_type': 'refresh_token', 'refresh_token': refreshToken},
-            options: Options(headers: {'Content-Type': 'application/json'}),
+            '${Environment.current.supabaseUrl}/auth/v1/token',
+            data: {
+              'grant_type': 'refresh_token',
+              'refresh_token': refreshToken,
+            },
+            options: Options(
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': Environment.current.supabaseAnonKey,
+              },
+            ),
           );
           if (response.statusCode == 200) {
             final data = response.data;
-            await secureStorage.saveAccessToken(data['access_token'] as String);
-            await secureStorage.saveRefreshToken(data['refresh_token'] as String);
+            await secureStorage.saveAccessToken(
+              (data['access_token'] as String?) ?? '',
+            );
+            await secureStorage.saveRefreshToken(
+              (data['refresh_token'] as String?) ?? '',
+            );
             logger.info('Token refreshed successfully via AuthInterceptor');
             _isRefreshing = false;
             handler.resolve(err.response!);
@@ -104,13 +116,12 @@ class ErrorInterceptor extends Interceptor {
     return switch (dioException.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.receiveTimeout ||
-      DioExceptionType.sendTimeout =>
-        TimeoutException(
-          message: 'Request timeout. Please try again.',
-          code: 'TIMEOUT_ERROR',
-          originalException: dioException,
-          stackTrace: dioException.stackTrace,
-        ),
+      DioExceptionType.sendTimeout => TimeoutException(
+        message: 'Request timeout. Please try again.',
+        code: 'TIMEOUT_ERROR',
+        originalException: dioException,
+        stackTrace: dioException.stackTrace,
+      ),
       DioExceptionType.badResponse => _mapServerError(dioException),
       DioExceptionType.connectionError => NetworkException(
         message: 'No internet connection. Please check your network.',
@@ -225,7 +236,9 @@ class RetryInterceptor extends Interceptor {
       _retryCount[key] = retryCount + 1;
 
       final delay = _calculateDelay(retryCount);
-      logger.info('Retrying request (attempt ${retryCount + 1}/$_maxRetries) after ${delay.inMilliseconds}ms');
+      logger.info(
+        'Retrying request (attempt ${retryCount + 1}/$_maxRetries) after ${delay.inMilliseconds}ms',
+      );
 
       Future.delayed(delay, () async {
         final response = await _retry(err.requestOptions);
@@ -254,8 +267,7 @@ class RetryInterceptor extends Interceptor {
     }
 
     // Retry on 5xx server errors
-    if (err.response?.statusCode != null &&
-        err.response!.statusCode! >= 500) {
+    if (err.response?.statusCode != null && err.response!.statusCode! >= 500) {
       return true;
     }
 

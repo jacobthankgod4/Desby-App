@@ -1,4 +1,4 @@
-/// Validation utilities for form inputs
+// Validation utilities for form inputs
 
 /// Email validation regex
 /// Matches standard email formats like: user@domain.com
@@ -12,42 +12,59 @@ String? validateEmail(String? value) {
   if (value == null || value.trim().isEmpty) {
     return 'Email is required';
   }
-  
+
   final trimmed = value.trim();
-  
+
   if (!emailRegex.hasMatch(trimmed)) {
     return 'Please enter a valid email address';
   }
-  
+
   if (trimmed.length > 254) {
     return 'Email is too long';
   }
-  
+
   return null;
 }
 
 /// Validates a password
 /// Returns null if valid, or error message if invalid
+/// Requires: lowercase, uppercase, digit, and symbol (matches Supabase config)
 String? validatePassword(String? value) {
   if (value == null || value.isEmpty) {
     return 'Password is required';
   }
-  
+
   if (value.length < 8) {
     return 'Password must be at least 8 characters';
   }
-  
+
+  if (!value.contains(RegExp(r'[a-z]'))) {
+    return 'Password must contain a lowercase letter';
+  }
+
+  if (!value.contains(RegExp(r'[A-Z]'))) {
+    return 'Password must contain an uppercase letter';
+  }
+
+  if (!value.contains(RegExp(r'[0-9]'))) {
+    return 'Password must contain a digit';
+  }
+
+  if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_\-]'))) {
+    return 'Password must contain a symbol';
+  }
+
   return null;
 }
 
 /// Password strength levels
 enum PasswordStrength {
   empty,
-  weak,        // Less than 8 characters
-  fair,        // 8+ characters
-  good,        // 8+ with uppercase or number
-  strong,      // 8+ with uppercase AND number
-  excellent,   // 8+ with uppercase, number, and special char
+  weak, // Less than 8 characters or missing categories
+  fair, // 8+ with 1 category
+  good, // 8+ with 2 categories
+  strong, // 8+ with 3 categories
+  excellent, // 8+ with all 4 categories (lowercase, uppercase, digit, symbol)
 }
 
 /// Analyzes password strength
@@ -56,23 +73,23 @@ PasswordStrength analyzePasswordStrength(String password) {
   if (password.isEmpty) {
     return PasswordStrength.empty;
   }
-  
+
   if (password.length < 8) {
     return PasswordStrength.weak;
   }
-  
+
   bool hasUppercase = password.contains(RegExp(r'[A-Z]'));
   bool hasLowercase = password.contains(RegExp(r'[a-z]'));
   bool hasNumber = password.contains(RegExp(r'[0-9]'));
-  bool hasSpecial = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_-]'));
-  
+  bool hasSpecial = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_\-]'));
+
   int score = 0;
   if (hasUppercase) score++;
   if (hasLowercase) score++;
   if (hasNumber) score++;
   if (hasSpecial) score++;
-  
-  if (score >= 3 && hasSpecial) {
+
+  if (score >= 4) {
     return PasswordStrength.excellent;
   } else if (score >= 3) {
     return PasswordStrength.strong;
@@ -91,13 +108,13 @@ String getPasswordStrengthMessage(PasswordStrength strength) {
     case PasswordStrength.weak:
       return 'Too short (minimum 8 characters)';
     case PasswordStrength.fair:
-      return 'Fair - add more complexity';
+      return 'Needs uppercase, lowercase, digit, and symbol';
     case PasswordStrength.good:
-      return 'Good password';
+      return 'Add more character types';
     case PasswordStrength.strong:
-      return 'Strong password';
+      return 'Almost there — one more type needed';
     case PasswordStrength.excellent:
-      return 'Excellent password';
+      return 'Strong password';
   }
 }
 
@@ -126,11 +143,11 @@ String? validateConfirmPassword(String? password, String? confirmPassword) {
   if (confirmPassword == null || confirmPassword.isEmpty) {
     return 'Please confirm your password';
   }
-  
+
   if (password != confirmPassword) {
     return 'Passwords do not match';
   }
-  
+
   return null;
 }
 
@@ -140,14 +157,14 @@ String? validatePhone(String? value) {
   if (value == null || value.trim().isEmpty) {
     return 'Phone number is required';
   }
-  
+
   final cleaned = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-  
+
   // Nigerian phone: starts with 0 (10 digits) or +234 (11 digits after country code)
   if (!RegExp(r'^(\+234|0)[789]\d{9}$').hasMatch(cleaned)) {
     return 'Please enter a valid Nigerian phone number';
   }
-  
+
   return null;
 }
 
@@ -162,14 +179,18 @@ String? validateRequired(String? value, [String fieldName = 'This field']) {
 
 /// Validates minimum length
 /// Returns null if valid, or error message if too short
-String? validateMinLength(String? value, int minLength, [String fieldName = 'This field']) {
+String? validateMinLength(
+  String? value,
+  int minLength, [
+  String fieldName = 'This field',
+]) {
   if (value == null || value.isEmpty) {
     return null; // Let required() handle empty
   }
-  
+
   if (value.length < minLength) {
     return '$fieldName must be at least $minLength characters';
   }
-  
+
   return null;
 }

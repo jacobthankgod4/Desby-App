@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:desby_app/theme/colors.dart';
 
 import '../../../orders/presentation/providers/order_provider.dart';
 import '../../../orders/domain/entities/order.dart';
 import '../../../../core/widgets/error_state_widget.dart';
-import '../../../../theme/colors.dart';
 
 /// Client Portfolio (shell-safe)
 ///
@@ -15,6 +15,7 @@ class ClientPortfolioPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final ordersAsync = ref.watch(ordersProvider(null));
 
     return SingleChildScrollView(
@@ -32,9 +33,13 @@ class ClientPortfolioPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-Text(
+          Text(
             'A collection of your project highlights and visuals.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 28),
           ordersAsync.when(
@@ -59,7 +64,9 @@ Text(
                 itemCount: active.length,
                 itemBuilder: (context, index) {
                   final order = active[index];
-                  final garmentType = order.items.isNotEmpty ? order.items.first.garmentType : 'Garment';
+                  final garmentType = order.items.isNotEmpty
+                      ? order.items.first.garmentType
+                      : 'Garment';
                   final imageUrl = order.materialAssetUrl;
 
                   return _PortfolioCard(
@@ -70,8 +77,11 @@ Text(
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-            error: (err, _) => const ErrorStateWidget(message: 'Failed to load portfolio.'),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.amber),
+            ),
+            error: (err, _) =>
+                const ErrorStateWidget(message: 'Failed to load portfolio.'),
           ),
         ],
       ),
@@ -84,12 +94,18 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 40),
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: Text(
           'PORTFOLIO EMPTY',
-          style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2),
+          style: TextStyle(
+            color: colors.divider,
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+            letterSpacing: 2,
+          ),
         ),
       ),
     );
@@ -109,10 +125,11 @@ class _PortfolioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: Colors.black26,
+        color: colors.overlayLight,
         image: imageUrl != null
             ? DecorationImage(image: NetworkImage(imageUrl!), fit: BoxFit.cover)
             : null,
@@ -124,7 +141,7 @@ class _PortfolioCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+            colors: [Colors.transparent, context.colors.scaffoldBg],
           ),
         ),
         child: Column(
@@ -133,7 +150,12 @@ class _PortfolioCard extends StatelessWidget {
           children: [
             Text(
               '${garmentType.toUpperCase()} ARCHITECTURE',
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1),
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
             const SizedBox(height: 10),
             Container(
@@ -141,11 +163,18 @@ class _PortfolioCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.amber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AppColors.amber.withValues(alpha: 0.2),
+                ),
               ),
               child: Text(
                 status.toUpperCase(),
-                style: const TextStyle(color: AppColors.amber, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+                style: const TextStyle(
+                  color: AppColors.amber,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ],
@@ -154,4 +183,3 @@ class _PortfolioCard extends StatelessWidget {
     );
   }
 }
-

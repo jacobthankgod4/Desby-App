@@ -43,16 +43,16 @@ class ApprenticeTaskModel with _$ApprenticeTaskModel {
 
 extension ApprenticeTaskModelX on ApprenticeTaskModel {
   ApprenticeTask toEntity() => ApprenticeTask(
-        id: id,
-        apprenticeshipId: apprenticeshipId,
-        title: title,
-        description: description,
-        status: ApprenticeTaskStatus.values.byName(status),
-        dueDate: dueDate,
-        completedAt: completedAt,
-        feedback: feedback,
-        score: score,
-        proofImageUrls: proofImageUrls,
-        submissionNotes: submissionNotes,
-      );
+    id: id,
+    apprenticeshipId: apprenticeshipId,
+    title: title,
+    description: description,
+    status: ApprenticeTaskStatus.values.byName(status),
+    dueDate: dueDate,
+    completedAt: completedAt,
+    feedback: feedback,
+    score: score,
+    proofImageUrls: proofImageUrls,
+    submissionNotes: submissionNotes,
+  );
 }

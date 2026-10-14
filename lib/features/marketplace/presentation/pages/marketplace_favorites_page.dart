@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
 
 class MarketplaceFavoritesPage extends ConsumerWidget {
   const MarketplaceFavoritesPage({super.key});
@@ -9,14 +10,18 @@ class MarketplaceFavoritesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    if (user == null) return const Scaffold(body: Center(child: Text('Please login')));
+    if (user == null)
+      return const Scaffold(body: Center(child: Text('Please login')));
 
     final supabase = Supabase.instance.client;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Your Favorites')),
+      appBar: shellAppBar(context, title: 'Your Favorites'),
       body: StreamBuilder(
-        stream: supabase.from('favorites').stream(primaryKey: ['id']).eq('user_id', user.id),
+        stream: supabase
+            .from('favorites')
+            .stream(primaryKey: ['id'])
+            .eq('user_id', user.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -29,9 +34,7 @@ class MarketplaceFavoritesPage extends ConsumerWidget {
             itemCount: favorites.length,
             itemBuilder: (context, index) {
               final fav = favorites[index];
-              return ListTile(
-                title: Text('Fabric ID: ${fav['fabric_id']}'),
-              );
+              return ListTile(title: Text('Fabric ID: ${fav['fabric_id']}'));
             },
           );
         },

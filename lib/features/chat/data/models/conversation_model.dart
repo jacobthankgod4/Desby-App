@@ -17,16 +17,21 @@ class ConversationModel with _$ConversationModel {
     Map<String, dynamic>? metadata,
   }) = _ConversationModel;
 
-  factory ConversationModel.fromJson(Map<String, dynamic> json) =>
-      _$ConversationModelFromJson(json);
+  factory ConversationModel.fromJson(Map<String, dynamic> json) {
+    final data = Map<String, dynamic>.from(json);
+    if (data['last_message'] is Map && (data['last_message'] as Map).isEmpty) {
+      data['last_message'] = null;
+    }
+    return _$$ConversationModelImplFromJson(data);
+  }
 
   factory ConversationModel.fromEntity(Conversation entity) {
     return ConversationModel(
       id: entity.id,
       participantIds: entity.participantIds,
-      lastMessage: entity.lastMessage != null 
-        ? ChatMessageModel.fromEntity(entity.lastMessage!) 
-        : null,
+      lastMessage: entity.lastMessage != null
+          ? ChatMessageModel.fromEntity(entity.lastMessage!)
+          : null,
       unreadCount: entity.unreadCount,
       orderId: entity.orderId,
       metadata: entity.metadata,
@@ -36,11 +41,11 @@ class ConversationModel with _$ConversationModel {
 
 extension ConversationModelX on ConversationModel {
   Conversation toEntity() => Conversation(
-        id: id,
-        participantIds: participantIds,
-        lastMessage: lastMessage?.toEntity(),
-        unreadCount: unreadCount,
-        orderId: orderId,
-        metadata: metadata,
-      );
+    id: id,
+    participantIds: participantIds,
+    lastMessage: lastMessage?.toEntity(),
+    unreadCount: unreadCount,
+    orderId: orderId,
+    metadata: metadata,
+  );
 }

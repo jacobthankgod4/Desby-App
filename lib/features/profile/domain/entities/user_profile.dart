@@ -37,7 +37,8 @@ class BusinessHours extends Equatable {
   /// Check if is open on a given day
   bool get isMondayOpen => mondayOpen != null && mondayOpen!.isNotEmpty;
   bool get isTuesdayOpen => tuesdayOpen != null && tuesdayOpen!.isNotEmpty;
-  bool get isWednesdayOpen => wednesdayOpen != null && wednesdayOpen!.isNotEmpty;
+  bool get isWednesdayOpen =>
+      wednesdayOpen != null && wednesdayOpen!.isNotEmpty;
   bool get isThursdayOpen => thursdayOpen != null && thursdayOpen!.isNotEmpty;
   bool get isFridayOpen => fridayOpen != null && fridayOpen!.isNotEmpty;
   bool get isSaturdayOpen => saturdayOpen != null && saturdayOpen!.isNotEmpty;
@@ -70,14 +71,18 @@ class BusinessHours extends Equatable {
       mondayClose: (json['monday_close'] ?? json['mondayClose']) as String?,
       tuesdayOpen: (json['tuesday_open'] ?? json['tuesdayOpen']) as String?,
       tuesdayClose: (json['tuesday_close'] ?? json['tuesdayClose']) as String?,
-      wednesdayOpen: (json['wednesday_open'] ?? json['wednesdayOpen']) as String?,
-      wednesdayClose: (json['wednesday_close'] ?? json['wednesdayClose']) as String?,
+      wednesdayOpen:
+          (json['wednesday_open'] ?? json['wednesdayOpen']) as String?,
+      wednesdayClose:
+          (json['wednesday_close'] ?? json['wednesdayClose']) as String?,
       thursdayOpen: (json['thursday_open'] ?? json['thursdayOpen']) as String?,
-      thursdayClose: (json['thursday_close'] ?? json['thursdayClose']) as String?,
+      thursdayClose:
+          (json['thursday_close'] ?? json['thursdayClose']) as String?,
       fridayOpen: (json['friday_open'] ?? json['fridayOpen']) as String?,
       fridayClose: (json['friday_close'] ?? json['fridayClose']) as String?,
       saturdayOpen: (json['saturday_open'] ?? json['saturdayOpen']) as String?,
-      saturdayClose: (json['saturday_close'] ?? json['saturdayClose']) as String?,
+      saturdayClose:
+          (json['saturday_close'] ?? json['saturdayClose']) as String?,
       sundayOpen: (json['sunday_open'] ?? json['sundayOpen']) as String?,
       sundayClose: (json['sunday_close'] ?? json['sundayClose']) as String?,
     );
@@ -107,6 +112,7 @@ class UserProfile extends Equatable {
   final String id;
   final String email;
   final String name;
+  final String? gender;
   final String? phone;
   final String? profileImage;
   final String userType; // 'client', 'tailor', 'apprentice', 'fabric_seller'
@@ -126,7 +132,8 @@ class UserProfile extends Equatable {
   final String? businessName;
   final String? businessAddress;
   final String? businessPhone;
-  final String? businessState; // Business location state (separate from personal state)
+  final String?
+  businessState; // Business location state (separate from personal state)
   final double? latitude;
   final double? longitude;
   final bool isVerified;
@@ -155,6 +162,9 @@ class UserProfile extends Equatable {
   final String? subscriptionPlanId;
   final DateTime? subscriptionExpiry;
 
+  // AI credits (free users get 5, premium get unlimited = -1)
+  final int aiCredits;
+
   // discovery UI fields
   final String? preferredFinderStyle; // 'uber' or 'classic'
   final int? distanceMinutes;
@@ -164,10 +174,16 @@ class UserProfile extends Equatable {
   final String? verifiedByTailorId;
   final String? fitPreference; // e.g. 'slim', 'standard', 'traditional'
 
+  // Bank details for payouts (tailors & fabric sellers)
+  final String? bankAccountNumber;
+  final String? bankCode;
+  final String? bankName;
+
   const UserProfile({
     required this.id,
     required this.email,
     required this.name,
+    this.gender,
     this.phone,
     this.profileImage,
     required this.userType,
@@ -203,11 +219,15 @@ class UserProfile extends Equatable {
     this.hasPricing = false,
     this.subscriptionPlanId,
     this.subscriptionExpiry,
+    this.aiCredits = 5,
     this.preferredFinderStyle,
     this.distanceMinutes,
     this.isMeasurementsVerified = false,
     this.verifiedByTailorId,
     this.fitPreference,
+    this.bankAccountNumber,
+    this.bankCode,
+    this.bankName,
   });
 
   /// Create a copy with updated fields
@@ -215,6 +235,7 @@ class UserProfile extends Equatable {
     String? id,
     String? email,
     String? name,
+    String? gender,
     String? phone,
     String? profileImage,
     String? userType,
@@ -250,16 +271,21 @@ class UserProfile extends Equatable {
     bool? hasPricing,
     String? subscriptionPlanId,
     DateTime? subscriptionExpiry,
+    int? aiCredits,
     String? preferredFinderStyle,
     int? distanceMinutes,
     bool? isMeasurementsVerified,
     String? verifiedByTailorId,
     String? fitPreference,
+    String? bankAccountNumber,
+    String? bankCode,
+    String? bankName,
   }) {
     return UserProfile(
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
+      gender: gender ?? this.gender,
       phone: phone ?? this.phone,
       profileImage: profileImage ?? this.profileImage,
       userType: userType ?? this.userType,
@@ -295,11 +321,16 @@ class UserProfile extends Equatable {
       hasPricing: hasPricing ?? this.hasPricing,
       subscriptionPlanId: subscriptionPlanId ?? this.subscriptionPlanId,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
+      aiCredits: aiCredits ?? this.aiCredits,
       preferredFinderStyle: preferredFinderStyle ?? this.preferredFinderStyle,
       distanceMinutes: distanceMinutes ?? this.distanceMinutes,
-      isMeasurementsVerified: isMeasurementsVerified ?? this.isMeasurementsVerified,
+      isMeasurementsVerified:
+          isMeasurementsVerified ?? this.isMeasurementsVerified,
       verifiedByTailorId: verifiedByTailorId ?? this.verifiedByTailorId,
       fitPreference: fitPreference ?? this.fitPreference,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+      bankCode: bankCode ?? this.bankCode,
+      bankName: bankName ?? this.bankName,
     );
   }
 
@@ -309,6 +340,7 @@ class UserProfile extends Equatable {
       'id': id,
       'email': email,
       'name': name,
+      'gender': gender,
       'phone': phone,
       'profile_image': profileImage,
       'user_type': userType,
@@ -344,11 +376,15 @@ class UserProfile extends Equatable {
       'has_pricing': hasPricing,
       'subscription_plan_id': subscriptionPlanId,
       'subscription_expiry': subscriptionExpiry?.toIso8601String(),
+      'ai_credits': aiCredits,
       'preferred_finder_style': preferredFinderStyle,
       'distance_minutes': distanceMinutes,
       'is_measurements_verified': isMeasurementsVerified,
       'verified_by_tailor_id': verifiedByTailorId,
       'fit_preference': fitPreference,
+      'bank_account_number': bankAccountNumber,
+      'bank_code': bankCode,
+      'bank_name': bankName,
     };
   }
 
@@ -358,12 +394,18 @@ class UserProfile extends Equatable {
       id: json['id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       name: json['name'] as String? ?? '',
+      gender: json['gender'] as String?,
       phone: json['phone'] as String?,
       profileImage: (json['profile_image'] ?? json['profileImage']) as String?,
       userType: (json['user_type'] ?? json['userType'] ?? 'tailor') as String,
-      createdAt: DateTime.parse((json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()) as String),
-      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null 
-          ? DateTime.parse((json['updated_at'] ?? json['updatedAt']) as String) 
+      createdAt: DateTime.parse(
+        (json['created_at'] ??
+                json['createdAt'] ??
+                DateTime.now().toIso8601String())
+            as String,
+      ),
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null
+          ? DateTime.parse((json['updated_at'] ?? json['updatedAt']) as String)
           : null,
       isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
       metadata: json['metadata'] as Map<String, dynamic>?,
@@ -373,52 +415,133 @@ class UserProfile extends Equatable {
       country: json['country'] as String?,
       lga: json['lga'] as String?,
       businessName: (json['business_name'] ?? json['businessName']) as String?,
-      businessAddress: (json['business_address'] ?? json['businessAddress']) as String?,
-      businessPhone: (json['business_phone'] ?? json['businessPhone']) as String?,
-      businessState: (json['business_state'] ?? json['businessState']) as String?,
+      businessAddress:
+          (json['business_address'] ?? json['businessAddress']) as String?,
+      businessPhone:
+          (json['business_phone'] ?? json['businessPhone']) as String?,
+      businessState:
+          (json['business_state'] ?? json['businessState']) as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       isVerified: (json['is_verified'] ?? json['isVerified']) as bool? ?? false,
       services: (json['services'] as List?)?.cast<String>(),
-      availableFabrics: (json['available_fabrics'] ?? json['availableFabrics'] as List?)?.cast<String>(),
+      availableFabrics:
+          (json['available_fabrics'] ?? json['availableFabrics'] as List?)
+              ?.cast<String>(),
       workingHours: (json['working_hours'] ?? json['workingHours']) as String?,
-      workingHoursByDay: (json['working_hours_by_day'] ?? json['workingHoursByDay']) != null 
-          ? BusinessHours.fromJson((json['working_hours_by_day'] ?? json['workingHoursByDay']) as Map<String, dynamic>) 
+      workingHoursByDay:
+          (json['working_hours_by_day'] ?? json['workingHoursByDay']) != null
+          ? BusinessHours.fromJson(
+              (json['working_hours_by_day'] ?? json['workingHoursByDay'])
+                  as Map<String, dynamic>,
+            )
           : null,
       bodyType: (json['body_type'] ?? json['bodyType']) as String?,
-      measurementUnit: (json['measurement_unit'] ?? json['measurementUnit']) as String?,
-      personalMeasurements: (json['personal_measurements'] ?? json['personalMeasurements']) as Map<String, dynamic>?,
-      preferredOccasions: (json['preferred_occasions'] ?? json['preferredOccasions'] as List?)?.cast<String>(),
-      preferredFabrics: (json['preferred_fabrics'] ?? json['preferredFabrics'] as List?)?.cast<String>(),
-      loyaltyPoints: (json['loyalty_points'] ?? json['loyaltyPoints']) as int? ?? 0,
-      baseStitchingPrice: (json['base_stitching_price'] ?? json['baseStitchingPrice'] as num?)?.toDouble(),
-      materialCost: (json['material_cost'] ?? json['materialCost'] as num?)?.toDouble(),
-      startingPrice: (json['starting_price'] ?? json['startingPrice'] as num?)?.toDouble(),
+      measurementUnit:
+          (json['measurement_unit'] ?? json['measurementUnit']) as String?,
+      personalMeasurements:
+          (json['personal_measurements'] ?? json['personalMeasurements'])
+              as Map<String, dynamic>?,
+      preferredOccasions:
+          (json['preferred_occasions'] ?? json['preferredOccasions'] as List?)
+              ?.cast<String>(),
+      preferredFabrics:
+          (json['preferred_fabrics'] ?? json['preferredFabrics'] as List?)
+              ?.cast<String>(),
+      loyaltyPoints:
+          (json['loyalty_points'] ?? json['loyaltyPoints']) as int? ?? 0,
+      baseStitchingPrice:
+          (json['base_stitching_price'] ?? json['baseStitchingPrice'] as num?)
+              ?.toDouble(),
+      materialCost: (json['material_cost'] ?? json['materialCost'] as num?)
+          ?.toDouble(),
+      startingPrice: (json['starting_price'] ?? json['startingPrice'] as num?)
+          ?.toDouble(),
       hasPricing: (json['has_pricing'] ?? json['hasPricing']) as bool? ?? false,
-      subscriptionPlanId: (json['subscription_plan_id'] ?? json['subscriptionPlanId']) as String?,
-      subscriptionExpiry: (json['subscription_expiry'] ?? json['subscriptionExpiry']) != null 
-          ? DateTime.parse((json['subscription_expiry'] ?? json['subscriptionExpiry']) as String) 
+      subscriptionPlanId:
+          (json['subscription_plan_id'] ?? json['subscriptionPlanId'])
+              as String?,
+      subscriptionExpiry:
+          (json['subscription_expiry'] ?? json['subscriptionExpiry']) != null
+          ? DateTime.parse(
+              (json['subscription_expiry'] ?? json['subscriptionExpiry'])
+                  as String,
+            )
           : null,
-      preferredFinderStyle: (json['preferred_finder_style'] ?? json['preferredFinderStyle']) as String?,
-      distanceMinutes: (json['distance_minutes'] ?? json['distanceMinutes']) as int?,
-      isMeasurementsVerified: (json['is_measurements_verified'] ?? json['isMeasurementsVerified']) as bool? ?? false,
-      verifiedByTailorId: (json['verified_by_tailor_id'] ?? json['verifiedByTailorId']) as String?,
-      fitPreference: (json['fit_preference'] ?? json['fitPreference']) as String?,
+      aiCredits: (json['ai_credits'] ?? json['aiCredits']) as int? ?? 5,
+      preferredFinderStyle:
+          (json['preferred_finder_style'] ?? json['preferredFinderStyle'])
+              as String?,
+      distanceMinutes:
+          (json['distance_minutes'] ?? json['distanceMinutes']) as int?,
+      isMeasurementsVerified:
+          (json['is_measurements_verified'] ?? json['isMeasurementsVerified'])
+              as bool? ??
+          false,
+      verifiedByTailorId:
+          (json['verified_by_tailor_id'] ?? json['verifiedByTailorId'])
+              as String?,
+      fitPreference:
+          (json['fit_preference'] ?? json['fitPreference']) as String?,
+      bankAccountNumber:
+          (json['bank_account_number'] ?? json['bankAccountNumber']) as String?,
+      bankCode:
+          (json['bank_code'] ?? json['bankCode']) as String?,
+      bankName:
+          (json['bank_name'] ?? json['bankName']) as String?,
     );
   }
 
   @override
   List<Object?> get props => [
-    id, email, name, phone, profileImage, userType, createdAt, updatedAt, 
-    isActive, metadata, bio, address, state, country, lga,
-    businessName, businessAddress, businessPhone, businessState,
-    latitude, longitude, isVerified, services, availableFabrics,
-    workingHours, workingHoursByDay, bodyType,
-    measurementUnit, personalMeasurements, preferredOccasions, 
-    preferredFabrics, loyaltyPoints, baseStitchingPrice, materialCost,
-    startingPrice, hasPricing, subscriptionPlanId, subscriptionExpiry,
-    preferredFinderStyle, distanceMinutes,
-    isMeasurementsVerified, verifiedByTailorId, fitPreference,
+    id,
+    email,
+    name,
+    gender,
+    phone,
+    profileImage,
+    userType,
+    createdAt,
+    updatedAt,
+    isActive,
+    metadata,
+    bio,
+    address,
+    state,
+    country,
+    lga,
+    businessName,
+    businessAddress,
+    businessPhone,
+    businessState,
+    latitude,
+    longitude,
+    isVerified,
+    services,
+    availableFabrics,
+    workingHours,
+    workingHoursByDay,
+    bodyType,
+    measurementUnit,
+    personalMeasurements,
+    preferredOccasions,
+    preferredFabrics,
+    loyaltyPoints,
+    baseStitchingPrice,
+    materialCost,
+    startingPrice,
+    hasPricing,
+    subscriptionPlanId,
+    subscriptionExpiry,
+    aiCredits,
+    preferredFinderStyle,
+    distanceMinutes,
+    isMeasurementsVerified,
+    verifiedByTailorId,
+    fitPreference,
+    bankAccountNumber,
+    bankCode,
+    bankName,
   ];
 }
 
@@ -432,6 +555,7 @@ class UserProfileDetails extends UserProfile {
     required super.id,
     required super.email,
     required super.name,
+    super.gender,
     super.phone,
     super.profileImage,
     required super.userType,
@@ -467,11 +591,15 @@ class UserProfileDetails extends UserProfile {
     super.hasPricing,
     super.subscriptionPlanId,
     super.subscriptionExpiry,
+    super.aiCredits,
     super.preferredFinderStyle,
     super.distanceMinutes,
     super.isMeasurementsVerified,
     super.verifiedByTailorId,
     super.fitPreference,
+    super.bankAccountNumber,
+    super.bankCode,
+    super.bankName,
     this.rating,
     this.totalJobs,
     this.completedJobs,
@@ -482,6 +610,7 @@ class UserProfileDetails extends UserProfile {
     String? id,
     String? email,
     String? name,
+    String? gender,
     String? phone,
     String? profileImage,
     String? userType,
@@ -517,11 +646,15 @@ class UserProfileDetails extends UserProfile {
     bool? hasPricing,
     String? subscriptionPlanId,
     DateTime? subscriptionExpiry,
+    int? aiCredits,
     String? preferredFinderStyle,
     int? distanceMinutes,
     bool? isMeasurementsVerified,
     String? verifiedByTailorId,
     String? fitPreference,
+    String? bankAccountNumber,
+    String? bankCode,
+    String? bankName,
     double? rating,
     int? totalJobs,
     int? completedJobs,
@@ -530,6 +663,7 @@ class UserProfileDetails extends UserProfile {
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
+      gender: gender ?? this.gender,
       phone: phone ?? this.phone,
       profileImage: profileImage ?? this.profileImage,
       userType: userType ?? this.userType,
@@ -565,11 +699,16 @@ class UserProfileDetails extends UserProfile {
       hasPricing: hasPricing ?? this.hasPricing,
       subscriptionPlanId: subscriptionPlanId ?? this.subscriptionPlanId,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
+      aiCredits: aiCredits ?? this.aiCredits,
       preferredFinderStyle: preferredFinderStyle ?? this.preferredFinderStyle,
       distanceMinutes: distanceMinutes ?? this.distanceMinutes,
-      isMeasurementsVerified: isMeasurementsVerified ?? this.isMeasurementsVerified,
+      isMeasurementsVerified:
+          isMeasurementsVerified ?? this.isMeasurementsVerified,
       verifiedByTailorId: verifiedByTailorId ?? this.verifiedByTailorId,
       fitPreference: fitPreference ?? this.fitPreference,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+      bankCode: bankCode ?? this.bankCode,
+      bankName: bankName ?? this.bankName,
       rating: rating ?? this.rating,
       totalJobs: totalJobs ?? this.totalJobs,
       completedJobs: completedJobs ?? this.completedJobs,
@@ -592,6 +731,7 @@ class UserProfileDetails extends UserProfile {
       id: base.id,
       email: base.email,
       name: base.name,
+      gender: base.gender,
       phone: base.phone,
       profileImage: base.profileImage,
       userType: base.userType,
@@ -639,10 +779,5 @@ class UserProfileDetails extends UserProfile {
   }
 
   @override
-  List<Object?> get props => [
-    ...super.props,
-    rating,
-    totalJobs,
-    completedJobs,
-  ];
+  List<Object?> get props => [...super.props, rating, totalJobs, completedJobs];
 }

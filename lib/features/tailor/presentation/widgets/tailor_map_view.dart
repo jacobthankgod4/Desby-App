@@ -3,10 +3,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../presentation/providers/tailor_finder_provider.dart';
 import '../../../../theme/colors.dart';
-import '../../../../core/widgets/tailor_finder_responsive.dart';
 
 /// Tailor Map View Widget
-/// Uses OpenStreetMap with CartoDB Dark Matter tiles
+/// Uses keyless OpenStreetMap tiles
 /// Mobile-optimized with performance improvements
 class TailorMapView extends StatefulWidget {
   final List<TailorMarker> tailors;
@@ -15,6 +14,7 @@ class TailorMapView extends StatefulWidget {
   final Function(TailorMarker) onTailorSelected;
   final Function(LatLng)? onMapTap;
   final VoidCallback? onBack;
+
   /// Enable mobile optimizations for better touch handling
   final bool enableMobileOptimizations;
 
@@ -33,11 +33,34 @@ class TailorMapView extends StatefulWidget {
   State<TailorMapView> createState() => _TailorMapViewState();
 }
 
+const _darkFilterMatrix = <double>[
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0.2126,
+  0.7152,
+  0.0722,
+  0,
+  0,
+  0,
+  0,
+  0,
+  1,
+  0,
+];
+
 class _TailorMapViewState extends State<TailorMapView> {
   late final MapController _mapController;
   bool _isDarkMode = true;
   bool _isMobile = false;
-  
+
   static const _defaultCenter = LatLng(6.5244, 3.3792);
   static const _defaultZoom = 17.0;
 
@@ -50,7 +73,7 @@ class _TailorMapViewState extends State<TailorMapView> {
       if (mounted) {
         final width = MediaQuery.of(context).size.width;
         setState(() {
-          _isMobile = width < TailorFinderBreakpoints.tablet;
+          _isMobile = width < 1000;
         });
       }
     });
@@ -62,69 +85,95 @@ class _TailorMapViewState extends State<TailorMapView> {
     super.dispose();
   }
 
+  /// Shown in place of a tile that failed to load. Matches the app surface so a
+  /// broken map reads as "map unavailable", not as a rendering glitch.
+  ImageProvider _mapFallbackImage(BuildContext context) =>
+      NetworkImage('data:image/svg+xml;utf8,${Uri.encodeComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">'
+        '<rect width="256" height="256" fill="#0A1921"/>'
+        '<path d="M0 64h256M0 128h256M0 192h256M64 0v256M128 0v256M192 0v256" '
+        'stroke="#16303d" stroke-width="1"/></svg>',
+      )}');
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black, // Dark background while tiles load
-      width: double.infinity,
-      height: double.infinity, // Let parent Expanded handle sizing
-      child: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: widget.userLocation ?? _defaultCenter,
-              initialZoom: _defaultZoom,
-              onTap: (_, position) {
-                widget.onMapTap?.call(position);
-              },
-              // Mobile: enable interactive flags for better touch handling
-              interactionOptions: _isMobile
-                  ? const InteractionOptions(
-                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                    )
-                  : const InteractionOptions(),
-            ),
-children: [
-              TileLayer(
-                urlTemplate: _isDarkMode 
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                subdomains: const ['a', 'b', 'c', 'd'],
-                userAgentPackageName: 'com.desby.app',
-                maxZoom: 19,
-                retinaMode: RetinaMode.isHighDensity(context),
+    final colors = context.colors;
+    final map = FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: widget.userLocation ?? _defaultCenter,
+        initialZoom: _defaultZoom,
+        onTap: (_, position) {
+          widget.onMapTap?.call(position);
+        },
+        // Mobile: enable interactive flags for better touch handling
+        interactionOptions: _isMobile
+            ? const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              )
+            : const InteractionOptions(),
+      ),
+      children: [
+        TileLayer(
+          // OSM's standard tile service. A descriptive User-Agent is part of
+          // their usage policy; the previous bare bundle id is a common reason
+          // tiles are refused.
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.desby.app (Desby OS tailoring platform)',
+          maxZoom: 19,
+          retinaMode: RetinaMode.isHighDensity(context),
+          // Tiles that fail now surface as a themed placeholder instead of
+          // being swallowed, which is how a dead map ended up looking like an
+          // empty grey rectangle with no explanation.
+          errorTileCallback: (tile, error, stackTrace) {
+            // `abortTrigger` means we cancelled the request ourselves — the tile
+            // provider aborts in-flight requests when the map pans or is disposed.
+            // That is normal churn, not a tile-server failure, so it stays quiet
+            // to keep genuine failures visible.
+            final message = error.toString();
+            if (message.contains('abortTrigger')) return;
+            debugPrint('[MAP] tile ${tile.coordinates} failed: $error');
+          },
+          errorImage: _mapFallbackImage(context),
+        ),
+        if (widget.selectedTailor != null && widget.userLocation != null)
+          PolylineLayer(
+            polylines: <Polyline>[
+              Polyline(
+                points: [widget.userLocation!, widget.selectedTailor!.location],
+                color: AppColors.amber,
+                strokeWidth: 4,
               ),
-              if (widget.selectedTailor != null && widget.userLocation != null)
-                PolylineLayer(
-                  polylines: <Polyline>[
-                    Polyline(
-                      points: [
-                        widget.userLocation!,
-                        widget.selectedTailor!.location,
-                      ],
-                      color: AppColors.amber,
-                      strokeWidth: 4,
-                    ),
-                  ],
-                ),
-              MarkerLayer(
-                markers: _buildTailorMarkers(),
-              ),
-              if (widget.userLocation != null)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: widget.userLocation!,
-                      width: 24,
-                      height: 24,
-                      child: const _UserLocationMarker(),
-                    ),
-                  ],
-                ),
             ],
           ),
-Positioned(
+        MarkerLayer(markers: _buildTailorMarkers()),
+        if (widget.userLocation != null)
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: widget.userLocation!,
+                width: 24,
+                height: 24,
+                child: const _UserLocationMarker(),
+              ),
+            ],
+          ),
+      ],
+    );
+    return Container(
+      color: colors.scaffoldBg,
+      width: double.infinity,
+      height: double.infinity,
+      child: Stack(
+        children: [
+          if (_isDarkMode)
+            ColorFiltered(
+              colorFilter: const ColorFilter.matrix(_darkFilterMatrix),
+              child: map,
+            )
+          else
+            map,
+          Positioned(
             right: 16,
             bottom: 16,
             child: _MapControls(
@@ -169,15 +218,9 @@ Positioned(
       final isSelected = widget.selectedTailor?.id == tailor.id;
       return Marker(
         point: tailor.location,
-        width: 50,
-        height: 50,
-        child: GestureDetector(
-          onTap: () => widget.onTailorSelected(tailor),
-          child: _TailorMapMarker(
-            tailor: tailor,
-            isSelected: isSelected,
-          ),
-        ),
+        width: 40,
+        height: 40,
+        child: _TailorMapMarker(tailor: tailor, isSelected: isSelected),
       );
     }).toList();
   }
@@ -187,23 +230,21 @@ class _TailorMapMarker extends StatelessWidget {
   final TailorMarker tailor;
   final bool isSelected;
 
-  const _TailorMapMarker({
-    required this.tailor,
-    required this.isSelected,
-  });
+  const _TailorMapMarker({required this.tailor, required this.isSelected});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.amber : const Color(0xFF1E3A45), // DARKER BLUE-NAVY
+        color: isSelected ? AppColors.amber : colors.scaffoldBg,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
+        border: Border.all(color: colors.borderDefault, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: colors.scaffoldBg,
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -241,9 +282,10 @@ class _UserLocationMarkerState extends State<_UserLocationMarker>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat();
-    _animation = Tween<double>(begin: 0.5, end: 1.5).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.5,
+      end: 1.5,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -254,6 +296,7 @@ class _UserLocationMarkerState extends State<_UserLocationMarker>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -264,17 +307,19 @@ class _UserLocationMarkerState extends State<_UserLocationMarker>
               width: 24 * _animation.value,
               height: 24 * _animation.value,
               decoration: BoxDecoration(
-                color: AppColors.uberInfo.withValues(alpha: 0.3 / _animation.value),
+                color: AppColors.uberInfo.withValues(
+                  alpha: 0.3 / _animation.value,
+                ),
                 shape: BoxShape.circle,
               ),
-            ),
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: AppColors.uberInfo,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: AppColors.uberInfo,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.borderDefault, width: 2),
+                ),
               ),
             ),
           ],
@@ -290,6 +335,7 @@ class _MapHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
@@ -297,16 +343,7 @@ class _MapHeader extends StatelessWidget {
         right: 16,
         bottom: 12,
       ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.darkNavy,
-            AppColors.darkNavy.withValues(alpha: 0),
-          ],
-        ),
-      ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: Row(
         children: [
           GestureDetector(
@@ -315,13 +352,13 @@ class _MapHeader extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: colors.surface,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: colors.borderSubtle, width: 1),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 size: 18,
               ),
             ),
@@ -330,9 +367,9 @@ class _MapHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: colors.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: colors.borderSubtle, width: 1),
             ),
             child: const Row(
               children: [
@@ -345,7 +382,7 @@ class _MapHeader extends StatelessWidget {
                 Text(
                   'MY LOCATION',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
@@ -359,13 +396,13 @@ class _MapHeader extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: colors.surface,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: colors.borderSubtle, width: 1),
             ),
             child: const Icon(
               Icons.tune_rounded,
-              color: Colors.white,
+              color: AppColors.amber,
               size: 18,
             ),
           ),
@@ -398,10 +435,8 @@ class _MapControls extends StatelessWidget {
         const SizedBox(height: 8),
         _ControlButton(icon: Icons.remove_rounded, onTap: onZoomOut),
         const SizedBox(height: 16),
-        _ControlButton(icon: Icons.my_location_rounded, onTap: onMyLocation, isPrimary: true),
-        const SizedBox(height: 8),
         _ControlButton(
-          icon: isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded, 
+          icon: isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
           onTap: onToggleMode,
         ),
       ],
@@ -412,30 +447,22 @@ class _MapControls extends StatelessWidget {
 class _ControlButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-  final bool isPrimary;
 
-  const _ControlButton({
-    required this.icon,
-    required this.onTap,
-    this.isPrimary = false,
-  });
+  const _ControlButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isPrimary ? AppColors.amber : AppColors.uberCard,
+          color: colors.surface,
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: isPrimary ? AppColors.darkNavy : AppColors.uberTextPrimary,
-          size: 20,
-        ),
+        child: Icon(icon, color: colors.textPrimary, size: 20),
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import '../../theme/colors.dart';
 
 class OnboardingScaffold extends StatelessWidget {
@@ -32,6 +31,7 @@ class OnboardingScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return PopScope(
       canPop: currentStep == 0,
       onPopInvokedWithResult: (didPop, result) async {
@@ -41,12 +41,20 @@ class OnboardingScaffold extends StatelessWidget {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Discard Progress?'),
-            content: const Text('All progress in this setup wizard will be lost.'),
+            content: const Text(
+              'All progress in this setup wizard will be lost.',
+            ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('KEEP EDITING')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('KEEP EDITING'),
+              ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('DISCARD', style: TextStyle(color: Colors.redAccent)),
+                child: const Text(
+                  'DISCARD',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
               ),
             ],
           ),
@@ -57,55 +65,58 @@ class OnboardingScaffold extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.darkNavy,
+        backgroundColor: colors.scaffoldBg,
         body: Stack(
           children: [
             // 1. Ambient Background System
             _buildAmbientBackground(),
-            
+
             // 2. Main Scrollable Content
             SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 36,
+                ),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 800),
                     child: Column(
                       children: [
                         // Header Identity & Progress
-                        _buildHeader(),
+                        _buildHeader(colors),
                         const SizedBox(height: 56),
-                        
+
                         // Main Heading
                         Text(
                           title,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 48, // Calibrated for mobile/tablet
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 48,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -2,
                             height: 1.1,
                           ),
                         ),
                         const SizedBox(height: 48),
-                        
+
                         // Content Card
-                        _buildMainCard(),
-                        
-                        const SizedBox(height: 120), // Space for footer
+                        _buildMainCard(colors),
+
+                        const SizedBox(height: 120),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-            
+
             // 3. Footer Navigation
-            _buildFooter(context),
-            
+            _buildFooter(context, colors),
+
             // 4. Floating Support
-            _buildFloatingSupport(),
+            _buildFloatingSupport(colors),
           ],
         ),
       ),
@@ -156,7 +167,7 @@ class OnboardingScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(DesbyThemeColors colors) {
     return Column(
       children: [
         Row(
@@ -164,10 +175,10 @@ class OnboardingScaffold extends StatelessWidget {
           children: [
             Image.asset('assets/images/logo.png', height: 24),
             const SizedBox(width: 10),
-            const Text(
+            Text(
               'DESBY OS',
               style: TextStyle(
-                color: Colors.white,
+                color: colors.textPrimary,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
@@ -186,7 +197,7 @@ class OnboardingScaffold extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.amber : Colors.white.withValues(alpha: 0.1),
+                  color: isActive ? AppColors.amber : colors.divider,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -197,16 +208,16 @@ class OnboardingScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildMainCard() {
-    final bool useBlur = !kIsWeb; // BackdropFilter is unstable/expensive on web engine
+  Widget _buildMainCard(DesbyThemeColors colors) {
+    final bool useBlur = !kIsWeb;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(40, 48, 40, 56),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: colors.borderDefault),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -217,23 +228,23 @@ class OnboardingScaffold extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(36),
-        child: useBlur 
-          ? BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: _buildCardContent(),
-            )
-          : _buildCardContent(),
+        child: useBlur
+            ? BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: _buildCardContent(colors),
+              )
+            : _buildCardContent(colors),
       ),
     );
   }
 
-  Widget _buildCardContent() {
+  Widget _buildCardContent(DesbyThemeColors colors) {
     return Column(
       children: [
         Text(
           stepLabel.toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white38,
+          style: TextStyle(
+            color: colors.textMuted,
             fontSize: 14,
             fontWeight: FontWeight.w800,
             letterSpacing: 2,
@@ -243,8 +254,8 @@ class OnboardingScaffold extends StatelessWidget {
         Text(
           prompt,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: colors.textPrimary,
             fontSize: 38,
             fontWeight: FontWeight.w900,
             letterSpacing: -1,
@@ -257,7 +268,7 @@ class OnboardingScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context) {
+  Widget _buildFooter(BuildContext context, DesbyThemeColors colors) {
     return Positioned(
       bottom: 0,
       left: 0,
@@ -269,9 +280,9 @@ class OnboardingScaffold extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.darkNavy.withValues(alpha: 0),
-              AppColors.darkNavy.withValues(alpha: 0.9),
-              AppColors.darkNavy,
+              colors.scaffoldBg.withValues(alpha: 0),
+              colors.scaffoldBg.withValues(alpha: 0.9),
+              colors.scaffoldBg,
             ],
           ),
         ),
@@ -281,16 +292,21 @@ class OnboardingScaffold extends StatelessWidget {
               if (onBack != null)
                 IconButton(
                   onPressed: () {
-                    // WEB STABILITY: Aggressive focus purge
                     FocusScope.of(context).unfocus();
                     FocusManager.instance.primaryFocus?.unfocus();
                     Future.delayed(const Duration(milliseconds: 300), onBack!);
                   },
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white54, size: 20),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white54,
+                    size: 20,
+                  ),
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.05),
+                    backgroundColor: colors.borderSubtle,
                     padding: const EdgeInsets.all(20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                   ),
                 ),
               if (onBack != null) const SizedBox(width: 16),
@@ -298,27 +314,39 @@ class OnboardingScaffold extends StatelessWidget {
                 child: SizedBox(
                   height: 64,
                   child: ElevatedButton(
-                    onPressed: isLoading || onNext == null ? null : () {
-                      // WEB STABILITY: Aggressive focus purge with enough buffer for DOM settling
-                      FocusScope.of(context).unfocus();
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      Future.delayed(const Duration(milliseconds: 300), onNext!);
-                    },
+                    onPressed: isLoading || onNext == null
+                        ? null
+                        : () {
+                            FocusScope.of(context).unfocus();
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            Future.delayed(
+                              const Duration(milliseconds: 300),
+                              onNext!,
+                            );
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.amber,
                       foregroundColor: AppColors.darkNavy,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       elevation: 0,
                     ),
                     child: isLoading
                         ? const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.darkNavy),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: AppColors.darkNavy,
+                            ),
                           )
                         : Text(
                             nextLabel,
-                            style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                   ),
                 ),
@@ -330,7 +358,7 @@ class OnboardingScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildFloatingSupport() {
+  Widget _buildFloatingSupport(DesbyThemeColors colors) {
     return Positioned(
       bottom: 120,
       right: 24,
@@ -340,11 +368,15 @@ class OnboardingScaffold extends StatelessWidget {
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: colors.borderSubtle,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              border: Border.all(color: colors.borderDefault),
             ),
-            child: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            child: Icon(
+              Icons.help_outline_rounded,
+              color: colors.textPrimary,
+              size: 24,
+            ),
           ),
           Positioned(
             top: 0,
@@ -353,9 +385,9 @@ class OnboardingScaffold extends StatelessWidget {
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: Colors.redAccent,
+                color: colors.statusError,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.darkNavy, width: 2),
+                border: Border.all(color: colors.scaffoldBg, width: 2),
               ),
             ),
           ),
@@ -379,6 +411,7 @@ class OptionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
@@ -386,24 +419,26 @@ class OptionPill extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.05),
+          color: isSelected ? AppColors.amber : colors.borderSubtle,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: isSelected ? AppColors.amber : Colors.white.withValues(alpha: 0.1),
+            color: isSelected ? AppColors.amber : colors.borderDefault,
             width: 1.5,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.amber.withValues(alpha: 0.2),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            )
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.amber.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label.toUpperCase(),
           style: TextStyle(
-            color: isSelected ? AppColors.darkNavy : Colors.white70,
+            color: isSelected ? AppColors.darkNavy : colors.textSecondary,
             fontWeight: FontWeight.w900,
             fontSize: 14,
             letterSpacing: 0.5,

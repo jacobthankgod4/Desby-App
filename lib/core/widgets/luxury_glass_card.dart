@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 
 class LuxuryGlassCard extends StatelessWidget {
   final Widget child;
@@ -18,21 +19,19 @@ class LuxuryGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: padding ?? const EdgeInsets.all(24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: borderColor ?? Colors.white.withValues(alpha: 0.1),
+          color: borderColor ?? colors.borderDefault,
           width: 1.5,
         ),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: opacity + 0.04),
-            Colors.white.withValues(alpha: opacity),
-          ],
+          colors: [colors.surfaceElevated, colors.surface],
         ),
       ),
       child: child,

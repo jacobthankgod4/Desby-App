@@ -6,20 +6,21 @@ class ShortcutCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Row(
       children: [
         _ShortcutTile(
           title: 'Bulk Order Guide',
           sub: 'Learn about merchant discounts',
           icon: Icons.auto_stories_rounded,
-          color: Colors.blue,
+          color: colors.textMuted,
         ),
         const SizedBox(width: 16),
         _ShortcutTile(
           title: 'Verify as Dealer',
           sub: 'Get the verified merchant badge',
           icon: Icons.verified_rounded,
-          color: Colors.green,
+          color: colors.textMuted,
         ),
         const SizedBox(width: 16),
         _ShortcutTile(
@@ -48,20 +49,25 @@ class _ShortcutTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Expanded(
       child: InkWell(
         onTap: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$title functionality coming soon to Desby Marketplace.')),
+            SnackBar(
+              content: Text(
+                '$title functionality coming soon to Desby Marketplace.',
+              ),
+            ),
           );
         },
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey[100]!),
+            border: Border.all(color: colors.borderDefault),
           ),
           child: Row(
             children: [
@@ -80,11 +86,15 @@ class _ShortcutTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.darkNavy),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: colors.textPrimary,
+                      ),
                     ),
                     Text(
                       sub,
-                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                      style: TextStyle(color: colors.textMuted, fontSize: 10),
                     ),
                   ],
                 ),

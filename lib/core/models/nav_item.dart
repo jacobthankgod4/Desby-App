@@ -6,7 +6,7 @@ class NavItem {
   final IconData icon;
   final String? route;
   final VoidCallback? onTap;
-  
+
   const NavItem({
     required this.label,
     required this.icon,

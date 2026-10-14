@@ -1,11 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum RecommendationType {
-  design,
-  fabric,
-  pricing,
-  marketing
-}
+enum RecommendationType { design, fabric, pricing, marketing }
 
 class Recommendation extends Equatable {
   final String id;
@@ -27,5 +22,13 @@ class Recommendation extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, title, description, type, confidenceScore, imageUrl, metadata];
+  List<Object?> get props => [
+    id,
+    title,
+    description,
+    type,
+    confidenceScore,
+    imageUrl,
+    metadata,
+  ];
 }

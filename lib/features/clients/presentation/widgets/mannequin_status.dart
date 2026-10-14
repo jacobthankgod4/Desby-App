@@ -6,15 +6,13 @@ class MannequinStatus extends StatelessWidget {
   final String gender;
   final Map<String, String>? measurements;
 
-  const MannequinStatus({
-    super.key,
-    required this.gender,
-    this.measurements,
-  });
+  const MannequinStatus({super.key, required this.gender, this.measurements});
 
   @override
   Widget build(BuildContext context) {
-    final bool hasMeasurements = measurements != null && measurements!.isNotEmpty;
+    final colors = context.colors;
+    final bool hasMeasurements =
+        measurements != null && measurements!.isNotEmpty;
 
     return LuxuryGlassCard(
       padding: const EdgeInsets.all(16),
@@ -23,10 +21,10 @@ class MannequinStatus extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'GARMENT ARCHITECTURE',
                 style: TextStyle(
-                  color: Colors.white38,
+                  color: colors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
@@ -35,7 +33,9 @@ class MannequinStatus extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: hasMeasurements ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                  color: hasMeasurements
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -69,27 +69,36 @@ class MannequinStatus extends StatelessWidget {
               Icon(
                 gender == 'FEMALE' ? Icons.woman : Icons.man,
                 size: 160,
-                color: Colors.white.withValues(alpha: 0.05),
+                color: colors.textPrimary.withValues(alpha: 0.05),
               ),
               Positioned(
                 top: 20,
-                child: _buildArchitectureTag('SHOULDER: ${measurements?['shoulder'] ?? '--'}'),
+                child: _buildArchitectureTag(
+                  'SHOULDER: ${measurements?['shoulder'] ?? '--'}',
+                  context,
+                ),
               ),
               Positioned(
                 top: 80,
-                child: _buildArchitectureTag('CHEST: ${measurements?['chest'] ?? '--'}'),
+                child: _buildArchitectureTag(
+                  'CHEST: ${measurements?['chest'] ?? '--'}',
+                  context,
+                ),
               ),
               Positioned(
                 bottom: 40,
-                child: _buildArchitectureTag('LENGTH: ${measurements?['length'] ?? '--'}'),
+                child: _buildArchitectureTag(
+                  'LENGTH: ${measurements?['length'] ?? '--'}',
+                  context,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
             'NEURAL SCAN SYNC: ${hasMeasurements ? "ACTIVE" : "PENDING"}',
-            style: const TextStyle(
-              color: Colors.white24,
+            style: TextStyle(
+              color: colors.textMuted,
               fontSize: 8,
               fontWeight: FontWeight.w700,
               letterSpacing: 1,
@@ -100,13 +109,14 @@ class MannequinStatus extends StatelessWidget {
     );
   }
 
-  Widget _buildArchitectureTag(String label) {
+  Widget _buildArchitectureTag(String label, BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black26,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: Text(
         label.toUpperCase(),

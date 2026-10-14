@@ -1,84 +1,99 @@
 import 'package:flutter/material.dart';
-import 'package:pod_player/pod_player.dart';
-import 'package:screen_protector/screen_protector.dart';
-import '../../../../theme/colors.dart';
+import 'dart:html' as html;
+import 'dart:ui_web' as ui_web;
+import 'package:desby_app/theme/colors.dart';
 
 class SecureVideoPlayer extends StatefulWidget {
   final String videoId;
-  final String? vimeoToken;
+  final String? videoUrl;
 
-  const SecureVideoPlayer({
-    super.key,
-    required this.videoId,
-    this.vimeoToken,
-  });
+  const SecureVideoPlayer({super.key, required this.videoId, this.videoUrl});
 
   @override
   State<SecureVideoPlayer> createState() => _SecureVideoPlayerState();
 }
 
 class _SecureVideoPlayerState extends State<SecureVideoPlayer> {
-  late final PodPlayerController controller;
-  bool _isInitialized = false;
+  late String _viewType;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _setupSecurity();
-    _initPlayer();
+    _viewType =
+        'video-player-${widget.videoId}-${DateTime.now().millisecondsSinceEpoch}';
+    _registerView();
   }
 
-  Future<void> _setupSecurity() async {
-    // Enable screen recording and screenshot protection
-    await ScreenProtector.preventScreenshotOn();
-    // processAppCycle removed in 1.5.3, preventScreenshotOn persists by default
-  }
+  void _registerView() {
+    // ignore: undefined_prefixed_name
+    ui_web.platformViewRegistry.registerViewFactory(_viewType, (int viewId) {
+      final video = html.VideoElement()
+        ..src = widget.videoUrl ?? ''
+        ..controls = true
+        ..preload = 'metadata'
+        ..style.width = '100%'
+        ..style.height = '100%'
+        ..style.borderRadius = '24px'
+        ..style.backgroundColor = '#000000';
 
-  void _initPlayer() {
-    controller = PodPlayerController(
-      playVideoFrom: widget.vimeoToken != null
-          ? PlayVideoFrom.vimeoPrivateVideos(
-              widget.videoId,
-              httpHeaders: {'Authorization': 'Bearer ${widget.vimeoToken}'},
-            )
-          : PlayVideoFrom.vimeo(widget.videoId),
-      podPlayerConfig: const PodPlayerConfig(
-        autoPlay: false,
-        isLooping: false,
-        videoQualityPriority: [720, 480, 360],
-      ),
-    )..initialise().then((_) {
-        if (mounted) setState(() => _isInitialized = true);
+      video.onLoadedData.listen((_) {
+        if (mounted) setState(() => _isLoading = false);
       });
-  }
 
-  @override
-  void dispose() {
-    // Disable protection when leaving the page to allow normal app use
-    ScreenProtector.preventScreenshotOff();
-    controller.dispose();
-    super.dispose();
+      video.onError.listen((_) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Could not load video';
+          });
+        }
+      });
+
+      return video;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return Container(
-        height: 240,
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-      );
-    }
-
+    final colors = context.colors;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(32),
-      child: PodVideoPlayer(
-        controller: controller,
-        frameAspectRatio: 16 / 9,
-        videoAspectRatio: 16 / 9,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: double.infinity,
+        height: 240,
+        color: colors.scaffoldBg,
+        child: Stack(
+          children: [
+            HtmlElementView(viewType: _viewType),
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(color: AppColors.amber),
+              ),
+            if (_errorMessage != null)
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: Colors.redAccent,
+                      size: 36,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

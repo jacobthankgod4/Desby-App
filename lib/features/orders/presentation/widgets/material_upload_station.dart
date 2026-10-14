@@ -7,10 +7,15 @@ class MaterialUploadStation extends StatefulWidget {
   final Function(XFile?) onImagePicked;
   final bool isCompleted;
 
+  /// Renders as a small square tile rather than the full-width drop zone, so it
+  /// can sit inside a grid of reference cards.
+  final bool compact;
+
   const MaterialUploadStation({
-    super.key, 
+    super.key,
     required this.onImagePicked,
     this.isCompleted = false,
+    this.compact = false,
   });
 
   @override
@@ -31,7 +36,7 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
       if (pickedFile != null) {
         // CROSS-PLATFORM: Handle bytes for web/mobile compatibility
         final bytes = await pickedFile.readAsBytes();
-        
+
         setState(() {
           _webImageBytes = bytes;
         });
@@ -44,15 +49,43 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    if (widget.compact) {
+      return Material(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => _pickImage(ImageSource.gallery),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.borderSubtle),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_photo_alternate_outlined,
+                    size: 22, color: colors.textMuted),
+                const SizedBox(height: 6),
+                Text('Add',
+                    style: TextStyle(
+                        fontSize: 11, color: colors.textMuted)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: widget.isCompleted 
-              ? AppColors.amber.withValues(alpha: 0.4) 
-              : Colors.white.withValues(alpha: 0.05), 
+          color: widget.isCompleted
+              ? AppColors.amber.withValues(alpha: 0.4)
+              : colors.borderSubtle,
           width: 1.5,
         ),
       ),
@@ -61,10 +94,10 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'STEP 2: MATERIAL ASSETS',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.textPrimary,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
@@ -72,7 +105,11 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
               ),
               const Spacer(),
               if (widget.isCompleted)
-                const Icon(Icons.check_circle_rounded, color: AppColors.amber, size: 16),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.amber,
+                  size: 16,
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -103,23 +140,36 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
     );
   }
 
-  Widget _buildUploadOption({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildUploadOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final colors = context.colors;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         height: 100,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: colors.borderSubtle),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: AppColors.amber, size: 28),
             const SizedBox(height: 10),
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            Text(
+              label,
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
+            ),
           ],
         ),
       ),
@@ -127,13 +177,14 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
   }
 
   Widget _buildImagePreview() {
+    final colors = context.colors;
     return Column(
       children: [
         Container(
           height: 200,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.black26,
+            color: colors.overlayLight,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.amber.withValues(alpha: 0.3)),
           ),
@@ -142,24 +193,41 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
             child: Stack(
               children: [
                 // WEB & MOBILE COMPATIBLE IMAGE LOADER
-                Positioned.fill(child: Image.memory(_webImageBytes!, fit: BoxFit.cover)),
+                Positioned.fill(
+                  child: Image.memory(_webImageBytes!, fit: BoxFit.cover),
+                ),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                      colors: [
+                        Colors.transparent,
+                        colors.scaffoldBg,
+                      ],
                     ),
                   ),
                 ),
-                const Positioned(
+                Positioned(
                   bottom: 16,
                   left: 16,
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle_rounded, color: Color(0xFF00FF7F), size: 16),
-                      SizedBox(width: 8),
-                      Text('ASSET LOCKED', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.successGreen,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Photo added',
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -175,7 +243,15 @@ class _MaterialUploadStationState extends State<MaterialUploadStation> {
             });
             widget.onImagePicked(null);
           },
-          child: const Text('REPLACE ASSET', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          child: const Text(
+            'Replace photo',
+            style: TextStyle(
+              color: AppColors.amber,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
         ),
       ],
     );

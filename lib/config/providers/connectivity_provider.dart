@@ -7,11 +7,11 @@ import '../../core/logging/logger.dart';
 /// Monitors network connectivity status
 final connectivityProvider = StreamProvider<ConnectivityStatus>((ref) async* {
   final connectivity = Connectivity();
-  
+
   // Get initial status
   final result = await connectivity.checkConnectivity();
   yield _mapConnectivityResult(result);
-  
+
   // Listen to connectivity changes
   await for (final result in connectivity.onConnectivityChanged) {
     logger.info('Connectivity changed: $result');

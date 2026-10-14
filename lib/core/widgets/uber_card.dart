@@ -27,7 +27,7 @@ class DesbyCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: padding,
         decoration: BoxDecoration(
-          color: AppColors.surfaceDark.withValues(alpha: 0.8),
+          color: AppColors.deepBlue.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive
@@ -76,7 +76,7 @@ class DesbyCardSmall extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceDark.withValues(alpha: 0.6),
+          color: AppColors.deepBlue.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive

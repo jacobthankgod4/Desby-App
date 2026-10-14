@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/models/plan_registry.dart';
@@ -47,47 +48,15 @@ class SupabaseSubscriptionRepository implements SubscriptionRepository {
   }
 
   Future<void> seedPlans() async {
-    // Seed plans to Supabase if table is empty
     try {
-      final response = await _supabase.from('subscription_plans').select().limit(1);
-      if ((response as List).isNotEmpty) return;
-
-      final allPlans = [
-        // Tailor
-        const SubscriptionPlan(id: 'tailor_starter', name: 'STARTER', price: 'FREE', amount: 0,
-          features: ['Shop Profile','Up to 10 Clients','Basic Booking Manager','Manual Measurements','Gallery Portfolio (5 Items)','Basic Dashboard Stats','Direct Client Messaging','Order Tracking'],
-          userType: 'tailor'),
-        const SubscriptionPlan(id: 'tailor_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'GO PREMIUM',
-          features: ['EVERYTHING IN STARTER PLUS:','Unlimited Client Profiles','Priority in Search & Discovery','Verified Premium Badge','Advanced Analytics & Insights','AI Business Forecasting','Revenue Reports & PDF Export','Custom Digital Receipts','Apprentice Management (2 Seats)','Inventory Management System','Unlimited Gallery Items','Custom Dispatch & Logistics','Priority Support'],
-          userType: 'tailor'),
-        // Client
-        const SubscriptionPlan(id: 'client_starter', name: 'STARTER', price: 'FREE', amount: 0,
-          features: ['Browse Tailors','Book Appointments','Order Tracking','Direct Messaging','Manual Measurement Entry','1 Active Order'],
-          userType: 'client'),
-        const SubscriptionPlan(id: 'client_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'GO PREMIUM',
-          features: ['EVERYTHING IN STARTER PLUS:','AI Body Scanning','Virtual Try-On','Digital Closet','Advanced Measurement Profiles','Multiple Active Orders','Priority Booking & Support','Design Gallery Access','Order History & Reorder'],
-          userType: 'client'),
-        // Apprentice
-        const SubscriptionPlan(id: 'apprentice_starter', name: 'STARTER', price: 'FREE', amount: 0,
-          features: ['Connect with 1 Mentor','Basic Learning Modules','Track Progress','Submit Tasks','Mentor Directory Access'],
-          userType: 'apprentice'),
-        const SubscriptionPlan(id: 'apprentice_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'GO PREMIUM',
-          features: ['EVERYTHING IN STARTER PLUS:','Multiple Mentors','Advanced Training Modules','AI Pattern Assistance','Secure Video Lessons','Certificate of Completion','Priority Task Review','Portfolio Showcase'],
-          userType: 'apprentice'),
-        // Fabric Seller
-        const SubscriptionPlan(id: 'seller_starter', name: 'STARTER', price: 'FREE', amount: 0,
-          features: ['Shop Listing','Up to 15 Fabric Items','Basic Inventory Sync','Browse Marketplace','Direct Buyer Messaging'],
-          userType: 'fabric_seller'),
-        const SubscriptionPlan(id: 'seller_premium', name: 'PREMIUM', price: '₦2,500/mo', amount: 2500, isElite: true, buttonLabel: 'VERIFY & UPGRADE',
-          features: ['EVERYTHING IN STARTER PLUS:','Verified Seller Badge','Unlimited Fabric Listings','Buyer Lead Generation','Featured Shop Placement','Wholesale Pricing Tiers','Advanced Sales Analytics','Priority Support','Merchant Wallet & Payouts'],
-          userType: 'fabric_seller'),
-      ];
-
+      final allPlans = PlanRegistry.allPlans;
       for (final plan in allPlans) {
-        await _supabase.from('subscription_plans').upsert(plan.toMap());
+        await _supabase
+            .from('subscription_plans')
+            .upsert(plan.toMap(), onConflict: 'id');
       }
-    } catch (_) {
-      // Silently fail — fallback plans will be used
+    } catch (e) {
+      debugPrint('[SubscriptionRepository] Plan seeding failed: $e');
     }
   }
 }

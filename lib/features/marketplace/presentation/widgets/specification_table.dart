@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
-
 import '../../domain/entities/fabric.dart';
 
 class SpecificationTable extends StatelessWidget {
@@ -9,43 +8,35 @@ class SpecificationTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final colorList = fabric?.availableColors ?? [];
+    final firstColor = colorList.isNotEmpty ? colorList.first : null;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // Re-introducing white for readability
+        color: colors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10))],
+        border: Border.all(color: colors.borderDefault),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          _AttributeRow(label: 'Brand', value: fabric?.origin ?? 'Italian Silk Masters', isFirst: true),
-          _AttributeRow(label: 'Type', value: fabric?.category ?? 'Charmeuse Luxury'),
-          _AttributeRow(label: 'Material', value: fabric?.composition ?? '100% Pure Mulberry Silk'),
-          _AttributeRow(label: 'Weight', value: fabric?.weight ?? '19 momme'),
-          const _AttributeRow(label: 'Width', value: '45 inches'),
-          _AttributeRow(label: 'Color', value: fabric?.availableColors.first ?? 'Midnight Navy'),
-          const _AttributeRow(label: 'Finish', value: 'High Sheen Gloss'),
-          
-          InkWell(
-            onTap: () {},
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-                border: Border(top: BorderSide(color: Colors.grey[100]!)),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('EXPLORE FULL METADATA', style: TextStyle(color: AppColors.darkNavy, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
-                  SizedBox(width: 8),
-                  Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.darkNavy, size: 18),
-                ],
-              ),
-            ),
+          _AttributeRow(
+            label: 'Origin',
+            value: fabric?.origin ?? 'N/A',
+            isFirst: true,
           ),
+          _AttributeRow(label: 'Type', value: fabric?.category ?? 'N/A'),
+          _AttributeRow(label: 'Material', value: fabric?.composition ?? 'N/A'),
+          _AttributeRow(label: 'Weight', value: fabric?.weight ?? 'N/A'),
+          if (firstColor != null)
+            _AttributeRow(label: 'Color', value: firstColor),
         ],
       ),
     );
@@ -57,23 +48,45 @@ class _AttributeRow extends StatelessWidget {
   final String value;
   final bool isFirst;
 
-  const _AttributeRow({required this.label, required this.value, this.isFirst = false});
+  const _AttributeRow({
+    required this.label,
+    required this.value,
+    this.isFirst = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
       decoration: BoxDecoration(
-        border: Border(top: isFirst ? BorderSide.none : BorderSide(color: Colors.grey[50]!)),
+        border: Border(
+          top: isFirst ? BorderSide.none : BorderSide(color: colors.divider),
+        ),
       ),
       child: Row(
         children: [
           SizedBox(
             width: 140,
-            child: Text(label.toUpperCase(), style: TextStyle(color: Colors.grey[400], fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            child: Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value, style: const TextStyle(color: AppColors.darkNavy, fontSize: 14, fontWeight: FontWeight.bold)),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

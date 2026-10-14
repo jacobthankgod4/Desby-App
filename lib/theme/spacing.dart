@@ -153,7 +153,8 @@ class ResponsiveSpacing {
   ResponsiveSpacing._(); // Private constructor to prevent instantiation
 
   /// Get spacing value based on screen width
-  static double getSpacing(double screenWidth, {
+  static double getSpacing(
+    double screenWidth, {
     required double mobile,
     required double tablet,
     required double desktop,
@@ -195,10 +196,7 @@ class EdgeInsetsUtils {
   EdgeInsetsUtils._(); // Private constructor to prevent instantiation
 
   /// Create symmetric padding
-  static EdgeInsets symmetric({
-    double horizontal = 0,
-    double vertical = 0,
-  }) =>
+  static EdgeInsets symmetric({double horizontal = 0, double vertical = 0}) =>
       EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical);
 
   /// Create padding from all sides
@@ -210,8 +208,7 @@ class EdgeInsetsUtils {
     double right = 0,
     double bottom = 0,
     double left = 0,
-  }) =>
-      EdgeInsets.only(top: top, right: right, bottom: bottom, left: left);
+  }) => EdgeInsets.only(top: top, right: right, bottom: bottom, left: left);
 }
 
 /// Common EdgeInsets presets
@@ -219,19 +216,25 @@ class AppEdgeInsets {
   AppEdgeInsets._(); // Private constructor to prevent instantiation
 
   // Symmetric padding
-  static const EdgeInsets symmetricHorizontalSm =
-      EdgeInsets.symmetric(horizontal: AppSpacing.paddingSm);
-  static const EdgeInsets symmetricHorizontalMd =
-      EdgeInsets.symmetric(horizontal: AppSpacing.paddingMd);
-  static const EdgeInsets symmetricHorizontalLg =
-      EdgeInsets.symmetric(horizontal: AppSpacing.paddingLg);
+  static const EdgeInsets symmetricHorizontalSm = EdgeInsets.symmetric(
+    horizontal: AppSpacing.paddingSm,
+  );
+  static const EdgeInsets symmetricHorizontalMd = EdgeInsets.symmetric(
+    horizontal: AppSpacing.paddingMd,
+  );
+  static const EdgeInsets symmetricHorizontalLg = EdgeInsets.symmetric(
+    horizontal: AppSpacing.paddingLg,
+  );
 
-  static const EdgeInsets symmetricVerticalSm =
-      EdgeInsets.symmetric(vertical: AppSpacing.paddingSm);
-  static const EdgeInsets symmetricVerticalMd =
-      EdgeInsets.symmetric(vertical: AppSpacing.paddingMd);
-  static const EdgeInsets symmetricVerticalLg =
-      EdgeInsets.symmetric(vertical: AppSpacing.paddingLg);
+  static const EdgeInsets symmetricVerticalSm = EdgeInsets.symmetric(
+    vertical: AppSpacing.paddingSm,
+  );
+  static const EdgeInsets symmetricVerticalMd = EdgeInsets.symmetric(
+    vertical: AppSpacing.paddingMd,
+  );
+  static const EdgeInsets symmetricVerticalLg = EdgeInsets.symmetric(
+    vertical: AppSpacing.paddingLg,
+  );
 
   // All sides padding
   static const EdgeInsets allSm = EdgeInsets.all(AppSpacing.paddingSm);
@@ -240,14 +243,23 @@ class AppEdgeInsets {
   static const EdgeInsets allXl = EdgeInsets.all(AppSpacing.paddingXl);
 
   // Only specific sides
-  static const EdgeInsets onlyTopSm = EdgeInsets.only(top: AppSpacing.paddingSm);
-  static const EdgeInsets onlyTopMd = EdgeInsets.only(top: AppSpacing.paddingMd);
-  static const EdgeInsets onlyTopLg = EdgeInsets.only(top: AppSpacing.paddingLg);
+  static const EdgeInsets onlyTopSm = EdgeInsets.only(
+    top: AppSpacing.paddingSm,
+  );
+  static const EdgeInsets onlyTopMd = EdgeInsets.only(
+    top: AppSpacing.paddingMd,
+  );
+  static const EdgeInsets onlyTopLg = EdgeInsets.only(
+    top: AppSpacing.paddingLg,
+  );
 
-  static const EdgeInsets onlyBottomSm =
-      EdgeInsets.only(bottom: AppSpacing.paddingSm);
-  static const EdgeInsets onlyBottomMd =
-      EdgeInsets.only(bottom: AppSpacing.paddingMd);
-  static const EdgeInsets onlyBottomLg =
-      EdgeInsets.only(bottom: AppSpacing.paddingLg);
+  static const EdgeInsets onlyBottomSm = EdgeInsets.only(
+    bottom: AppSpacing.paddingSm,
+  );
+  static const EdgeInsets onlyBottomMd = EdgeInsets.only(
+    bottom: AppSpacing.paddingMd,
+  );
+  static const EdgeInsets onlyBottomLg = EdgeInsets.only(
+    bottom: AppSpacing.paddingLg,
+  );
 }

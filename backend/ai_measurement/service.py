@@ -58,7 +58,7 @@ def extract_measurements():
             f"{KORRA_BASE_URL}/api/v2/measurements/extract",
             files=files,
             data=data,
-            headers={"X-API-Key": KORRA_API_KEY},
+            headers={"X-API-Key": request.headers.get("X-API-Key", KORRA_API_KEY)},
             timeout=120,
         )
 
@@ -89,7 +89,7 @@ def estimate_measurements():
         resp = requests.post(
             f"{KORRA_BASE_URL}/api/v2/measurements/estimate",
             data=form_data,
-            headers={"X-API-Key": KORRA_API_KEY},
+            headers={"X-API-Key": request.headers.get("X-API-Key", KORRA_API_KEY)},
             timeout=30,
         )
         return jsonify(resp.json()), resp.status_code

@@ -11,9 +11,7 @@ void main() {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
-          home: Scaffold(
-            body: Center(child: Text('smoke-test')),
-          ),
+          home: Scaffold(body: Center(child: Text('smoke-test'))),
         ),
       ),
     );
@@ -22,4 +20,3 @@ void main() {
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
-

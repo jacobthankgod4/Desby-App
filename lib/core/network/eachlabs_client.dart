@@ -6,9 +6,9 @@ import '../../config/environment.dart';
 /// EachLabs API Client - State-of-the-art Virtual Try-On using IDM-VTON
 class EachLabsClient {
   final Dio _dio;
-  
+
   String get _apiKey => Environment.current.eachLabsApiKey;
-  static const String _baseUrl = 'https://api.eachlabs.ai/v1/prediction';
+  String get _baseUrl => Environment.current.eachLabsBaseUrl;
 
   EachLabsClient({Dio? dio}) : _dio = dio ?? Dio() {
     _dio.options.baseUrl = _baseUrl;
@@ -31,20 +31,23 @@ class EachLabsClient {
   }) async {
     try {
       debugPrint('[EACHLABS] Creating prediction for: $description');
-      
-      final response = await _dio.post('/', data: {
-        'model': 'idm-vton',
-        'version': '0.0.1',
-        'input': {
-          'crop': true,
-          'seed': 42,
-          'steps': 30,
-          'category': category,
-          'garm_img': garmImg,
-          'human_img': humanImg,
-          'garment_des': description,
+
+      final response = await _dio.post(
+        '/',
+        data: {
+          'model': 'idm-vton',
+          'version': '0.0.1',
+          'input': {
+            'crop': true,
+            'seed': 42,
+            'steps': 30,
+            'category': category,
+            'garm_img': garmImg,
+            'human_img': humanImg,
+            'garment_des': description,
+          },
         },
-      });
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data['id'] as String?;
@@ -71,18 +74,21 @@ class EachLabsClient {
   Future<EachLabsResult> waitForResult(String id) async {
     int attempts = 0;
     const maxAttempts = 60; // 2 minutes max
-    
+
     while (attempts < maxAttempts) {
       final result = await getPrediction(id);
-      
+
       if (result.status == 'success') return result;
       if (result.status == 'failed' || result.status == 'error') return result;
-      
+
       attempts++;
       await Future.delayed(const Duration(seconds: 2));
     }
-    
-    return EachLabsResult(status: 'timeout', error: 'Rendering timed out after 2 minutes');
+
+    return EachLabsResult(
+      status: 'timeout',
+      error: 'Rendering timed out after 2 minutes',
+    );
   }
 }
 

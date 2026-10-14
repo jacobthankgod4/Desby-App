@@ -20,7 +20,9 @@ void main() {
     getOrders = GetOrdersUsecase(mockRepository);
     getOrderById = GetOrderByIdUsecase(mockRepository);
     createOrder = CreateOrderUsecase(mockRepository);
-    provideDummy<Result<List<OrderEntity>>>(Failure(ServerFailure(message: 'dummy')));
+    provideDummy<Result<List<OrderEntity>>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
     provideDummy<Result<OrderEntity>>(Failure(ServerFailure(message: 'dummy')));
   });
 
@@ -38,8 +40,9 @@ void main() {
 
   group('GetOrdersUsecase', () {
     test('should return list of orders on success', () async {
-      when(mockRepository.getOrders(tailorId: anyNamed('tailorId')))
-          .thenAnswer((_) async => Success([tOrder]));
+      when(
+        mockRepository.getOrders(tailorId: anyNamed('tailorId')),
+      ).thenAnswer((_) async => Success([tOrder]));
 
       final result = await getOrders(tailorId: 'tailor1');
 
@@ -51,8 +54,9 @@ void main() {
     });
 
     test('should return Failure on error', () async {
-      when(mockRepository.getOrders(tailorId: anyNamed('tailorId')))
-          .thenAnswer((_) async => Failure(NetworkFailure(message: 'No connection')));
+      when(mockRepository.getOrders(tailorId: anyNamed('tailorId'))).thenAnswer(
+        (_) async => Failure(NetworkFailure(message: 'No connection')),
+      );
 
       final result = await getOrders(tailorId: 'tailor1');
 
@@ -62,8 +66,9 @@ void main() {
 
   group('GetOrderByIdUsecase', () {
     test('should return order by id', () async {
-      when(mockRepository.getOrderById('ord_1'))
-          .thenAnswer((_) async => Success(tOrder));
+      when(
+        mockRepository.getOrderById('ord_1'),
+      ).thenAnswer((_) async => Success(tOrder));
 
       final result = await getOrderById('ord_1');
 
@@ -77,8 +82,9 @@ void main() {
 
   group('CreateOrderUsecase', () {
     test('should create order successfully', () async {
-      when(mockRepository.createOrder(any))
-          .thenAnswer((_) async => Success(tOrder));
+      when(
+        mockRepository.createOrder(any),
+      ).thenAnswer((_) async => Success(tOrder));
 
       final result = await createOrder(tOrder);
 

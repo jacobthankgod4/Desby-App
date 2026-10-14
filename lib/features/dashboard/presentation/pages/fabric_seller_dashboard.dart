@@ -13,20 +13,25 @@ class FabricSellerDashboard extends ConsumerStatefulWidget {
   const FabricSellerDashboard({super.key});
 
   @override
-  ConsumerState<FabricSellerDashboard> createState() => _FabricSellerDashboardState();
+  ConsumerState<FabricSellerDashboard> createState() =>
+      _FabricSellerDashboardState();
 }
 
 class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final user = ref.watch(currentUserProvider);
     final statsAsync = ref.watch(merchantStatsProvider(user?.id ?? ''));
 
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
+      backgroundColor: colors.scaffoldBg,
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(merchantStatsProvider);
+          final user = ref.read(currentUserProvider);
+          if (user != null) {
+            ref.invalidate(merchantStatsProvider(user.id));
+          }
         },
         color: AppColors.amber,
         child: SingleChildScrollView(
@@ -51,18 +56,17 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
                     AnimatedEntry(
                       index: 1,
                       child: LuxuryStatCard(
-                        title: 'Total GMV',
-                        value: '₦${(stats['total_gmv'] as num).toInt()}',
+                        title: 'Total Sales',
+                        value: '₦${(stats['total_gmv'] as num?)?.toInt() ?? 0}',
                         icon: Icons.monetization_on_rounded,
                         color: Colors.greenAccent,
-                        trend: '+15%',
                       ),
                     ),
                     AnimatedEntry(
                       index: 2,
                       child: LuxuryStatCard(
                         title: 'Orders',
-                        value: '${stats['order_count']}',
+                        value: '${stats['order_count'] ?? 0}',
                         icon: Icons.local_shipping_rounded,
                         color: Colors.orangeAccent,
                       ),
@@ -70,8 +74,8 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
                     AnimatedEntry(
                       index: 3,
                       child: LuxuryStatCard(
-                        title: 'Total SKU',
-                        value: '${stats['sku_count']}',
+                        title: 'Total Products',
+                        value: '${stats['sku_count'] ?? 0}',
                         icon: Icons.inventory_2_rounded,
                       ),
                     ),
@@ -79,10 +83,10 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
                       index: 4,
                       child: LuxuryStatCard(
                         title: 'Avg Rating',
-                        value: '4.8',
+                        value:
+                            '${(stats['avg_rating'] as num?)?.toStringAsFixed(1) ?? 'N/A'}',
                         icon: Icons.workspace_premium_rounded,
                         color: Colors.blueAccent,
-                        trend: '+0.2',
                       ),
                     ),
                   ],
@@ -115,7 +119,7 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
               // Performance Analytics
               AnimatedEntry(
                 index: 9,
-                child: _buildSectionHeader('Popularity', '/inventory'),
+                child: _buildSectionHeader('Top Inventory', '/inventory'),
               ),
               const SizedBox(height: 16),
               AnimatedEntry(index: 10, child: _buildPerformanceHUD()),
@@ -128,31 +132,54 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('SELLER DASHBOARD', style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            const Text(
+              'Seller Dashboard',
+              style: TextStyle(
+                color: AppColors.amber,
+                fontSize: 8,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
+            ),
             _WalletButton(onTap: () => ref.pushShell('/merchant-wallet')),
           ],
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Marketplace',
-          style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+          ),
         ),
         const SizedBox(height: 24),
         ElevatedButton.icon(
           onPressed: () => ref.pushShell('/fabric-upload'),
           icon: const Icon(Icons.add_photo_alternate_rounded, size: 18),
-          label: const Text('UPLOAD NEW FABRIC', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+          label: const Text(
+            'UPLOAD NEW FABRIC',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              letterSpacing: 1,
+            ),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.amber,
             foregroundColor: AppColors.darkNavy,
             minimumSize: const Size(double.infinity, 54),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 0,
           ),
         ),
@@ -161,6 +188,7 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
   }
 
   Widget _buildErrorState() {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -168,15 +196,30 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.orangeAccent.withValues(alpha: 0.1),
+              color: AppColors.amber.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.analytics_outlined, color: Colors.orangeAccent, size: 48),
+            child: const Icon(
+              Icons.sync_problem_rounded,
+              color: AppColors.amber,
+              size: 40,
+            ),
           ),
           const SizedBox(height: 12),
-          const Text('STATS UNAVAILABLE', style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          Text(
+            'SYNC ERROR',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('Pull down to retry', style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 10)),
+          Text(
+            'Could not load stats',
+            style: TextStyle(color: colors.textMuted, fontSize: 10),
+          ),
         ],
       ),
     );
@@ -186,49 +229,108 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
     return _DispatchCard(
       onDispatch: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('CALIBRATING LOGISTICS...'), backgroundColor: Colors.blueAccent),
+          const SnackBar(
+            content: Text('Preparing delivery...'),
+            backgroundColor: Colors.blueAccent,
+          ),
         );
       },
     );
   }
 
   Widget _buildRecentUploadsHUD() {
-    final fabrics = [
-      ('GOLD DAMASK', '45 YD', Icons.texture_rounded),
-      ('PREMIUM SILK', '30 YD', Icons.water_drop_rounded),
-      ('EGYPTIAN COTTON', '60 YD', Icons.grass_rounded),
-      ('ITALIAN WOOL', '25 YD', Icons.wind_power_rounded),
-    ];
+    final colors = context.colors;
+    final user = ref.watch(currentUserProvider);
+    final fabricsAsync = ref.watch(sellerInventoryProvider(user?.id ?? ''));
 
-    return SizedBox(
-      height: 160,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: fabrics.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 16),
-        itemBuilder: (context, index) {
-          final (name, stock, icon) = fabrics[index];
-          return _FabricCard(name: name, stock: stock, icon: icon);
-        },
+    return fabricsAsync.when(
+      data: (fabrics) {
+        if (fabrics.isEmpty) {
+          return Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                'No fabrics uploaded yet',
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
+              ),
+            ),
+          );
+        }
+        return SizedBox(
+          height: 160,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: fabrics.length > 4 ? 4 : fabrics.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final fabric = fabrics[index];
+              return _FabricCard(
+                name: fabric.name.toUpperCase(),
+                stock: '${fabric.stockQuantity.toInt()} YD',
+                icon: Icons.texture_rounded,
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const SizedBox(
+        height: 160,
+        child: Center(child: CircularProgressIndicator(color: AppColors.amber)),
       ),
+      error: (_, __) => const SizedBox(),
     );
   }
 
   Widget _buildPerformanceHUD() {
-    return _PerformanceCard(
-      items: [
-        ('PREMIUM SILK', 0.85, Colors.blueAccent),
-        ('EGYPTIAN COTTON', 0.65, AppColors.amber),
-        ('ITALIAN WOOL', 0.40, Colors.purpleAccent),
-      ],
+    final user = ref.watch(currentUserProvider);
+    final fabricsAsync = ref.watch(sellerInventoryProvider(user?.id ?? ''));
+
+    return fabricsAsync.when(
+      data: (fabrics) {
+        if (fabrics.isEmpty) return const SizedBox();
+        final sorted = List.of(fabrics)
+          ..sort((a, b) => b.stockQuantity.compareTo(a.stockQuantity));
+        final top = sorted.take(3).toList();
+        if (top.isEmpty) return const SizedBox();
+        final maxStock = top.first.stockQuantity;
+        return _PerformanceCard(
+          items: top
+              .map(
+                (f) => (
+                  f.name.toUpperCase(),
+                  maxStock > 0 ? f.stockQuantity / maxStock : 0.0,
+                  AppColors.amber,
+                ),
+              )
+              .toList(),
+        );
+      },
+      loading: () => const SizedBox(
+        height: 100,
+        child: Center(child: CircularProgressIndicator(color: AppColors.amber)),
+      ),
+      error: (_, __) => const SizedBox(),
     );
   }
 
   Widget _buildSectionHeader(String title, String route) {
+    final colors = context.colors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white38)),
+        Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+            color: colors.textMuted,
+          ),
+        ),
         GestureDetector(
           onTap: () => ref.setShell(route),
           child: Container(
@@ -237,7 +339,15 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
               color: AppColors.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Text('MANAGE', style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+            child: const Text(
+              'MANAGE',
+              style: TextStyle(
+                color: AppColors.amber,
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+                letterSpacing: 1,
+              ),
+            ),
           ),
         ),
       ],
@@ -296,12 +406,15 @@ class _DispatchCardState extends State<_DispatchCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: LuxuryGlassCard(
         padding: const EdgeInsets.all(20),
-        borderColor: _isHovered ? Colors.orangeAccent.withValues(alpha: 0.2) : null,
+        borderColor: _isHovered
+            ? Colors.orangeAccent.withValues(alpha: 0.2)
+            : null,
         child: Column(
           children: [
             Row(
@@ -315,15 +428,33 @@ class _DispatchCardState extends State<_DispatchCard> {
                         : Colors.orangeAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.emergency_share_rounded, color: Colors.orangeAccent, size: 20),
+                  child: const Icon(
+                    Icons.emergency_share_rounded,
+                    color: Colors.orangeAccent,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('PENDING SHIPMENT', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-                      Text('Silk Fabric #442 • Lagos', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Pending Shipment',
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        'No pending shipments',
+                        style: TextStyle(
+                          color: colors.textMuted,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -336,12 +467,24 @@ class _DispatchCardState extends State<_DispatchCard> {
               child: ElevatedButton(
                 onPressed: widget.onDispatch,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isHovered ? Colors.white.withValues(alpha: 0.15) : Colors.white10,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: _isHovered
+                      ? colors.divider
+                      : colors.borderSubtle,
+                  foregroundColor: colors.textPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('CALL RIDER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+                child: Text(
+                  'Request Pickup',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
+                    letterSpacing: 1,
+                    color: colors.textPrimary,
+                  ),
+                ),
               ),
             ),
           ],
@@ -355,7 +498,11 @@ class _FabricCard extends StatefulWidget {
   final String name;
   final String stock;
   final IconData icon;
-  const _FabricCard({required this.name, required this.stock, required this.icon});
+  const _FabricCard({
+    required this.name,
+    required this.stock,
+    required this.icon,
+  });
 
   @override
   State<_FabricCard> createState() => _FabricCardState();
@@ -366,6 +513,7 @@ class _FabricCardState extends State<_FabricCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -376,14 +524,12 @@ class _FabricCardState extends State<_FabricCard> {
           duration: const Duration(milliseconds: 150),
           width: 130,
           decoration: BoxDecoration(
-            color: _isHovered
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.white.withValues(alpha: 0.03),
+            color: _isHovered ? colors.surfaceHover : colors.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: _isHovered
                   ? AppColors.amber.withValues(alpha: 0.2)
-                  : Colors.white.withValues(alpha: 0.05),
+                  : colors.borderSubtle,
             ),
           ),
           child: Column(
@@ -395,9 +541,13 @@ class _FabricCardState extends State<_FabricCard> {
                     color: _isHovered
                         ? AppColors.amber.withValues(alpha: 0.1)
                         : AppColors.amber.withValues(alpha: 0.05),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
                   ),
-                  child: Center(child: Icon(widget.icon, color: AppColors.amber, size: 28)),
+                  child: Center(
+                    child: Icon(widget.icon, color: AppColors.amber, size: 28),
+                  ),
                 ),
               ),
               Padding(
@@ -405,8 +555,22 @@ class _FabricCardState extends State<_FabricCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9)),
-                    Text('${widget.stock} REMAINING', style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
+                    Text(
+                      widget.name,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 9,
+                      ),
+                    ),
+                    Text(
+                      '${widget.stock} REMAINING',
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -431,7 +595,11 @@ class _PerformanceCard extends StatelessWidget {
           final (name, progress, color) = item;
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: _PerformanceItem(name: name, progress: progress, color: color),
+            child: _PerformanceItem(
+              name: name,
+              progress: progress,
+              color: color,
+            ),
           );
         }).toList(),
       ),
@@ -443,18 +611,38 @@ class _PerformanceItem extends StatelessWidget {
   final String name;
   final double progress;
   final Color color;
-  const _PerformanceItem({required this.name, required this.progress, required this.color});
+  const _PerformanceItem({
+    required this.name,
+    required this.progress,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(name, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-            Text('${(progress * 100).toInt()}%', style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
+            Text(
+              name,
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+              ),
+            ),
+            Text(
+              '${(progress * 100).toInt()}%',
+              style: TextStyle(
+                color: color,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -462,7 +650,7 @@ class _PerformanceItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.white.withValues(alpha: 0.05),
+            backgroundColor: colors.borderSubtle,
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 4,
           ),

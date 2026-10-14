@@ -55,9 +55,11 @@ class ServicePricing {
 
   /// Get the starting/base price (minimum price)
   double get startingPrice {
-    final prices = [stitchingPrice, alterationPrice, customPrice]
-        .where((p) => p > 0)
-        .toList();
+    final prices = [
+      stitchingPrice,
+      alterationPrice,
+      customPrice,
+    ].where((p) => p > 0).toList();
     if (prices.isEmpty) return 0.0;
     return prices.reduce((a, b) => a < b ? a : b);
   }
@@ -79,6 +81,27 @@ class ServicePricing {
       currency: currency ?? this.currency,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ServicePricing &&
+          other.stitchingPrice == stitchingPrice &&
+          other.alterationPrice == alterationPrice &&
+          other.customPrice == customPrice &&
+          other.materialCost == materialCost &&
+          other.expressFee == expressFee &&
+          other.currency == currency;
+
+  @override
+  int get hashCode => Object.hash(
+    stitchingPrice,
+    alterationPrice,
+    customPrice,
+    materialCost,
+    expressFee,
+    currency,
+  );
 }
 
 class User {
@@ -113,7 +136,8 @@ class User {
   double get startingPrice => servicePricing?.startingPrice ?? 0.0;
 
   /// Check if pricing is configured
-  bool get hasPricing => servicePricing != null && (servicePricing?.startingPrice ?? 0) > 0;
+  bool get hasPricing =>
+      servicePricing != null && (servicePricing?.startingPrice ?? 0) > 0;
 
   User copyWith({
     String? id,
@@ -142,4 +166,39 @@ class User {
       pricingTier: pricingTier ?? this.pricingTier,
     );
   }
+
+  /// Value equality so Riverpod can tell a genuinely changed user from the same
+  /// user rebuilt by a token refresh. Without this, every `tokenRefreshed` event
+  /// re-notified every dependent of [currentUserProvider], which re-issued their
+  /// REST queries (orders, notifications) on each refresh.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is User &&
+          other.id == id &&
+          other.email == email &&
+          other.name == name &&
+          other.userType == userType &&
+          other.createdAt == createdAt &&
+          other.phone == phone &&
+          other.profileImage == profileImage &&
+          other.bio == bio &&
+          other.isVerified == isVerified &&
+          other.servicePricing == servicePricing &&
+          other.pricingTier == pricingTier;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    email,
+    name,
+    userType,
+    createdAt,
+    phone,
+    profileImage,
+    bio,
+    isVerified,
+    servicePricing,
+    pricingTier,
+  );
 }

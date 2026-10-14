@@ -19,12 +19,13 @@ class QuoteEstimationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -112,7 +113,7 @@ class QuoteEstimationCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-// Price row - with Flexible to prevent overflow
+            // Price row - with Flexible to prevent overflow
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -189,26 +190,28 @@ class QuoteEstimationCard extends StatelessWidget {
               const Divider(color: AppColors.borderLight),
               const SizedBox(height: 12),
               // Inclusions list
-              ...quote.inclusions.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.success,
-                          size: 16,
+              ...quote.inclusions.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.success,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          item,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ],
         ),
@@ -222,20 +225,17 @@ class QuoteEstimationCompact extends StatelessWidget {
   final BookingQuote quote;
   final VoidCallback? onTap;
 
-  const QuoteEstimationCompact({
-    super.key,
-    required this.quote,
-    this.onTap,
-  });
+  const QuoteEstimationCompact({super.key, required this.quote, this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surfaceDark,
+          color: AppColors.deepBlue,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -251,11 +251,7 @@ class QuoteEstimationCompact extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             // Divider
-            Container(
-              width: 1,
-              height: 20,
-              color: AppColors.borderLight,
-            ),
+            Container(width: 1, height: 20, color: colors.borderDefault),
             const SizedBox(width: 12),
             // Turnaround
             Expanded(

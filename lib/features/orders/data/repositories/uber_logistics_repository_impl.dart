@@ -9,16 +9,10 @@ class UberLogisticsRepositoryImpl implements UberLogisticsRepository {
     required UberStructuredAddress pickup,
     required UberStructuredAddress dropoff,
   }) async {
-    // Stub implementation
-    return Right(UberDeliveryQuote(
-      id: 'quote_${DateTime.now().millisecondsSinceEpoch}',
-      fee: 4900,
-      currencyType: 'NGN',
-      expiresAt: DateTime.now().add(const Duration(minutes: 30)),
-      pickupDuration: 15,
-      totalDuration: 45,
-      dropoffEta: DateTime.now().add(const Duration(minutes: 60)),
-    ));
+    // Uber logistics not implemented — use Fez Logistics instead
+    return Left(Failure(ServerFailure(
+      message: 'Uber logistics not available. Use Fez Logistics.',
+    )));
   }
 
   @override
@@ -38,18 +32,26 @@ class UberLogisticsRepositoryImpl implements UberLogisticsRepository {
   }
 
   @override
-  Future<Either<Failure, UberDeliveryStatus>> getStatus(String deliveryId) async {
+  Future<Either<Failure, UberDeliveryStatus>> getStatus(
+    String deliveryId,
+  ) async {
     // Stub implementation
-    return Right(UberDeliveryStatus(
-      id: deliveryId,
-      current: 'pickup',
-      courierImminent: false,
-      trackingUrl: 'https://ubr.to/tracking',
-    ));
+    return Right(
+      UberDeliveryStatus(
+        id: deliveryId,
+        current: 'pickup',
+        courierImminent: false,
+        // PLACEHOLDER: Uber does not return a customer tracking URL yet
+        trackingUrl: 'https://ubr.to/tracking',
+      ),
+    );
   }
 
   @override
-  Future<Either<Failure, void>> cancelDelivery(String deliveryId, String reason) async {
+  Future<Either<Failure, void>> cancelDelivery(
+    String deliveryId,
+    String reason,
+  ) async {
     // Stub implementation
     return const Right(null);
   }

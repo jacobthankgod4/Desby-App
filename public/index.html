@@ -84,15 +84,18 @@
       background-color: #0A1921; /* Dark Navy matches main app */
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       width: 100vw;
       color: white;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .logo-container {
       margin-bottom: 40px;
@@ -155,7 +158,6 @@
     window.onerror = function(message, source, lineno, colno, error) {
       // Suppress removeChild errors during DOM manipulation
       if (message && message.includes && message.includes('removeChild')) {
-        console.log("[DEBUG] Suppressed DOM error:", message);
         return true; // Prevent default error handling
       }
       return false; // Let other errors propagate
@@ -165,16 +167,13 @@
     window.addEventListener('unhandledrejection', function(event) {
       if (event.reason && event.reason.message &&
           event.reason.message.includes('removeChild')) {
-        console.log("[DEBUG] Suppressed unhandled rejection:", event.reason.message);
         event.preventDefault();
       }
     });
 
-    console.log("[DEBUG] Desby OS: Handshaking with Browser...");
     window.addEventListener('load', function() {
       const statusEl = document.getElementById('status');
       if (statusEl) statusEl.innerText = "Syncing Neural Assets";
-      console.log("[DEBUG] All Scripts Loaded Successfully");
 
       // Safe preloader cleanup: use remove() method with proper null checks
       // This avoids the removeChild error when parent reference is stale
@@ -195,7 +194,6 @@
           }
         } catch (e) {
           // Silently ignore - element was already removed or DOM was modified
-          console.log("[DEBUG] Preloader cleanup skipped:", e.message);
         }
       };
 

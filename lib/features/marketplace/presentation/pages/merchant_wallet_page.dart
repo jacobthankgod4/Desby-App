@@ -4,38 +4,40 @@ import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/merchant_provider.dart';
 import '../../../../core/widgets/luxury_glass_card.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
+import '../../../../core/widgets/price_text_field.dart';
 
 class MerchantWalletPage extends ConsumerWidget {
   const MerchantWalletPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final user = ref.watch(currentUserProvider);
     final balanceAsync = ref.watch(walletBalanceProvider(user?.id ?? ''));
     final historyAsync = ref.watch(payoutHistoryProvider(user?.id ?? ''));
 
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
-        title: const Text('MERCHANT WALLET', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 2)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: colors.scaffoldBg,
+      appBar: shellAppBar(context, title: 'MERCHANT WALLET'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildBalanceCard(balanceAsync),
+            _buildBalanceCard(context, balanceAsync),
             const SizedBox(height: 40),
-            const Text('PAYOUT HISTORY', style: TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+            const Text(
+              'PAYOUT HISTORY',
+              style: TextStyle(
+                color: AppColors.amber,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+            ),
             const SizedBox(height: 16),
-            _buildHistoryList(historyAsync),
+            _buildHistoryList(context, historyAsync),
             const SizedBox(height: 60),
           ],
         ),
@@ -44,44 +46,84 @@ class MerchantWalletPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceCard(AsyncValue<Map<String, dynamic>> balanceAsync) {
+  Widget _buildBalanceCard(
+    BuildContext context,
+    AsyncValue<Map<String, dynamic>> balanceAsync,
+  ) {
+    final colors = context.colors;
     return balanceAsync.when(
       data: (data) => LuxuryGlassCard(
         padding: const EdgeInsets.all(32),
         child: Column(
           children: [
-            const Text('SETTLED BALANCE', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            Text(
+              'SETTLED BALANCE',
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
+            ),
             const SizedBox(height: 12),
-            Text('₦${(data['balance'] as num).toStringAsFixed(2)}', 
-              style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: -1)),
+            Text(
+              '\u20A6${(data['balance'] as num).toStringAsFixed(2)}',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1,
+              ),
+            ),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.hourglass_bottom_rounded, color: AppColors.amber, size: 14),
+                const Icon(
+                  Icons.hourglass_bottom_rounded,
+                  color: AppColors.amber,
+                  size: 14,
+                ),
                 const SizedBox(width: 8),
-                Text('PENDING: ₦${(data['pending_payout'] as num).toStringAsFixed(2)}', 
-                  style: const TextStyle(color: AppColors.amber, fontSize: 11, fontWeight: FontWeight.bold)),
+                Text(
+                  'PENDING: \u20A6${(data['pending_payout'] as num).toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: AppColors.amber,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ],
         ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppColors.amber),
+      ),
       error: (e, _) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.account_balance_wallet_outlined, color: Colors.white24, size: 48),
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              color: colors.textMuted,
+              size: 48,
+            ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'WALLET UNAVAILABLE',
-              style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1),
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Check your connection and try again.',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 11),
+              style: TextStyle(color: colors.textMuted, fontSize: 11),
             ),
           ],
         ),
@@ -89,41 +131,81 @@ class MerchantWalletPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryList(AsyncValue<List<Map<String, dynamic>>> historyAsync) {
+  Widget _buildHistoryList(
+    BuildContext context,
+    AsyncValue<List<Map<String, dynamic>>> historyAsync,
+  ) {
+    final colors = context.colors;
     return historyAsync.when(
-      data: (history) => history.isEmpty
-          ? const Center(child: Text('No payout history found.', style: TextStyle(color: Colors.white10)))
-          : ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: history.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = history[index];
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('₦${(item['amount'] as num).toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          Text(item['created_at'].toString().split('T').first, style: const TextStyle(color: Colors.white24, fontSize: 10)),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(color: _getStatusColor(item['status']).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                        child: Text(item['status'].toString().toUpperCase(), 
-                          style: TextStyle(color: _getStatusColor(item['status']), fontSize: 8, fontWeight: FontWeight.w900)),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+      data: (history) {
+        return history.isEmpty
+            ? Center(
+                child: Text(
+                  'No payout history found.',
+                  style: TextStyle(color: colors.textMuted),
+                ),
+              )
+            : ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: history.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final item = history[index];
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '\u20A6${(item['amount'] as num).toStringAsFixed(0)}',
+                              style: TextStyle(
+                                color: colors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              item['created_at'].toString().split('T').first,
+                              style: TextStyle(
+                                color: colors.textMuted,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(
+                              item['status'],
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            item['status'].toString().toUpperCase(),
+                            style: TextStyle(
+                              color: _getStatusColor(item['status']),
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+      },
       loading: () => const LinearProgressIndicator(color: AppColors.amber),
       error: (e, _) => const SizedBox(),
     );
@@ -131,32 +213,52 @@ class MerchantWalletPage extends ConsumerWidget {
 
   Color _getStatusColor(dynamic status) {
     switch (status.toString()) {
-      case 'processed': return Colors.greenAccent;
-      case 'failed': return Colors.redAccent;
-      default: return AppColors.amber;
+      case 'processed':
+        return Colors.greenAccent;
+      case 'failed':
+        return Colors.redAccent;
+      default:
+        return AppColors.amber;
     }
   }
 
-  Widget _buildPayoutAction(BuildContext context, WidgetRef ref, AsyncValue<Map<String, dynamic>> balanceAsync) {
+  Widget _buildPayoutAction(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<Map<String, dynamic>> balanceAsync,
+  ) {
+    final colors = context.colors;
     final balance = balanceAsync.asData?.value['balance'] ?? 0.0;
-    
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: ElevatedButton(
-        onPressed: balance > 0 ? () => _showPayoutDialog(context, ref, balance) : null,
+        onPressed: balance > 0
+            ? () => _showPayoutDialog(context, ref, balance)
+            : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.amber,
           foregroundColor: AppColors.darkNavy,
-          disabledBackgroundColor: Colors.white10,
+          disabledBackgroundColor: colors.borderSubtle,
           minimumSize: const Size(double.infinity, 64),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
         ),
-        child: const Text('REQUEST PAYOUT', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+        child: const Text(
+          'REQUEST PAYOUT',
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+        ),
       ),
     );
   }
 
-  void _showPayoutDialog(BuildContext context, WidgetRef ref, double maxAmount) {
+  void _showPayoutDialog(
+    BuildContext context,
+    WidgetRef ref,
+    double maxAmount,
+  ) {
+    final colors = context.colors;
     final amountController = TextEditingController(text: maxAmount.toString());
     final bankController = TextEditingController();
     final accountController = TextEditingController();
@@ -164,47 +266,125 @@ class MerchantWalletPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkNavy,
+        backgroundColor: colors.dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('PAYOUT REQUEST', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+        title: Text(
+          'PAYOUT REQUEST',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: amountController, 
+              controller: amountController,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'Amount (NGN)', labelStyle: TextStyle(color: Colors.white24)),
+              inputFormatters: priceInputFormatters,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Amount (NGN)',
+                hintStyle: TextStyle(color: colors.textHint, fontSize: 13),
+                filled: true,
+                fillColor: colors.inputFill,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppColors.amber,
+                    width: 1.5,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: bankController, 
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'Bank Name', labelStyle: TextStyle(color: Colors.white24)),
+              controller: bankController,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Bank Name',
+                hintStyle: TextStyle(color: colors.textHint, fontSize: 13),
+                filled: true,
+                fillColor: colors.inputFill,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppColors.amber,
+                    width: 1.5,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: accountController, 
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: 'Account Number', labelStyle: TextStyle(color: Colors.white24)),
+              controller: accountController,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Account Number',
+                hintStyle: TextStyle(color: colors.textHint, fontSize: 13),
+                filled: true,
+                fillColor: colors.inputFill,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppColors.amber,
+                    width: 1.5,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
           ElevatedButton(
             onPressed: () async {
               final user = ref.read(currentUserProvider);
+              if (user == null) return;
               await ref.read(merchantRepositoryProvider).requestPayout(
-                user!.id, 
-                double.parse(amountController.text),
-                {'bank': bankController.text, 'account': accountController.text}
+                user.id,
+                double.parse(priceToDigits(amountController.text)),
+                {
+                  'bank': bankController.text,
+                  'account': accountController.text,
+                },
               );
               ref.invalidate(walletBalanceProvider(user.id));
               ref.invalidate(payoutHistoryProvider(user.id));
               if (context.mounted) Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.amber,
+              foregroundColor: AppColors.darkNavy,
+            ),
             child: const Text('SUBMIT'),
           ),
         ],

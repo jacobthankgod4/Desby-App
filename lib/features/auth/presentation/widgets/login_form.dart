@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../theme/colors.dart';
 import '../../../../theme/spacing.dart';
 import '../../../../theme/typography.dart';
 
@@ -44,6 +45,7 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.lg),
@@ -82,12 +84,32 @@ class _LoginFormState extends State<LoginForm> {
               controller: emailController,
               focusNode: emailFocus,
               enabled: !widget.isLoading,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                labelText: 'Email',
                 hintText: 'Enter your email',
-                prefixIcon: const Icon(Icons.email_outlined),
+                hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+                filled: true,
+                fillColor: colors.borderSubtle,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.amber, width: 1.5),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -102,12 +124,32 @@ class _LoginFormState extends State<LoginForm> {
               controller: passwordController,
               focusNode: passwordFocus,
               enabled: !widget.isLoading,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                labelText: 'Password',
                 hintText: 'Enter your password',
-                prefixIcon: const Icon(Icons.lock_outlined),
+                hintStyle: TextStyle(color: colors.textMuted, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.lock_outlined,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+                filled: true,
+                fillColor: colors.borderSubtle,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.amber, width: 1.5),
                 ),
               ),
               obscureText: true,
@@ -129,10 +171,7 @@ class _LoginFormState extends State<LoginForm> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(
-                        'Sign In',
-                        style: AppTypography.button,
-                      ),
+                    : Text('Sign In', style: AppTypography.button),
               ),
             ),
           ],

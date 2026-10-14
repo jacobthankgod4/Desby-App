@@ -35,20 +35,16 @@ final secureStorageProvider = Provider<SecureStorageService>((ref) {
 final appInitializationProvider = FutureProvider<void>((ref) async {
   try {
     logger.info('Starting app initialization');
-    
+
     // Initialize local storage
     await ref.watch(localStorageProvider.future);
-    
+
     // Check for existing authentication
     logger.debug('Checking for existing authentication session');
-    
+
     logger.info('App initialization completed successfully');
   } catch (e, stackTrace) {
-    logger.error(
-      'App initialization failed',
-      error: e,
-      stackTrace: stackTrace,
-    );
+    logger.error('App initialization failed', error: e, stackTrace: stackTrace);
     rethrow;
   }
 });

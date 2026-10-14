@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 
 /// Responsive utilities for Tailor Finder pages
 /// Provides responsive breakpoints, adaptive layouts, and accessibility helpers
@@ -9,7 +10,7 @@ class TailorFinderBreakpoints {
 
   // ATOMIC FIX: Low thresholds to account for sidebar + padding
   static const double mobile = 300.0;
-  static const double tablet = 500.0;  
+  static const double tablet = 500.0;
   static const double desktop = 700.0;
   static const double wide = 1000.0;
 }
@@ -38,7 +39,7 @@ class TailorFinderResponsive extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        
+
         if (width >= TailorFinderBreakpoints.wide && wide != null) {
           return wide!;
         } else if (width >= TailorFinderBreakpoints.desktop) {
@@ -58,32 +59,33 @@ class TailorFinderLayout {
   TailorFinderLayout._();
 
   // Map aspect ratios (mobile vs desktop)
-  static const double mobileMapAspect = 0.55; // 55% height for map on mobile - reduced for more sheet space
+  static const double mobileMapAspect =
+      0.55; // 55% height for map on mobile - reduced for more sheet space
   static const double desktopMapWidth = 0.55; // 55% width for map on desktop
-  
+
   // Panel widths (fraction of total width)
   static const double desktopPanelMin = 280.0;
   static const double desktopPanelMax = 400.0;
-  
+
   // Paddings
   static const double mobilePadding = 16.0;
   static const double desktopPadding = 24.0;
-  
-// Bottom sheet sizes (fraction of screen height)
+
+  // Bottom sheet sizes (fraction of screen height)
   // FIX #2: Reduced max from 0.85 to 0.78 to prevent bottom overflow (3.4px):
   // accounts for: mobile nav bar (80px+34px) + CTA button (100px+34px) + safe area
   static const double sheetMin = 0.15;
   static const double sheetMedium = 0.35;
   static const double sheetMax = 0.78;
-  
-// Mobile-specific adjustments
+
+  // Mobile-specific adjustments
   static const double mobileSheetInitial = 0.35;
   static const double mobileSheetMin = 0.20;
   // FIX: Reduced from 0.85 to 0.75 to prevent bottom overflow
   // Must leave space for: nav bar (~80px) + CTA button (~60px) + safe area (~34px) ≈ 174px
   // On a typical 844px phone: 174/844 ≈ 0.206, so use 0.75 for max (leaving ~21% free)
   static const double mobileSheetMax = 0.75;
-  
+
   // Safe area padding for bottom elements (calculated dynamically in widget)
   static const double navBarHeight = 80.0;
   static const double ctaButtonHeight = 60.0;
@@ -119,9 +121,10 @@ class _TailorFinderShimmerState extends State<TailorFinderShimmer>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: -1.0,
+      end: 2.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -173,7 +176,11 @@ class TailorListShimmer extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             children: [
-              const TailorFinderShimmer(width: 56, height: 56, borderRadius: 12),
+              const TailorFinderShimmer(
+                width: 56,
+                height: 56,
+                borderRadius: 12,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -216,9 +223,7 @@ class MapShimmer extends StatelessWidget {
           color: const Color(0xFFE0E0E0),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: const Center(child: CircularProgressIndicator()),
       ),
     );
   }
@@ -259,17 +264,17 @@ class TailorFinderContrast {
   TailorFinderContrast._();
 
   // Primary text (dark on light) - meets 4.5:1
-  static const Color textPrimary = Color(0xFF1A1A1A); // #1A1A1A passes
-  
-  // Secondary text - meets 4.5:1  
+  static const Color textPrimary = AppColors.darkGray;
+
+  // Secondary text - meets 4.5:1
   static const Color textSecondary = Color(0xFF4A4A4A);
-  
+
   // Button text - meets 4.5:1
   static const Color buttonText = Color(0xFF0A0A0A);
-  
+
   // Disabled text - below threshold is OK (3:1 minimum)
   static const Color disabled = Color(0xFF9E9E9E);
-  
+
   // Required asterisk for forms
   static const Color required = Color(0xFFD32F2F);
 }

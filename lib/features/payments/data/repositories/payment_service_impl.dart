@@ -1,3 +1,4 @@
+// STUB: Not used in production. Remove if not needed.
 import '../../domain/entities/payment.dart';
 import '../../domain/services/payment_service.dart';
 

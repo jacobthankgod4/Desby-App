@@ -4,6 +4,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i3;
+import 'dart:typed_data' as _i7;
 
 import 'package:desby_app/core/error/failures.dart' as _i4;
 import 'package:desby_app/features/profile/domain/entities/user_profile.dart'
@@ -74,6 +75,22 @@ class MockProfileRepository extends _i1.Mock implements _i2.ProfileRepository {
               _i6.dummyValue<_i4.Result<void>>(
                 this,
                 Invocation.method(#uploadProfileImage, [userId, imagePath]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<void>>);
+
+  @override
+  _i3.Future<_i4.Result<void>> uploadProfileImageBytes(
+    String? userId,
+    _i7.Uint8List? bytes,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#uploadProfileImageBytes, [userId, bytes]),
+            returnValue: _i3.Future<_i4.Result<void>>.value(
+              _i6.dummyValue<_i4.Result<void>>(
+                this,
+                Invocation.method(#uploadProfileImageBytes, [userId, bytes]),
               ),
             ),
           )

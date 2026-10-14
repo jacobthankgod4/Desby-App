@@ -17,7 +17,9 @@ void main() {
   setUp(() {
     mockRepository = MockAuthRepository();
     usecase = LoginUsecase(mockRepository);
-    provideDummy<Result<AuthResponse>>(Failure(ServerFailure(message: 'dummy')));
+    provideDummy<Result<AuthResponse>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
   });
 
   group('LoginUsecase', () {
@@ -37,27 +39,28 @@ void main() {
     );
 
     test('should return AuthResponse when login is successful', () async {
-      when(mockRepository.login('test@example.com', 'password'))
-          .thenAnswer((_) async => Success(tAuthResponse));
+      when(
+        mockRepository.login('test@example.com', 'password'),
+      ).thenAnswer((_) async => Success(tAuthResponse));
 
       final result = await usecase('test@example.com', 'password');
 
       expect(result, isA<Success>());
-      result.fold(
-        (failure) => fail('Should not return failure'),
-        (authResponse) {
-          expect(authResponse.user.email, 'test@example.com');
-          expect(authResponse.accessToken, 'access_token');
-        },
-      );
+      result.fold((failure) => fail('Should not return failure'), (
+        authResponse,
+      ) {
+        expect(authResponse.user.email, 'test@example.com');
+        expect(authResponse.accessToken, 'access_token');
+      });
 
       verify(mockRepository.login('test@example.com', 'password')).called(1);
     });
 
     test('should return Failure when login fails', () async {
       final tFailure = ServerFailure(message: 'Login failed');
-      when(mockRepository.login('test@example.com', 'password'))
-          .thenAnswer((_) async => Failure(tFailure));
+      when(
+        mockRepository.login('test@example.com', 'password'),
+      ).thenAnswer((_) async => Failure(tFailure));
 
       final result = await usecase('test@example.com', 'password');
 

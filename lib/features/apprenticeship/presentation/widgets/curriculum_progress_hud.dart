@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 
-class CurriculumProgressHud extends StatelessWidget {
-  final double progress; // 0.0 to 1.0
+class CurriculumProgressHud extends ConsumerWidget {
+  final double progress;
   final String level;
   final String nextTarget;
 
@@ -14,63 +16,100 @@ class CurriculumProgressHud extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final percent = (progress * 100).toInt();
+    final colors = context.colors;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkNavy : Colors.white,
-        borderRadius: BorderRadius.circular(32),
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          if (!isDark)
+          if (!isDark) ...[
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 24,
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 20,
               offset: const Offset(0, 8),
             ),
+            BoxShadow(
+              color: Colors.white,
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+          if (isDark) ...[
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ],
       ),
       child: Row(
         children: [
-          // Circular Progress Indicator with center label
+          // Circular Progress
           SizedBox(
-            height: 100,
-            width: 100,
+            height: 88,
+            width: 88,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                ShaderMask(
-                  shaderCallback: (rect) => const LinearGradient(
-                    colors: [AppColors.amber, Colors.orangeAccent],
-                  ).createShader(rect),
+                // Background circle
+                SizedBox(
+                  height: 88,
+                  width: 88,
                   child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 10,
+                    value: 1.0,
+                    strokeWidth: 8,
                     strokeCap: StrokeCap.round,
-                    backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    backgroundColor: isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : colors.surfaceAlt,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.transparent,
+                    ),
                   ),
                 ),
+                // Progress circle
+                SizedBox(
+                  height: 88,
+                  width: 88,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 8,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      percent >= 100 ? AppColors.successGreen : AppColors.amber,
+                    ),
+                  ),
+                ),
+                // Percentage text
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${(progress * 100).toInt()}%',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 20,
-                        letterSpacing: -0.5,
+                      '$percent%',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        height: 1,
+                        color: colors.textPrimary,
                       ),
                     ),
-                    const Text(
-                      'SYNC',
+                    const SizedBox(height: 2),
+                    Text(
+                      'DONE',
                       style: TextStyle(
                         fontSize: 8,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white38,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                        color: colors.textHint,
                       ),
                     ),
                   ],
@@ -78,14 +117,18 @@ class CurriculumProgressHud extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 20),
           // Info Section
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Level badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.amber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -95,44 +138,46 @@ class CurriculumProgressHud extends StatelessWidget {
                     style: const TextStyle(
                       color: AppColors.amber,
                       fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'NEXT MILESTONE',
-                  style: TextStyle(
-                    color: Colors.white24,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  ),
-                ),
+                // Next milestone
                 Text(
                   nextTarget,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: colors.textPrimary,
+                    height: 1.3,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 12),
-                const Row(
-                  children: [
-                    Text(
-                      'Continue Training',
-                      style: TextStyle(
-                        color: AppColors.amber,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                // Continue button
+                GestureDetector(
+                  onTap: () => ref.pushShell('/curriculum'),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Continue Training',
+                        style: TextStyle(
+                          color: AppColors.amber,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_rounded, color: AppColors.amber, size: 14),
-                  ],
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.amber,
+                        size: 14,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

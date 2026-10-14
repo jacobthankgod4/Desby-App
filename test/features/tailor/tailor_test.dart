@@ -24,9 +24,15 @@ void main() {
     getApprenticeships = GetTailorApprenticeshipsUsecase(mockRepo);
     getCurriculum = GetCurriculumUsecase(mockRepo);
     getTasks = GetApprenticeTasksUsecase(mockRepo);
-    provideDummy<Result<List<Apprenticeship>>>(Failure(ServerFailure(message: 'dummy')));
-    provideDummy<Result<List<ApprenticeModule>>>(Failure(ServerFailure(message: 'dummy')));
-    provideDummy<Result<List<ApprenticeTask>>>(Failure(ServerFailure(message: 'dummy')));
+    provideDummy<Result<List<Apprenticeship>>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
+    provideDummy<Result<List<ApprenticeModule>>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
+    provideDummy<Result<List<ApprenticeTask>>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
   });
 
   final tApprenticeship = Apprenticeship(
@@ -56,8 +62,9 @@ void main() {
 
   group('GetTailorApprenticeshipsUsecase', () {
     test('should return list of apprenticeships', () async {
-      when(mockRepo.getApprenticeships('tailor_1'))
-          .thenAnswer((_) async => Success([tApprenticeship]));
+      when(
+        mockRepo.getApprenticeships('tailor_1'),
+      ).thenAnswer((_) async => Success([tApprenticeship]));
 
       final result = await getApprenticeships('tailor_1');
 
@@ -69,8 +76,9 @@ void main() {
     });
 
     test('should return Failure on error', () async {
-      when(mockRepo.getApprenticeships('tailor_1'))
-          .thenAnswer((_) async => Failure(ServerFailure(message: 'DB error')));
+      when(
+        mockRepo.getApprenticeships('tailor_1'),
+      ).thenAnswer((_) async => Failure(ServerFailure(message: 'DB error')));
 
       final result = await getApprenticeships('tailor_1');
 
@@ -80,8 +88,9 @@ void main() {
 
   group('GetCurriculumUsecase', () {
     test('should return list of modules', () async {
-      when(mockRepo.getCurriculum())
-          .thenAnswer((_) async => Success([tModule]));
+      when(
+        mockRepo.getCurriculum(),
+      ).thenAnswer((_) async => Success([tModule]));
 
       final result = await getCurriculum();
 
@@ -95,8 +104,9 @@ void main() {
 
   group('GetApprenticeTasksUsecase', () {
     test('should return list of tasks', () async {
-      when(mockRepo.getApprenticeTasks('app_1'))
-          .thenAnswer((_) async => Success([tTask]));
+      when(
+        mockRepo.getApprenticeTasks('app_1'),
+      ).thenAnswer((_) async => Success([tTask]));
 
       final result = await getTasks('app_1');
 

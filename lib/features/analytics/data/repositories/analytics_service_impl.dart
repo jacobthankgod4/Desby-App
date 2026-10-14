@@ -23,20 +23,31 @@ class AnalyticsServiceImpl implements AnalyticsService {
 
   @override
   Future<void> setUserProperty(String name, String value) async {
-     debugPrint('Analytics User Property: $name = $value');
+    debugPrint('Analytics User Property: $name = $value');
   }
 
   @override
   Future<List<BusinessMetric>> getDashboardMetrics(String userId) async {
     try {
-      final ordersResponse = await _supabase.from('orders').select('total_amount, status, created_at').eq('tailor_id', userId);
-      final clientsResponse = await _supabase.from('clients').select('id, created_at').eq('tailor_id', userId);
+      final ordersResponse = await _supabase
+          .from('orders')
+          .select('total_amount, status, created_at')
+          .eq('tailor_id', userId);
+      final clientsResponse = await _supabase
+          .from('clients')
+          .select('id, created_at')
+          .eq('tailor_id', userId);
 
       final List<dynamic> orders = ordersResponse;
       final List<dynamic> clients = clientsResponse;
 
-      final totalRevenue = orders.fold(0.0, (sum, o) => sum + (o['total_amount'] as num).toDouble());
-      final completedOrders = orders.where((o) => o['status'] == 'completed' || o['status'] == 'delivered').length;
+      final totalRevenue = orders.fold(
+        0.0,
+        (sum, o) => sum + ((o['total_amount'] as num?)?.toDouble() ?? 0),
+      );
+      final completedOrders = orders
+          .where((o) => o['status'] == 'delivered')
+          .length;
       final now = DateTime.now();
       final thisMonthOrders = orders.where((o) {
         final date = DateTime.parse(o['created_at'] as String);
@@ -44,11 +55,36 @@ class AnalyticsServiceImpl implements AnalyticsService {
       }).length;
 
       return [
-        BusinessMetric(label: 'Total Revenue', value: totalRevenue, trend: 'stable', changePercentage: 0),
-        BusinessMetric(label: 'Total Orders', value: orders.length.toDouble(), trend: 'stable', changePercentage: 0),
-        BusinessMetric(label: 'Completed Orders', value: completedOrders.toDouble(), trend: 'stable', changePercentage: 0),
-        BusinessMetric(label: 'Total Clients', value: clients.length.toDouble(), trend: 'stable', changePercentage: 0),
-        BusinessMetric(label: 'Orders This Month', value: thisMonthOrders.toDouble(), trend: 'stable', changePercentage: 0),
+        BusinessMetric(
+          label: 'Total Revenue',
+          value: totalRevenue,
+          trend: 'stable',
+          changePercentage: 0,
+        ),
+        BusinessMetric(
+          label: 'Total Orders',
+          value: orders.length.toDouble(),
+          trend: 'stable',
+          changePercentage: 0,
+        ),
+        BusinessMetric(
+          label: 'Completed Orders',
+          value: completedOrders.toDouble(),
+          trend: 'stable',
+          changePercentage: 0,
+        ),
+        BusinessMetric(
+          label: 'Total Clients',
+          value: clients.length.toDouble(),
+          trend: 'stable',
+          changePercentage: 0,
+        ),
+        BusinessMetric(
+          label: 'Orders This Month',
+          value: thisMonthOrders.toDouble(),
+          trend: 'stable',
+          changePercentage: 0,
+        ),
       ];
     } catch (e) {
       debugPrint('Error getting dashboard metrics: $e');
@@ -57,7 +93,11 @@ class AnalyticsServiceImpl implements AnalyticsService {
   }
 
   @override
-  Future<Map<String, dynamic>> getRevenueReport(String userId, DateTime start, DateTime end) async {
+  Future<Map<String, dynamic>> getRevenueReport(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
     try {
       final response = await _supabase
           .from('orders')
@@ -67,14 +107,22 @@ class AnalyticsServiceImpl implements AnalyticsService {
           .lte('created_at', end.toIso8601String());
 
       final List<dynamic> orders = response;
-      final totalRevenue = orders.fold(0.0, (sum, o) => sum + (o['total_amount'] as num).toDouble());
-      final completedOrders = orders.where((o) => o['status'] == 'completed' || o['status'] == 'delivered').length;
+      final totalRevenue = orders.fold(
+        0.0,
+        (sum, o) => sum + (o['total_amount'] as num).toDouble(),
+      );
+      final completedOrders = orders
+          .where((o) => o['status'] == 'delivered')
+          .length;
 
       return {
         'totalRevenue': totalRevenue,
         'totalOrders': orders.length,
         'completedOrders': completedOrders,
-        'period': {'start': start.toIso8601String(), 'end': end.toIso8601String()},
+        'period': {
+          'start': start.toIso8601String(),
+          'end': end.toIso8601String(),
+        },
       };
     } catch (e) {
       debugPrint('Error getting revenue report: $e');
@@ -85,8 +133,14 @@ class AnalyticsServiceImpl implements AnalyticsService {
   @override
   Future<Map<String, dynamic>> getBusinessInsights(String userId) async {
     try {
-      final ordersResponse = await _supabase.from('orders').select().eq('tailor_id', userId);
-      final clientsResponse = await _supabase.from('clients').select().eq('tailor_id', userId);
+      final ordersResponse = await _supabase
+          .from('orders')
+          .select()
+          .eq('tailor_id', userId);
+      final clientsResponse = await _supabase
+          .from('clients')
+          .select()
+          .eq('tailor_id', userId);
 
       final List<dynamic> orders = ordersResponse;
       final List<dynamic> clients = clientsResponse;
@@ -94,8 +148,15 @@ class AnalyticsServiceImpl implements AnalyticsService {
       return {
         'totalOrders': orders.length,
         'totalClients': clients.length,
-        'totalRevenue': orders.fold(0.0, (sum, o) => sum + (o['total_amount'] as num).toDouble()),
-        'completedOrders': orders.where((o) => o['status'] == 'completed' || o['status'] == 'delivered').length,
+        'totalRevenue': orders.fold(
+          0.0,
+          (sum, o) => sum + (o['total_amount'] as num).toDouble(),
+        ),
+        'completedOrders': orders
+            .where(
+              (o) => o['status'] == 'completed' || o['status'] == 'delivered',
+            )
+            .length,
       };
     } catch (e) {
       debugPrint('Error getting business insights: $e');
@@ -106,18 +167,26 @@ class AnalyticsServiceImpl implements AnalyticsService {
   @override
   Future<List<Map<String, dynamic>>> getMonthlyRevenue(String userId) async {
     try {
-      final response = await _supabase.from('orders').select('total_amount, created_at').eq('tailor_id', userId);
+      final response = await _supabase
+          .from('orders')
+          .select('total_amount, created_at')
+          .eq('tailor_id', userId);
       final List<dynamic> orders = response;
-      
+
       // Group by month
       final Map<String, double> monthlyData = {};
       for (final order in orders) {
         final date = DateTime.parse(order['created_at'] as String);
-        final monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
-        monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + (order['total_amount'] as num).toDouble();
+        final monthKey =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}';
+        monthlyData[monthKey] =
+            (monthlyData[monthKey] ?? 0) +
+            (order['total_amount'] as num).toDouble();
       }
 
-      return monthlyData.entries.map((e) => {'month': e.key, 'revenue': e.value}).toList();
+      return monthlyData.entries
+          .map((e) => {'month': e.key, 'revenue': e.value})
+          .toList();
     } catch (e) {
       debugPrint('Error getting monthly revenue: $e');
       return [];
@@ -127,14 +196,17 @@ class AnalyticsServiceImpl implements AnalyticsService {
   @override
   Future<Map<String, int>> getOrderCategoryDistribution(String userId) async {
     try {
-      final response = await _supabase.from('orders').select('items').eq('tailor_id', userId);
+      final response = await _supabase
+          .from('orders')
+          .select('items')
+          .eq('tailor_id', userId);
       final List<dynamic> orders = response;
-      
+
       final Map<String, int> distribution = {};
       for (final order in orders) {
         final List<dynamic> items = order['items'] as List<dynamic>;
         for (final item in items) {
-          final type = item['garmentType'] as String;
+          final type = item['garment_type'] as String;
           distribution[type] = (distribution[type] ?? 0) + 1;
         }
       }

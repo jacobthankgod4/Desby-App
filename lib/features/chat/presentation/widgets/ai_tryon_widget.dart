@@ -3,10 +3,16 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/services/image_upload_service.dart';
 import '../../../../core/network/eachlabs_client.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class AiTryOnWidget extends StatefulWidget {
   final Function(String imageUrl) onGenerated;
-  const AiTryOnWidget({super.key, required this.onGenerated});
+  final String? garmentImageUrl;
+  const AiTryOnWidget({
+    super.key,
+    required this.onGenerated,
+    this.garmentImageUrl,
+  });
 
   @override
   State<AiTryOnWidget> createState() => _AiTryOnWidgetState();
@@ -16,7 +22,7 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
   final _imageService = ImageUploadService();
   final _eachLabsClient = EachLabsClient();
   final _descriptionController = TextEditingController();
-  
+
   XFile? _personImage;
   XFile? _garmentImage;
   bool _isGenerating = false;
@@ -37,9 +43,13 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
   }
 
   Future<void> _generate() async {
-    if (_personImage == null || _garmentImage == null) return;
+    if (_personImage == null) return;
     if (_descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please describe the garment (e.g. Silk Kaftan)')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please describe the garment (e.g. Silk Kaftan)'),
+        ),
+      );
       return;
     }
 
@@ -49,13 +59,30 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
     });
 
     try {
-      final personUrl = await _imageService.uploadImage(_personImage!, 'tryon', 'models');
-      final garmentUrl = await _imageService.uploadImage(_garmentImage!, 'tryon', 'garments');
+      final personUrl = await _imageService.uploadImage(
+        _personImage!,
+        'tryon',
+        'models',
+      );
+      String? garmentUrl;
+      if (widget.garmentImageUrl != null) {
+        garmentUrl = widget.garmentImageUrl;
+      } else if (_garmentImage != null) {
+        garmentUrl = await _imageService.uploadImage(
+          _garmentImage!,
+          'tryon',
+          'garments',
+        );
+      } else {
+        throw 'Please select a garment image';
+      }
 
-      if (personUrl == null || garmentUrl == null) throw 'Upload failed';
+      if (personUrl == null || garmentUrl == null) {
+        throw const ImageUploadException('Upload returned no URL');
+      }
 
-      setState(() => _status = 'Neural Texture Mapping...');
-      
+      setState(() => _status = 'Creating your try-on...');
+
       final id = await _eachLabsClient.createPrediction(
         humanImg: personUrl,
         garmImg: garmentUrl,
@@ -63,9 +90,9 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
         category: _category,
       );
 
-      if (id == null) throw 'AI Initiation failed';
+      if (id == null) throw 'Could not start the try-on. Please try again.';
 
-      setState(() => _status = 'Diffusing Design (10-30s)...');
+      setState(() => _status = 'Finalizing your look...');
 
       final result = await _eachLabsClient.waitForResult(id);
 
@@ -75,10 +102,26 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
       } else {
         throw result.error ?? 'Generation failed';
       }
-
+    } on ImageUploadException catch (e) {
+      debugPrint('AI try-on image upload failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image upload failed — please try again'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('AI Error: $e'), backgroundColor: Colors.redAccent));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Something went wrong with the try-on. Please try again.',
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isGenerating = false);
@@ -87,26 +130,44 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(32),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A1921),
+      decoration: BoxDecoration(
+        color: colors.scaffoldBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('IDM-VTON NEURAL FITTING', 
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2, color: AppColors.amber)),
+            const Text(
+              'Virtual Try-On',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+                letterSpacing: 2,
+                color: AppColors.amber,
+              ),
+            ),
             const SizedBox(height: 32),
             Row(
               children: [
-                _buildImageSlot('CUSTOMER', _personImage, () => _pickImage(true)),
+                _buildImageSlot(
+                  'CUSTOMER',
+                  _personImage,
+                  () => _pickImage(true),
+                ),
                 const SizedBox(width: 24),
-                const Icon(Icons.auto_awesome_mosaic_rounded, color: Colors.white10),
+                Icon(Icons.arrow_forward_rounded, color: colors.borderSubtle),
                 const SizedBox(width: 24),
-                _buildImageSlot('GARMENT', _garmentImage, () => _pickImage(false)),
+                widget.garmentImageUrl != null
+                    ? _buildNetworkImageSlot('GARMENT', widget.garmentImageUrl!)
+                    : _buildImageSlot(
+                        'GARMENT',
+                        _garmentImage,
+                        () => _pickImage(false),
+                      ),
               ],
             ),
             const SizedBox(height: 32),
@@ -117,29 +178,72 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 labelText: 'GARMENT DESCRIPTION',
-                labelStyle: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+                labelStyle: TextStyle(
+                  color: colors.textMuted,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
                 hintText: 'e.g. Traditional African Lace Kaftan',
-                hintStyle: const TextStyle(color: Colors.white10, fontSize: 12),
+                hintStyle: TextStyle(color: colors.borderSubtle, fontSize: 12),
                 filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.03),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.amber)),
+                fillColor: colors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: colors.borderSubtle),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.amber),
+                ),
               ),
             ),
             const SizedBox(height: 40),
             if (_isGenerating) ...[
-              const CircularProgressIndicator(color: AppColors.amber, strokeWidth: 2),
+              const CircularProgressIndicator(
+                color: AppColors.amber,
+                strokeWidth: 2,
+              ),
               const SizedBox(height: 24),
-              Text(_status.toUpperCase(), style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 1)),
+              Text(
+                _status.toUpperCase(),
+                style: TextStyle(
+                  color: AppColors.amber,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 9,
+                  letterSpacing: 1,
+                ),
+              ),
             ] else
               SizedBox(
                 width: double.infinity,
                 height: 64,
                 child: ElevatedButton(
-                  onPressed: (_personImage != null && _garmentImage != null) ? _generate : null,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 0),
-                  child: const Text('INITIALIZE TRY-ON', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                  onPressed:
+                      (_personImage != null &&
+                          (widget.garmentImageUrl != null ||
+                              _garmentImage != null))
+                      ? _generate
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.amber,
+                    foregroundColor: AppColors.darkNavy,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Start Try-On',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
                 ),
               ),
             const SizedBox(height: 40),
@@ -150,10 +254,11 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
   }
 
   Widget _buildCategorySelector() {
+    final colors = context.colors;
     final categories = {
       'upper_body': 'TOPS',
       'lower_body': 'BOTTOMS',
-      'dresses': 'ONE-PIECE'
+      'dresses': 'ONE-PIECE',
     };
 
     return Row(
@@ -166,12 +271,22 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
               margin: const EdgeInsets.symmetric(horizontal: 4),
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: isSel ? AppColors.amber : Colors.white.withValues(alpha: 0.03),
+                color: isSel ? AppColors.amber : colors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isSel ? AppColors.amber : Colors.white10),
+                border: Border.all(
+                  color: isSel ? AppColors.amber : colors.borderSubtle,
+                ),
               ),
               alignment: Alignment.center,
-              child: Text(e.value, style: TextStyle(color: isSel ? AppColors.darkNavy : Colors.white60, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              child: Text(
+                e.value,
+                style: TextStyle(
+                  color: isSel ? AppColors.darkNavy : colors.textMuted,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
         );
@@ -180,10 +295,19 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
   }
 
   Widget _buildImageSlot(String label, XFile? file, VoidCallback onTap) {
+    final colors = context.colors;
     return Expanded(
       child: Column(
         children: [
-          Text(label, style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          Text(
+            label,
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
           const SizedBox(height: 12),
           InkWell(
             onTap: onTap,
@@ -191,13 +315,56 @@ class _AiTryOnWidgetState extends State<AiTryOnWidget> {
               height: 140,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.03),
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: file != null ? AppColors.amber : Colors.white10, width: 1.5),
+                border: Border.all(
+                  color: file != null ? AppColors.amber : colors.borderSubtle,
+                  width: 1.5,
+                ),
               ),
-              child: file != null 
-                ? ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.network(file.path, fit: BoxFit.cover))
-                : const Icon(Icons.add_a_photo_rounded, color: Colors.white10, size: 28),
+              child: file != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: AppNetworkImage(url: file.path, fit: BoxFit.cover),
+                    )
+                  : Icon(
+                      Icons.add_a_photo_rounded,
+                      color: colors.borderSubtle,
+                      size: 28,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetworkImageSlot(String label, String imageUrl) {
+    final colors = context.colors;
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 140,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.amber, width: 1.5),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: AppNetworkImage(url: imageUrl, fit: BoxFit.cover),
             ),
           ),
         ],

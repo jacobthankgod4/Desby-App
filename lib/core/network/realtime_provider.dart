@@ -4,13 +4,13 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 
 final realtimeServiceProvider = Provider<RealtimeService>((ref) {
   final service = RealtimeServiceImpl();
-  
+
   // Connect/Disconnect based on auth state
   ref.listen(isAuthenticatedProvider, (previous, next) {
     if (next) {
       final user = ref.read(currentUserProvider);
       if (user != null) {
-        service.connect(user.id);
+        service.connect(user.id, userType: user.userType);
       }
     } else {
       service.disconnect();

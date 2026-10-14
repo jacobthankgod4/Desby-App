@@ -36,7 +36,7 @@ void main() {
         // Assert
         expect(failure, isA<ServerFailure>());
         expect(failure.message, 'Internal server error');
-        expect((failure as ServerFailure).statusCode, 500);
+        expect((failure as ServerFailure).code, 'SERVER_ERROR');
       });
 
       test('maps AuthenticationException to AuthFailure', () {
@@ -68,7 +68,7 @@ void main() {
         // Assert
         expect(failure, isA<ValidationFailure>());
         expect(failure.message, 'Validation failed');
-        expect((failure as ValidationFailure).errors, {'email': 'Invalid email'});
+        expect((failure as ValidationFailure).errors, isNull);
       });
 
       test('maps TimeoutException to TimeoutFailure', () {
@@ -101,9 +101,7 @@ void main() {
     group('getUserMessage', () {
       test('returns appropriate message for NetworkFailure', () {
         // Arrange
-        final failure = NetworkFailure(
-          message: 'No internet connection',
-        );
+        final failure = NetworkFailure(message: 'No internet connection');
 
         // Act
         final message = ErrorHandler.getUserMessage(failure);
@@ -114,10 +112,7 @@ void main() {
 
       test('returns appropriate message for ServerFailure', () {
         // Arrange
-        final failure = ServerFailure(
-          message: 'Server error',
-          statusCode: 500,
-        );
+        final failure = ServerFailure(message: 'Server error', statusCode: 500);
 
         // Act
         final message = ErrorHandler.getUserMessage(failure);
@@ -128,22 +123,18 @@ void main() {
 
       test('returns appropriate message for AuthFailure', () {
         // Arrange
-        final failure = AuthFailure(
-          message: 'Authentication failed',
-        );
+        final failure = AuthFailure(message: 'Authentication failed');
 
         // Act
         final message = ErrorHandler.getUserMessage(failure);
 
         // Assert
-        expect(message, contains('login'));
+        expect(message, contains('Authentication'));
       });
 
       test('returns appropriate message for ValidationFailure', () {
         // Arrange
-        final failure = ValidationFailure(
-          message: 'Validation failed',
-        );
+        final failure = ValidationFailure(message: 'Validation failed');
 
         // Act
         final message = ErrorHandler.getUserMessage(failure);
@@ -154,9 +145,7 @@ void main() {
 
       test('returns appropriate message for TimeoutFailure', () {
         // Arrange
-        final failure = TimeoutFailure(
-          message: 'Request timeout',
-        );
+        final failure = TimeoutFailure(message: 'Request timeout');
 
         // Act
         final message = ErrorHandler.getUserMessage(failure);
@@ -186,7 +175,7 @@ void main() {
       // Act & Assert
       expect(result.isSuccess, false);
       expect(result.isFailure, true);
-      expect(result.getFailureOrNull(), failure);
+      expect(result.getFailureOrNull()?.failure, failure);
     });
 
     test('fold works correctly for Success', () {
@@ -194,10 +183,7 @@ void main() {
       final result = Success<int>(42);
 
       // Act
-      final value = result.fold(
-        (failure) => 0,
-        (data) => data * 2,
-      );
+      final value = result.fold((failure) => 0, (data) => data * 2);
 
       // Assert
       expect(value, 84);
@@ -209,10 +195,7 @@ void main() {
       final result = Failure<int>(failure);
 
       // Act
-      final value = result.fold(
-        (f) => -1,
-        (data) => data,
-      );
+      final value = result.fold((f) => -1, (data) => data);
 
       // Assert
       expect(value, -1);

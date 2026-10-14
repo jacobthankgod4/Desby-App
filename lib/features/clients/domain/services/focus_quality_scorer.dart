@@ -56,8 +56,8 @@ class FocusQualityScorer {
     final rating = q >= thresholdExcellent
         ? QualityRating.excellent
         : q >= thresholdAcceptable
-            ? QualityRating.acceptable
-            : QualityRating.poor;
+        ? QualityRating.acceptable
+        : QualityRating.poor;
 
     return QualityScore(
       q: q,
@@ -70,13 +70,18 @@ class FocusQualityScorer {
       profileId: profile.bucket,
       gender: gender,
       shouldFallback: rating == QualityRating.poor,
-      fallbackReason: rating == QualityRating.poor ? _getFallbackReason(q, c, v, o, s) : null,
+      fallbackReason: rating == QualityRating.poor
+          ? _getFallbackReason(q, c, v, o, s)
+          : null,
     );
   }
 
   /// Compute center alignment score (C)
   /// Based on how centered the target is in the viewport
-  static double _computeCenterScore(FocusProfile profile, String measurementKey) {
+  static double _computeCenterScore(
+    FocusProfile profile,
+    String measurementKey,
+  ) {
     // Ideal targets are near center (0, 0, 0 in camera space)
     // Score decreases as target moves away from ideal center
     final targetY = profile.target.y;
@@ -101,7 +106,8 @@ class FocusQualityScorer {
   static double _getIdealY(String measurementKey) {
     if (measurementKey.contains('neck')) return 0.45;
     if (measurementKey.contains('shoulder')) return 0.42;
-    if (measurementKey.contains('bust') || measurementKey.contains('chest')) return 0.28;
+    if (measurementKey.contains('bust') || measurementKey.contains('chest'))
+      return 0.28;
     if (measurementKey.contains('waist')) return 0.10;
     if (measurementKey.contains('hip')) return -0.08;
     if (measurementKey.contains('thigh')) return -0.26;
@@ -114,7 +120,10 @@ class FocusQualityScorer {
   /// Compute visibility score (V)
   /// Based on estimated region coverage
   static double _computeVisibilityScore(
-      FocusProfile profile, String measurementKey, String gender) {
+    FocusProfile profile,
+    String measurementKey,
+    String gender,
+  ) {
     // Smaller body parts need tighter zoom (higher score)
     // Larger body parts can have looser framing
     final radius = profile.orbit.radius;
@@ -139,13 +148,17 @@ class FocusQualityScorer {
     }
     if (measurementKey.contains('knee')) return 1.55;
     if (measurementKey.contains('ankle')) return 1.28;
-    if (measurementKey.contains('full') || measurementKey.contains('floor')) return 2.0;
+    if (measurementKey.contains('full') || measurementKey.contains('floor'))
+      return 2.0;
     return 1.75; // Default
   }
 
   /// Compute occlusion score (O)
   /// Penalize measurements that might be occluded
-  static double _computeOcclusionScore(FocusProfile profile, String measurementKey) {
+  static double _computeOcclusionScore(
+    FocusProfile profile,
+    String measurementKey,
+  ) {
     // Back-facing measurements have higher occlusion risk
     final theta = profile.orbit.theta;
     final isBackView = theta > 90 && theta < 270;
@@ -156,7 +169,7 @@ class FocusQualityScorer {
         'bust_round',
         'bust_point',
         'chest_round',
-        'across_chest'
+        'across_chest',
       ];
       if (frontOnlyMeasurements.contains(measurementKey)) {
         return 0.5; // Lower score for back view of front-focused measurement
@@ -201,7 +214,12 @@ class FocusQualityScorer {
 
   /// Get reason for fallback
   static String _getFallbackReason(
-      double q, double c, double v, double o, double s) {
+    double q,
+    double c,
+    double v,
+    double o,
+    double s,
+  ) {
     if (c < 0.5) return 'target_off_center';
     if (v < 0.5) return 'poor_visibility';
     if (o < 0.5) return 'occlusion_risk';

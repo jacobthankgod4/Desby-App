@@ -41,14 +41,16 @@ class MediaServiceImpl implements MediaService {
       final List<XFile> xFiles = await _imageUploadService.pickMultipleImages();
       final List<AppFile> files = [];
       for (final xFile in xFiles) {
-        files.add(AppFile(
-          id: xFile.name.hashCode.toString(),
-          name: xFile.name,
-          url: xFile.path,
-          type: FileType.image,
-          size: await xFile.length(),
-          uploadedAt: DateTime.now(),
-        ));
+        files.add(
+          AppFile(
+            id: xFile.name.hashCode.toString(),
+            name: xFile.name,
+            url: xFile.path,
+            type: FileType.image,
+            size: await xFile.length(),
+            uploadedAt: DateTime.now(),
+          ),
+        );
       }
       return files;
     } catch (e) {

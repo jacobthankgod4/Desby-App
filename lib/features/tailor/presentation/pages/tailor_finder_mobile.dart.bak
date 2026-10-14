@@ -1,0 +1,167 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launch.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../domain/entities/service_tier.dart';
+import '../providers/tailor_finder_provider.dart';
+import '../widgets/tailor_map_view.dart';
+import '../widgets/tailor_card.dart';
+import '../widgets/service_tier_selector.dart';
+import '../widgets/quote_estimation_card.dart';
+import '../../../../core/providers/navigation_provider.dart';
+import '../../../../theme/colors.dart';
+import '../../../../core/widgets/tailor_finder_responsive.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../profile/domain/entities/user_profile.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
+
+/// TailorFinderMobile - Uber-style Tailor Discovery for Mobile
+/// Responsive: adapts to any mobile screen size (tablet-optimized)
+/// Feature Parity: Full desktop feature set adapted for touch
+class TailorFinderMobile extends ConsumerStatefulWidget {
+  const TailorFinderMobile({super.key});
+
+  @override
+  ConsumerState<TailorFinderMobile> createState() => _TailorFinderMobileState();
+}
+
+class _TailorFinderMobileState extends ConsumerState<TailorFinderMobile> {
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+
+  // Track if showing tailor details inline
+  bool _showTailorDetails = false;
+
+  // Track view mode: true = show map, false = hide map for more tailor options
+  bool _showMap = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(tailorFinderProvider.notifier).loadNearbyTailors();
+    });
+    // Apply user's preferred finder style from onboarding
+    _applyUserPreference();
+  }
+
+  /// Apply user's preferred finder style from their profile (FIX #4)
+  void _applyUserPreference() {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser != null) {
+      final profileAsync = ref.read(userProfileProvider(currentUser.id));
+      // Handle the async profile data
+      profileAsync.when(
+        data: (profile) {
+          if (profile?.preferredFinderStyle != null) {
+            // If user chose 'classic' during onboarding, hide map by default
+            final useClassic = profile!.preferredFinderStyle == 'classic';
+            if (mounted) {
+              setState(() {
+                _showMap = !useClassic;
+              });
+            }
+          }
+        },
+        loading: () {},
+        error: (_, _) {},
+      );
+    }
+  }
+
+  /// Handle back navigation - INDUSTRY STANDARD: PopScope for back button handling (FIX #1)
+  Future<bool> _onWillPop() async {
+    // If showing details, go back to list first
+    if (_showTailorDetails) {
+      setState(() {
+        _showTailorDetails = false;
+      });
+      return false;
+    }
+    // If there's a selected tailor, deselect first
+    final state = ref.read(tailorFinderProvider);
+    if (state.selectedTailor != null) {
+      ref.read(tailorFinderProvider.notifier).clearSelection();
+      // Collapse sheet
+      await _sheetController.animateTo(
+        0.25,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+      return false; // Don't pop, just deselect
+    }
+    // Otherwise check if we can pop
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+      return true;
+    }
+    // If no routes to pop, go to main dashboard
+    if (ref.read(navigationProvider).route != '/main') {
+      ref.setShell('/main');
+    }
+    return true;
+  }
+
+  // Adaptive sheet sizes based on aspect ratio
+  double get _sheetInitialSize {
+    final aspect = MediaQuery.of(context).size.aspectRatio;
+    // On taller devices, open sheet more; on wider, open less
+    return aspect < 0.5 ? 0.55 : 0.5;
+  }
+
+  // Loading sheet placeholder
+  Widget _buildLoadingSheet() {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.5,
+        decoration: BoxDecoration(
+          color: AppColors.figmaCardFill,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const TailorFinderShimmer(width: 100, height: 20),
+            const SizedBox(height: 16),
+            const TailorFinderShimmer(width: double.infinity, height: 48),
+            const SizedBox(height: 16),
+            const TailorListShimmer(itemCount: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final state = ref.watch(tailorFinderProvider);
+    final selectedTailor = state.selectedTailor;
+    final selectedTier = state.selectedServiceTier;
+    final currentQuote = state.currentQuote;
+
+    // Loading state with shimmer
+    if (state.isLoading) {
+      return Container(
+        color: AppColors.darkNavy,
+        child: Stack(
+          children: [
+            const MapShimmer(aspectRatio: 0.65),
+            _buildLoadingSheet(),
+          ],
+  "analysis

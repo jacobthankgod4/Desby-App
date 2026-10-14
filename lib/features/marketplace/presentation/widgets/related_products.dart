@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
 import '../../domain/entities/fabric.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 /// RelatedProducts - Shows similar fabrics based on category
 class RelatedProducts extends StatelessWidget {
   final List<Fabric> relatedFabrics;
   final String currentFabricId;
   final Function(Fabric) onFabricTap;
-  
+
   const RelatedProducts({
     super.key,
     required this.relatedFabrics,
@@ -17,27 +18,28 @@ class RelatedProducts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     // Filter out current fabric
     final filteredFabrics = relatedFabrics
         .where((f) => f.id != currentFabricId)
         .take(4)
         .toList();
-    
+
     if (filteredFabrics.isEmpty) {
       return const SizedBox.shrink();
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 32),
-        const Text(
+        Text(
           'RELATED PRODUCTS',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w900,
             letterSpacing: 2,
-            color: AppColors.textMuted,
+            color: colors.textMuted,
           ),
         ),
         const SizedBox(height: 16),
@@ -64,22 +66,20 @@ class RelatedProducts extends StatelessWidget {
 class _RelatedProductCard extends StatelessWidget {
   final Fabric fabric;
   final VoidCallback onTap;
-  
-  const _RelatedProductCard({
-    required this.fabric,
-    required this.onTap,
-  });
+
+  const _RelatedProductCard({required this.fabric, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 160,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: colors.borderDefault),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +89,7 @@ class _RelatedProductCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: colors.surfaceHover,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(11),
                   ),
@@ -99,14 +99,14 @@ class _RelatedProductCard extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(11),
                         ),
-                        child: Image.network(
-                          fabric.imageUrls.first,
+                        child: AppNetworkImage(
+                          url: fabric.imageUrls.first,
                           fit: BoxFit.cover,
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.texture_rounded,
-                        color: Colors.grey,
+                        color: colors.iconMuted,
                         size: 40,
                       ),
               ),
@@ -121,15 +121,15 @@ class _RelatedProductCard extends StatelessWidget {
                     fabric.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '₦${fabric.pricePerYard.toStringAsFixed(0)}/yd',
+                    '\u20A6${fabric.pricePerYard.toStringAsFixed(0)}/yd',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

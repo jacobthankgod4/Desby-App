@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bespoke Piece — Desby</title>
+<meta name="description" content="View this bespoke piece listed by a verified tailor on Desby.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1921; --navy-2:#0E2430; --navy-3:#123240;
+    --amber:#FFC107; --amber-deep:#E6A800; --amber-soft:#FFF3CC;
+    --paper:#F7F6F2; --muted:#5B6B74; --line:#E8E6DF;
+    --green:#0F9D76;
+    --shadow-sm:0 1px 3px rgba(10,25,33,.08);
+    --shadow-md:0 14px 38px rgba(10,25,33,.12);
+    --shadow-lg:0 30px 80px rgba(10,25,33,.24);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Sora',sans-serif;letter-spacing:-.02em;line-height:1.14;color:var(--navy)}
+  img{display:block}
+  a{text-decoration:none;color:inherit}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 28px}
+  .btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:15px;border-radius:999px;padding:16px 32px;transition:.22s;border:none;cursor:pointer;font-family:'Inter';overflow:hidden;width:100%}
+  .btn::after{content:"";position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);transition:left .6s var(--ease-out)}
+  .btn:hover::after{left:130%}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-amber{background:var(--amber);color:#111;box-shadow:0 8px 24px rgba(255,193,7,.35)}
+  .btn-amber:hover{background:var(--amber-deep)}
+  .btn-navy{background:var(--navy);color:#fff}
+  .btn-navy:hover{background:var(--navy-3)}
+  .btn-ghost{background:transparent;color:var(--navy);border:1.5px solid #D8D5CC}
+  .btn-ghost:hover{border-color:var(--navy)}
+  
+  .crumb{font-size:13.5px;color:var(--muted);padding:22px 0 0;font-weight:500}
+  .crumb a{color:var(--amber-deep);font-weight:600}
+
+  .detail{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(36px,5vw,70px);padding:36px 0 90px;align-items:start}
+  .gallery{position:sticky;top:96px}
+  .main-img{border-radius:28px;overflow:hidden;box-shadow:var(--shadow-md);background:linear-gradient(150deg,#F2EFE6,#E7E2D4);aspect-ratio:4/4.4;display:flex;align-items:center;justify-content:center}
+  .main-img img{width:100%;height:100%;object-fit:cover;animation:fadeIn .6s var(--ease-out)}
+  @keyframes fadeIn{from{opacity:0;transform:scale(1.015)}to{opacity:1;transform:none}}
+  .thumbs{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
+  .thumb{width:76px;height:76px;border-radius:14px;overflow:hidden;border:2.5px solid transparent;cursor:pointer;transition:.2s;background:#fff;padding:0}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb.on{border-color:var(--amber)}
+  .thumb:hover{transform:translateY(-3px)}
+
+  .p-cat{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--amber-deep);text-transform:uppercase;margin-bottom:12px}
+  h1.title{font-size:clamp(28px,3.6vw,42px);margin-bottom:14px}
+  .p-tailor{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .t-avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--navy),#274552);color:var(--amber);display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Sora';font-size:18px;overflow:hidden;flex-shrink:0}
+  .t-avatar img{width:100%;height:100%;object-fit:cover}
+  .t-name{font-weight:700;color:var(--navy);font-size:15.5px;display:flex;align-items:center;gap:7px}
+  .t-name::after{content:"✓ Verified";font-size:11px;font-weight:800;color:var(--green);background:rgba(15,157,118,.1);padding:3px 10px;border-radius:99px}
+  .t-sub{font-size:13px;color:var(--muted)}
+  .p-price{font-family:'Sora';font-weight:800;font-size:clamp(26px,3vw,34px);color:var(--navy);margin-bottom:6px}
+  .p-price-note{font-size:13.5px;color:var(--muted);margin-bottom:26px}
+  .p-desc{color:#3A4B54;font-size:15.5px;margin-bottom:30px;max-width:520px}
+  .spec-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px}
+  .spec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;color:#4A5C66}
+  .cta-stack{display:grid;gap:13px;max-width:440px;margin-bottom:14px}
+  .gate-note{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--muted);max-width:440px}
+  .gate-note svg{flex-shrink:0;width:18px;height:18px;margin-top:3px;color:var(--amber-deep)}
+
+  .rel-sec{padding:20px 0 110px}
+  .rel-sec h2{font-size:clamp(22px,3vw,30px);margin-bottom:28px}
+  .rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px}
+  .rel-card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .4s var(--ease-out),box-shadow .4s}
+  .rel-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-md)}
+  .rel-img{aspect-ratio:1/1;overflow:hidden;background:linear-gradient(150deg,#F2EFE6,#E7E2D4)}
+  .rel-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s var(--ease-out)}
+  .rel-card:hover .rel-img img{transform:scale(1.05)}
+  .rel-body{padding:14px 16px 18px}
+  .rel-title{font-family:'Sora';font-weight:700;font-size:14.5px;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rel-price{font-size:14px;font-weight:700;color:var(--amber-deep);margin-top:4px}
+
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:18px;color:var(--muted)}
+  .spinner{width:44px;height:44px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--amber);animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .notfound{display:none;text-align:center;padding:120px 20px}
+  .notfound h1{font-size:clamp(26px,4vw,40px);margin-bottom:14px}
+  .notfound p{color:var(--muted);margin-bottom:30px}
+
+  /* Signup gate modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(10,25,33,.66);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+  .modal-bg.open{display:flex}
+  .modal{background:#fff;border-radius:26px;max-width:440px;width:100%;padding:40px 36px;text-align:center;animation:pop .45s var(--ease-out);position:relative}
+  @keyframes pop{from{opacity:0;transform:scale(.92) translateY(24px)}to{opacity:1;transform:none}}
+  .modal .m-ico{width:64px;height:64px;border-radius:18px;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px}
+  .modal h3{font-size:22px;margin-bottom:10px}
+  .modal p{color:var(--muted);font-size:14.5px;margin-bottom:26px}
+  .modal .close-x{position:absolute;top:16px;right:20px;background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+  @media(max-width:920px){.detail{grid-template-columns:1fr}.gallery{position:static}}
+
+  header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:84px;max-width:1200px;margin:0 auto;padding:0 28px}
+  .logo{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:800;font-size:23px;color:var(--navy)}
+  .logo-mark{width:54px;height:54px;border-radius:14px;object-fit:cover;display:block}
+  .nav-links{display:flex;align-items:center;gap:30px;font-size:15px;font-weight:500;color:#3A4B54}
+  .nav-links a{transition:color .2s}
+  .nav-links a:hover{color:var(--navy)}
+  .nav-links a.active{color:var(--navy);font-weight:700;position:relative}
+  .nav-links a.active::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:2.5px;border-radius:2px;background:var(--amber)}
+  .nav-cta{display:flex;align-items:center;gap:16px}
+  .signin{font-weight:600;font-size:15px;color:var(--navy)}
+  .nav-cta .btn-amber{padding:12px 24px;font-size:14px}
+  .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;z-index:200}
+  .hamburger span{display:block;width:22px;height:2px;background:var(--navy);border-radius:2px;transition:.3s}
+  .mobile-menu{display:none;position:fixed;inset:0;background:#fff;z-index:150;padding:100px 28px 40px;flex-direction:column;gap:0}
+  .mobile-menu.open{display:flex}
+  .mobile-menu a{display:block;padding:16px 0;font-size:17px;font-weight:600;color:var(--navy);border-bottom:1px solid var(--line)}
+  .mobile-menu a:last-child{border-bottom:none}
+  .mobile-menu .mob-cta{margin-top:auto;padding-bottom:40px;display:flex;flex-direction:column;gap:12px}
+  .mobile-menu .mob-cta a{text-align:center;border:none;padding:14px;border-radius:999px;font-weight:700}
+  .mob-cta .btn-amber{background:var(--amber);color:#111}
+  .mob-cta .btn-navy{background:var(--navy);color:#fff}
+  .mobile-menu .mob-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--navy);z-index:160}
+  .mobile-menu .mob-close:hover{background:var(--line)}
+  @media(max-width:900px){.nav-links{display:none}.nav-cta{display:none}.hamburger{display:flex}}
+
+  footer{background:var(--navy);color:#9FB3BC;padding:70px 0 34px;font-size:14px}
+  .foot-inner{max-width:1200px;margin:0 auto;padding:0 28px}
+  .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:44px;margin-bottom:52px}
+  .foot-brand p{margin:18px 0 0;max-width:280px;color:#7E93A0}
+  footer h4{color:#fff;font-family:'Sora';font-size:13.5px;margin-bottom:20px;letter-spacing:.06em}
+  .foot-col a{display:block;margin-bottom:13px;transition:.2s;width:fit-content}
+  .foot-col a:hover{color:var(--amber);transform:translateX(4px)}
+  .foot-base{border-top:1px solid rgba(255,255,255,.09);padding-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;color:#7E93A0;font-size:13px}
+  @media(max-width:860px){.foot-grid{grid-template-columns:1fr 1fr}}
+
+  .socials{display:flex;gap:12px;margin-top:22px}
+  .socials a{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#CFE0E8;transition:.25s}
+  .socials a:hover{background:var(--amber);color:var(--navy);border-color:var(--amber);transform:translateY(-3px)}
+
+  .btn svg{width:18px;height:18px}
+  .m-ico svg{width:30px;height:30px}
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+    <div class="nav-links">
+      <a href="/#features">Features</a>
+      <a href="/shop" class="active">Shop</a>
+      <a href="/#about">About</a>
+      <a href="/help">Help</a>
+    </div>
+    <div class="nav-cta">
+      <a class="signin" href="#" onclick="return false">Sign in</a>
+      <a class="btn btn-amber header-cta-btn" href="/app" onclick="return false">Get started</a>
+    </div>
+    <button class="hamburger" onclick="document.getElementById('mobMenu').classList.add('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<div class="mobile-menu" id="mobMenu">
+  <button class="mob-close" onclick="document.getElementById('mobMenu').classList.remove('open')" aria-label="Close menu">&times;</button>
+  <a href="/#features" onclick="document.getElementById('mobMenu').classList.remove('open')">Features</a>
+  <a href="/shop" onclick="document.getElementById('mobMenu').classList.remove('open')">Shop</a>
+  <a href="/#about" onclick="document.getElementById('mobMenu').classList.remove('open')">About</a>
+  <a href="/help" onclick="document.getElementById('mobMenu').classList.remove('open')">Help</a>
+  <div class="mob-cta">
+    <a class="btn-amber mob-cta-btn" href="/app">Get started</a>
+    <a class="btn-navy" href="#" onclick="return false">Sign in</a>
+  </div>
+</div>
+<script>
+(function(){
+  var btns = document.querySelectorAll('.header-cta-btn, .mob-cta-btn');
+  var hasSession = false;
+  try { hasSession = !!localStorage.getItem('sb-aemumiyzowraoachzxtu-auth-token'); } catch(e){}
+  btns.forEach(function(b){
+    if(hasSession){ b.textContent='Dashboard'; b.href='/app'; }
+  });
+})();
+</script>
+
+
+
+
+<div class="wrap">
+  <div class="crumb"><a href="/shop">← Back to shop</a></div>
+</div>
+
+<div class="wrap">
+  <div class="loading" id="loading"><div class="spinner"></div><span>Fetching this piece…</span></div>
+  <div class="notfound" id="notfound">
+    <h1>Piece not found</h1>
+    <p>This listing may have been removed by the tailor, or the link is broken.</p>
+    <a class="btn btn-navy" href="/shop" style="width:auto">Browse the shop</a>
+  </div>
+
+  <div class="detail" id="detail" style="display:none">
+    <div class="gallery">
+      <div class="main-img"><img id="mainImg" src="" alt=""></div>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+    <div>
+      <span class="p-cat" id="pCat"></span>
+      <h1 class="title" id="pTitle"></h1>
+      <div class="p-tailor">
+        <div class="t-avatar" id="tAvatar"></div>
+        <div>
+          <div class="t-name" id="pTailor"></div>
+          <div class="t-sub">Listed on Desby · Made to order</div>
+        </div>
+      </div>
+      <div class="p-price" id="pPrice"></div>
+      <div class="p-price-note">Price covers sewing. Fabric may be sourced with your tailor after booking.</div>
+      <p class="p-desc" id="pDesc"></p>
+      <div class="spec-row" id="specRow"></div>
+      <div class="cta-stack">
+        <button class="btn btn-amber" onclick="tryOn()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg> Try it on with AI</button>
+        <a class="btn btn-navy" id="orderBtn" href="#" onclick="return false">Order this look in the app</a>
+        <a class="btn btn-ghost" href="/shop">Keep browsing</a>
+      </div>
+      <div class="gate-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Virtual try-on needs a free Desby account so your photos and results stay private to you.</span></div>
+    </div>
+  </div>
+
+  <div class="rel-sec" id="relSec" style="display:none">
+    <h2>More from this collection</h2>
+    <div class="rel-grid" id="relGrid"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="gate">
+  <div class="modal">
+    <button class="close-x" onclick="closeGate()">×</button>
+    <div class="m-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg></div>
+    <h3>Create a free account to try this on</h3>
+    <p>Virtual try-on renders this piece on your photo using AI. It takes 30 seconds to sign up — and your try-on history stays saved to your account.</p>
+    <div class="cta-stack" style="max-width:none">
+      <a class="btn btn-amber" href="/app?route=/virtual-tryon">Sign up free</a>
+      <a class="btn btn-ghost" href="/app?route=/virtual-tryon">I already have an account</a>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  const SUPABASE_URL = 'https://aemumiyzowraoachzxtu.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbXVtaXl6b3dyYW9hY2h6eHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjAxNTcsImV4cCI6MjEwMTI5NjE1N30.9qXwWvuPWHxMk7q45fcLZfLTVUvnzAbLn9mIa_8tBSM';
+  const SB_REF = 'aemumiyzowraoachzxtu';
+  const headers = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  const kind = params.get('kind') || 'design';
+  const table = kind === 'product' ? 'products' : 'designs';
+  const naira = n => '₦' + Number(n||0).toLocaleString('en-NG');
+
+  let current = null;
+
+  function isSignedIn(){
+    try {
+      const raw = localStorage.getItem('sb-' + SB_REF + '-auth-token');
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      const exp = s.currentSession?.expires_at || 0;
+      return !!s.currentSession && exp > Date.now()/1000;
+    } catch(e){ return false; }
+  }
+
+  function tryOn(){
+    if (isSignedIn()) location.href = '/app?route=/virtual-tryon';
+    else document.getElementById('gate').classList.add('open');
+  }
+  function closeGate(){ document.getElementById('gate').classList.remove('open'); }
+  document.getElementById('gate').addEventListener('click', e => { if (e.target.id==='gate') closeGate(); });
+
+  function render(it){
+    current = it;
+    document.title = (it.title||it.name||'Bespoke piece') + ' — Desby';
+    const imgs = (it.image_urls||[]);
+    document.getElementById('mainImg').src = imgs[0]||'';
+    document.getElementById('mainImg').alt = it.title||it.name||'Bespoke piece';
+    document.getElementById('thumbs').innerHTML = imgs.map((u,i) =>
+      `<button class="thumb ${i===0?'on':''}" onclick="setImg(this,'${u}')"><img src="${u}" alt="View ${i+1}" loading="lazy"></button>`).join('');
+    document.getElementById('pCat').textContent = it.category || 'BESPOKE';
+    document.getElementById('pTitle').textContent = it.title || it.name || 'Untitled piece';
+    document.getElementById('pTailor').textContent = it.tailor_name || 'Verified tailor';
+    const av = document.getElementById('tAvatar');
+    if (it.tailor_avatar_url) av.innerHTML = `<img src="${it.tailor_avatar_url}" alt="">`;
+    else av.textContent = (it.tailor_name||'T')[0].toUpperCase();
+    document.getElementById('pPrice').textContent = naira(it.price);
+    document.getElementById('pDesc').textContent = it.description || 'A bespoke piece made to order by a verified Desby tailor. Book this look in the app to share your measurements, fabric preference and delivery details — your tailor handles the rest.';
+    const specs = [];
+    if (it.category) specs.push('Category · ' + it.category);
+    if (it.gender) specs.push('Style · ' + it.gender);
+    specs.push('Made to order');
+    specs.push('Nationwide delivery');
+    document.getElementById('specRow').innerHTML = specs.map(s=>`<span class="spec">${s}</span>`).join('');
+    // JSON-LD for SEO
+    const ld = {"@context":"https://schema.org","@type":"Product","name":it.title||it.name,"image":imgs,"description":it.description||undefined,"brand":{"@type":"Brand","name":it.tailor_name||'Desby Tailor'}, "offers":{"@type":"Offer","priceCurrency":"NGN","price":it.price,"availability":"https://schema.org/InStock"}};
+    const sc = document.createElement('script'); sc.type='application/ld+json'; sc.text=JSON.stringify(ld); document.head.appendChild(sc);
+  }
+
+  function setImg(btn, url){
+    document.getElementById('mainImg').src = url;
+    document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('on'));
+    btn.classList.add('on');
+  }
+
+  async function loadRelated(it){
+    const cat = (it.category||'').replace(/'/g,"''");
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=id,title,name,price,image_urls,tailor_name&is_visible=eq.true&id=neq.${it.id}${cat?`&category=eq.${encodeURIComponent(it.category)}`:''}&limit=4`, { headers });
+    if (!res.ok) return;
+    let rows = await res.json();
+    if (!rows.length){
+      const res2 = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=id,title,name,price,image_urls,tailor_name&is_visible=eq.true&id=neq.${it.id}&limit=4`, { headers });
+      rows = res2.ok ? await res2.json() : [];
+    }
+    if (!rows.length) return;
+    document.getElementById('relSec').style.display='block';
+    document.getElementById('relGrid').innerHTML = rows.map(r => `
+      <div class="rel-card" onclick="location.href='/product/?id=${r.id}&kind=${kind}'">
+        <div class="rel-img"><img src="${(r.image_urls||[])[0]||''}" alt="${r.title||r.name||''}" loading="lazy"></div>
+        <div class="rel-body">
+          <div class="rel-title">${r.title||r.name||'Untitled'}</div>
+          <div class="rel-price">${naira(r.price)}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  async function init(){
+    if (!id){ showNotFound(); return; }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&id=eq.${encodeURIComponent(id)}&is_visible=eq.true`, { headers });
+    if (!res.ok){ showNotFound(); return; }
+    const rows = await res.json();
+    if (!rows.length){ showNotFound(); return; }
+    render(rows[0]);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('detail').style.display='grid';
+    loadRelated(rows[0]);
+  }
+  function showNotFound(){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('notfound').style.display='block';
+  }
+  init();
+</script>
+<footer>
+  <div class="foot-inner">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="/"><img class="logo-mark" src="/img/logo-mark.png" alt="Desby logo" width="54" height="54">Desby</a>
+        <p>The digital operating system for tailors, fashion entrepreneurs, apprentices and fabric sellers across Africa.</p>
+      </div>
+      <div class="foot-col">
+        <h4>PRODUCT</h4>
+        <a href="/shop">Shop all designs</a>
+        <a href="/#features">Tailor OS</a>
+        <a href="/#features">AI Body Scan</a>
+        <a href="/#features">Virtual Try-On</a>
+        <a href="/#features">Fabric Marketplace</a>
+        <a href="/#features">Smart Logistics</a>
+      </div>
+      <div class="foot-col">
+        <h4>COMPANY</h4>
+        <a href="/#about">About Desby</a>
+        <a href="/#stories">Stories</a>
+        <a href="/#how">Get started</a>
+        <a href="#" onclick="return false">Sign in</a>
+      </div>
+      <div class="foot-col">
+        <h4>SUPPORT</h4>
+        <a href="mailto:hello@desby.app">hello@desby.app</a>
+        <a href="/help">Help centre</a>
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of service</a>
+      </div>
+<div class="socials">
+        <a href="https://www.linkedin.com/company/desby-app/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg></a>
+        <a href="https://www.instagram.com/desby_app" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.8" cy="6.2" r="1.4" fill="currentColor" stroke="none"/></svg></a>
+        <a href="https://www.facebook.com/profile.php?id=61567341441314" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.52 1.5-3.91 3.78-3.91 1.09 0 2.24.2 2.24.2v2.46H15.2c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.45 2.9h-2.33V22c4.78-.76 8.43-4.92 8.43-9.94z"/></svg></a>
+        <a href="https://x.com/desby_app" target="_blank" rel="noopener" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M18.24 2.25h3.31l-7.23 8.26L22.83 21.75h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.83L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z"/></svg></a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Desby. All rights reserved.</span>
+      <span>Made with love for fashion</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

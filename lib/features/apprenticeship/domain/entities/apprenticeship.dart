@@ -1,13 +1,13 @@
 import 'package:equatable/equatable.dart';
 import '../../../auth/domain/entities/user.dart';
+import '../../../clients/domain/entities/client.dart' show InviteStatus;
 
 enum ApprenticeshipStatus {
-  invitedByMaster,      // Master pushed invite, student needs to accept
-  onboarding,           // Student accepted invite, currently completing dossier
-  awaitingMasterApproval, // Student self-applied, Master needs to confirm
-  active,               // Fully linked and verified
+  active,
+  awaitingMasterApproval,
   completed,
-  terminated
+  terminated,
+  pendingInvite,
 }
 
 class Apprenticeship extends Equatable {
@@ -15,11 +15,17 @@ class Apprenticeship extends Equatable {
   final String tailorId;
   final String apprenticeId;
   final ApprenticeshipStatus status;
-  final double progress; // 0.0 to 1.0
+  final double progress;
   final DateTime startDate;
   final DateTime? endDate;
   final List<String> skillIds;
-  
+  final String? inviteToken;
+  final InviteStatus inviteStatus;
+  final String? apprenticeName;
+  final String? apprenticePhone;
+  final String? level;
+  final DateTime? updatedAt;
+
   // UI Enrichment (optional, populated via joins)
   final User? apprenticeProfile;
   final User? tailorProfile;
@@ -33,23 +39,41 @@ class Apprenticeship extends Equatable {
     required this.startDate,
     this.endDate,
     this.skillIds = const [],
+    this.inviteToken,
+    this.inviteStatus = InviteStatus.none,
+    this.apprenticeName,
+    this.apprenticePhone,
+    this.level,
+    this.updatedAt,
     this.apprenticeProfile,
     this.tailorProfile,
   });
 
+  bool get hasInvite => inviteToken != null && inviteToken!.isNotEmpty;
+
+  String? get inviteUrl => inviteToken != null
+      ? 'https://desby.app/invite-apprentice?token=$inviteToken'
+      : null;
+
   @override
   List<Object?> get props => [
-        id,
-        tailorId,
-        apprenticeId,
-        status,
-        progress,
-        startDate,
-        endDate,
-        skillIds,
-        apprenticeProfile,
-        tailorProfile,
-      ];
+    id,
+    tailorId,
+    apprenticeId,
+    status,
+    progress,
+    startDate,
+    endDate,
+    skillIds,
+    inviteToken,
+    inviteStatus,
+    apprenticeName,
+    apprenticePhone,
+    level,
+    updatedAt,
+    apprenticeProfile,
+    tailorProfile,
+  ];
 
   Apprenticeship copyWith({
     String? id,
@@ -60,6 +84,12 @@ class Apprenticeship extends Equatable {
     DateTime? startDate,
     DateTime? endDate,
     List<String>? skillIds,
+    String? inviteToken,
+    InviteStatus? inviteStatus,
+    String? apprenticeName,
+    String? apprenticePhone,
+    String? level,
+    DateTime? updatedAt,
     User? apprenticeProfile,
     User? tailorProfile,
   }) {
@@ -72,6 +102,12 @@ class Apprenticeship extends Equatable {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       skillIds: skillIds ?? this.skillIds,
+      inviteToken: inviteToken ?? this.inviteToken,
+      inviteStatus: inviteStatus ?? this.inviteStatus,
+      apprenticeName: apprenticeName ?? this.apprenticeName,
+      apprenticePhone: apprenticePhone ?? this.apprenticePhone,
+      level: level ?? this.level,
+      updatedAt: updatedAt ?? this.updatedAt,
       apprenticeProfile: apprenticeProfile ?? this.apprenticeProfile,
       tailorProfile: tailorProfile ?? this.tailorProfile,
     );

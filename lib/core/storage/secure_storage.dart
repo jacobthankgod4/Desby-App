@@ -20,7 +20,8 @@ class SecureStorageService {
   SecureStorageService._internal() {
     _storage = const FlutterSecureStorage(
       aOptions: AndroidOptions(
-        keyCipherAlgorithm: KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+        keyCipherAlgorithm:
+            KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
         storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
       ),
     );
@@ -29,10 +30,7 @@ class SecureStorageService {
   /// Save access token
   Future<void> saveAccessToken(String token) async {
     try {
-      await _storage.write(
-        key: StorageKeys.accessToken,
-        value: token,
-      );
+      await _storage.write(key: StorageKeys.accessToken, value: token);
       logger.debug('Access token saved securely');
     } catch (e, stackTrace) {
       logger.error(
@@ -61,10 +59,7 @@ class SecureStorageService {
   /// Save refresh token
   Future<void> saveRefreshToken(String token) async {
     try {
-      await _storage.write(
-        key: StorageKeys.refreshToken,
-        value: token,
-      );
+      await _storage.write(key: StorageKeys.refreshToken, value: token);
       logger.debug('Refresh token saved securely');
     } catch (e, stackTrace) {
       logger.error(
@@ -102,11 +97,7 @@ class SecureStorageService {
       ]);
       logger.debug('Tokens saved securely');
     } catch (e, stackTrace) {
-      logger.error(
-        'Failed to save tokens',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      logger.error('Failed to save tokens', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -120,11 +111,7 @@ class SecureStorageService {
       ]);
       logger.debug('Tokens cleared');
     } catch (e, stackTrace) {
-      logger.error(
-        'Failed to clear tokens',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      logger.error('Failed to clear tokens', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -153,8 +140,7 @@ class SecureStorageService {
   /// Get user credentials
   Future<Map<String, String>?> getCredentials() async {
     try {
-      final credentials =
-          await _storage.read(key: StorageKeys.userCredentials);
+      final credentials = await _storage.read(key: StorageKeys.userCredentials);
       if (credentials == null) return null;
 
       final decoded = jsonDecode(credentials) as Map<String, dynamic>;

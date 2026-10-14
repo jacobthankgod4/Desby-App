@@ -33,16 +33,32 @@ final deleteClientUsecaseProvider = Provider((ref) {
   return DeleteClientUsecase(ref.watch(clientRepositoryProvider));
 });
 
-final clientsProvider = FutureProvider.family<List<Client>, String?>((ref, query) async {
+final getClientByInviteTokenUsecaseProvider = Provider((ref) {
+  return GetClientByInviteTokenUsecase(ref.watch(clientRepositoryProvider));
+});
+
+final updateClientByInviteUsecaseProvider = Provider((ref) {
+  return UpdateClientByInviteUsecase(ref.watch(clientRepositoryProvider));
+});
+
+final generateInviteTokenUsecaseProvider = Provider((ref) {
+  return GenerateInviteTokenUsecase(ref.watch(clientRepositoryProvider));
+});
+
+final clientsProvider = FutureProvider.family<List<Client>,
+    ({String tailorId, String? query})>((ref, params) async {
   final usecase = ref.watch(getClientsUsecaseProvider);
-  final result = await usecase(query: query);
+  final result = await usecase(tailorId: params.tailorId, query: params.query);
   return result.fold(
     (failure) => throw Exception(failure.toString()),
     (clients) => clients,
   );
 });
 
-final clientOrdersProvider = FutureProvider.family<List<OrderEntity>, String>((ref, clientId) async {
+final clientOrdersProvider = FutureProvider.family<List<OrderEntity>, String>((
+  ref,
+  clientId,
+) async {
   try {
     final orders = await ref.watch(ordersProvider(null).future);
     return orders.where((o) => o.clientId == clientId).toList();
@@ -52,11 +68,36 @@ final clientOrdersProvider = FutureProvider.family<List<OrderEntity>, String>((r
   }
 });
 
-final clientDetailProvider = FutureProvider.family<Client, String>((ref, id) async {
+final clientDetailProvider = FutureProvider.family<Client, String>((
+  ref,
+  id,
+) async {
   final usecase = ref.watch(getClientByIdUsecaseProvider);
   final result = await usecase(id);
   return result.fold(
     (failure) => throw Exception(failure.toString()),
     (client) => client,
+  );
+});
+
+// Invite system providers
+final clientByInviteTokenProvider = FutureProvider.family<Client?, String>((
+  ref,
+  token,
+) async {
+  final usecase = ref.watch(getClientByInviteTokenUsecaseProvider);
+  final result = await usecase(token);
+  return result.fold((failure) => null, (client) => client);
+});
+
+final inviteClientProvider = FutureProvider.family<Client, Client>((
+  ref,
+  client,
+) async {
+  final usecase = ref.watch(createClientUsecaseProvider);
+  final result = await usecase(client);
+  return result.fold(
+    (failure) => throw Exception(failure.toString()),
+    (created) => created,
   );
 });

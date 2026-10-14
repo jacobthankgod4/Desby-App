@@ -6,6 +6,7 @@ import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/widgets/error_state_widget.dart';
 import '../../../../core/widgets/luxury_glass_card.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
 
 class OrderListPage extends ConsumerStatefulWidget {
   const OrderListPage({super.key});
@@ -14,13 +15,17 @@ class OrderListPage extends ConsumerStatefulWidget {
   ConsumerState<OrderListPage> createState() => _OrderListPageState();
 }
 
-class _OrderListPageState extends ConsumerState<OrderListPage> with SingleTickerProviderStateMixin {
+class _OrderListPageState extends ConsumerState<OrderListPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: OrderStatus.values.length + 1, vsync: this);
+    _tabController = TabController(
+      length: OrderStatus.values.length + 1,
+      vsync: this,
+    );
   }
 
   @override
@@ -31,24 +36,29 @@ class _OrderListPageState extends ConsumerState<OrderListPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1921),
-      appBar: AppBar(
-        title: const Text('GARMENT PIPELINE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2)),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      backgroundColor: colors.scaffoldBg,
+      appBar: shellAppBar(
+        context,
+        title: 'Orders',
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
           labelColor: AppColors.amber,
-          unselectedLabelColor: Colors.white24,
+          unselectedLabelColor: colors.textMuted,
           indicatorColor: AppColors.amber,
           indicatorWeight: 3,
-          labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+          labelStyle: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
           tabs: [
-            const Tab(text: 'ALL MANIFESTS'),
-            ...OrderStatus.values.map((status) => Tab(text: status.displayName.toUpperCase())),
+            const Tab(text: 'All Orders'),
+            ...OrderStatus.values.map(
+              (status) => Tab(text: status.displayName.toUpperCase()),
+            ),
           ],
         ),
       ),
@@ -58,14 +68,6 @@ class _OrderListPageState extends ConsumerState<OrderListPage> with SingleTicker
           const _OrderList(status: null),
           ...OrderStatus.values.map((status) => _OrderList(status: status)),
         ],
-      ),
-      floatingActionButton: Consumer(
-        builder: (context, ref, child) => FloatingActionButton.extended(
-          onPressed: () => ref.pushShell('/order-create'),
-          backgroundColor: AppColors.amber,
-          icon: const Icon(Icons.add_rounded, color: AppColors.darkNavy),
-          label: const Text('NEW ORDER', style: TextStyle(color: AppColors.darkNavy, fontWeight: FontWeight.w900, letterSpacing: 1)),
-        ),
       ),
     );
   }
@@ -81,7 +83,7 @@ class _OrderList extends ConsumerWidget {
 
     return ordersAsync.when(
       data: (orders) => orders.isEmpty
-          ? _buildEmptyState()
+          ? _buildEmptyState(context)
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
               itemCount: orders.length,
@@ -91,19 +93,35 @@ class _OrderList extends ConsumerWidget {
                 return _OrderCard(order: order);
               },
             ),
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber, strokeWidth: 2)),
-      error: (err, _) => const ErrorStateWidget(message: 'Pipeline sync failed.'),
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.amber,
+          strokeWidth: 2,
+        ),
+      ),
+      error: (err, _) => const ErrorStateWidget(
+        message: 'Could not load orders. Tap to retry.',
+      ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.checkroom_outlined, size: 64, color: Colors.white.withValues(alpha: 0.05)),
+          Icon(Icons.checkroom_outlined, size: 64, color: colors.borderSubtle),
           const SizedBox(height: 24),
-          const Text('PIPELINE CLEAR', style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+          Text(
+            'No orders yet',
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
         ],
       ),
     );
@@ -116,6 +134,7 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return LuxuryGlassCard(
       padding: const EdgeInsets.all(20),
       child: Consumer(
@@ -130,13 +149,22 @@ class _OrderCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'MANIFEST #${order.id.substring(0, 8).toUpperCase()}',
-                        style: const TextStyle(color: Colors.white24, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+                        'Order #${order.id.substring(0, 8).toUpperCase()}',
+                        style: TextStyle(
+                          color: colors.textMuted,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         order.clientName.toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ],
                   ),
@@ -144,37 +172,72 @@ class _OrderCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              Divider(color: Colors.white.withValues(alpha: 0.05), height: 1),
+              Divider(color: colors.divider, height: 1),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildInfoBit('GARMENTS', order.items.length.toString()),
-                  _buildInfoBit('DUE DATE', '${order.dueDate.day}/${order.dueDate.month}'),
-                  _buildInfoBit('VALUE', '₦${order.totalAmount.toStringAsFixed(0)}'),
+                  _buildInfoBit(
+                    context,
+                    'Items',
+                    order.items.length.toString(),
+                  ),
+                  _buildInfoBit(
+                    context,
+                    'DUE DATE',
+                    // due_date is nullable in the DB: the tailor confirms the
+                    // timeline. Never invent one, and never crash on a missing
+                    // date — this threw before and took the whole list with it.
+                    order.dueDate == null
+                        ? 'To confirm'
+                        : '${order.dueDate!.day}/${order.dueDate!.month}',
+                  ),
+                  _buildInfoBit(
+                    context,
+                    'VALUE',
+                    '₦${order.totalAmount.toStringAsFixed(0)}',
+                  ),
                 ],
               ),
               if (order.requiresDispatch) ...[
                 const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.amber.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.amber.withValues(alpha: 0.1)),
+                    border: Border.all(
+                      color: AppColors.amber.withValues(alpha: 0.1),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.local_shipping_outlined, color: AppColors.amber, size: 14),
+                      const Icon(
+                        Icons.local_shipping_outlined,
+                        color: AppColors.amber,
+                        size: 14,
+                      ),
                       const SizedBox(width: 12),
                       const Text(
-                        'LOGISTICS ACTIVE',
-                        style: TextStyle(color: AppColors.amber, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1),
+                        'Delivery Active',
+                        style: TextStyle(
+                          color: AppColors.amber,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
                       ),
                       const Spacer(),
                       Text(
-                        order.fezOrderNo ?? 'PENDING UBER',
-                        style: const TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w700),
+                        order.shipmentId ?? 'Awaiting pickup',
+                        style: TextStyle(
+                          color: colors.textMuted,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),
@@ -187,13 +250,29 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBit(String label, String value) {
+  Widget _buildInfoBit(BuildContext context, String label, String value) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white24, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 1)),
+        Text(
+          label,
+          style: TextStyle(
+            color: colors.textMuted,
+            fontSize: 7,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
+        Text(
+          value,
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
       ],
     );
   }
@@ -205,15 +284,33 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     Color color;
     switch (status) {
-      case OrderStatus.pending: color = Colors.orange; break;
-      case OrderStatus.bookingAccepted: color = Colors.greenAccent; break;
-      case OrderStatus.materialsInTransit: color = Colors.blueAccent; break;
-      case OrderStatus.inProgress: color = AppColors.amber; break;
-      case OrderStatus.ready: color = Colors.green; break;
-      case OrderStatus.delivered: color = Colors.grey; break;
-      case OrderStatus.cancelled: color = Colors.red; break;
+      case OrderStatus.pending:
+        color = Colors.orange;
+        break;
+      case OrderStatus.bookingAccepted:
+        color = Colors.greenAccent;
+        break;
+      case OrderStatus.materialsInTransit:
+        color = Colors.blueAccent;
+        break;
+      case OrderStatus.inProgress:
+        color = AppColors.amber;
+        break;
+      case OrderStatus.ready:
+        color = Colors.green;
+        break;
+      case OrderStatus.delivered:
+        color = colors.textMuted;
+        break;
+      case OrderStatus.cancelled:
+        color = Colors.red;
+        break;
+      case OrderStatus.paid:
+        color = Colors.greenAccent;
+        break;
     }
 
     return Container(
@@ -225,7 +322,12 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         status.displayName.toUpperCase(),
-        style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+        style: TextStyle(
+          color: color,
+          fontSize: 8,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

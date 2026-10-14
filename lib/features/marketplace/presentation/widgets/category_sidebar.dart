@@ -6,50 +6,82 @@ class CategorySidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(right: BorderSide(color: Colors.grey[200]!)),
+        color: colors.surface,
+        border: Border(right: BorderSide(color: colors.sidebarBorder)),
       ),
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 24),
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Text(
               'CATEGORIES',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
-                color: Colors.grey,
+                color: colors.textMuted,
                 letterSpacing: 1.5,
               ),
             ),
           ),
-          _CategoryItem(icon: Icons.auto_awesome_rounded, label: 'New Arrivals', count: '42', isSelected: true),
-          _CategoryItem(icon: Icons.star_outline_rounded, label: 'Top Rated', count: '128'),
-          _CategoryItem(icon: Icons.texture_rounded, label: 'Silk Fabrics', count: '56'),
-          _CategoryItem(icon: Icons.waves_rounded, label: 'Cotton Blends', count: '94'),
-          _CategoryItem(icon: Icons.grid_4x4_rounded, label: 'Linen & Lace', count: '31'),
-          _CategoryItem(icon: Icons.category_outlined, label: 'Accessories', count: '205'),
-          
+          _CategoryItem(
+            icon: Icons.auto_awesome_rounded,
+            label: 'New Arrivals',
+            count: '42',
+            isSelected: true,
+          ),
+          _CategoryItem(
+            icon: Icons.star_outline_rounded,
+            label: 'Top Rated',
+            count: '128',
+          ),
+          _CategoryItem(
+            icon: Icons.texture_rounded,
+            label: 'Silk Fabrics',
+            count: '56',
+          ),
+          _CategoryItem(
+            icon: Icons.waves_rounded,
+            label: 'Cotton Blends',
+            count: '94',
+          ),
+          _CategoryItem(
+            icon: Icons.grid_4x4_rounded,
+            label: 'Linen & Lace',
+            count: '31',
+          ),
+          _CategoryItem(
+            icon: Icons.category_outlined,
+            label: 'Accessories',
+            count: '205',
+          ),
+
           const SizedBox(height: 40),
-          
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Text(
               'FILTERS',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
-                color: Colors.grey,
+                color: colors.textMuted,
                 letterSpacing: 1.5,
               ),
             ),
           ),
-          _CategoryItem(icon: Icons.color_lens_outlined, label: 'Color Palette'),
+          _CategoryItem(
+            icon: Icons.color_lens_outlined,
+            label: 'Color Palette',
+          ),
           _CategoryItem(icon: Icons.payments_outlined, label: 'Price Range'),
-          _CategoryItem(icon: Icons.verified_user_outlined, label: 'Verified Sellers'),
+          _CategoryItem(
+            icon: Icons.verified_user_outlined,
+            label: 'Verified Sellers',
+          ),
         ],
       ),
     );
@@ -71,20 +103,21 @@ class _CategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
       leading: Icon(
-        icon, 
-        size: 18, 
-        color: isSelected ? AppColors.amber : Colors.grey[600],
+        icon,
+        size: 18,
+        color: isSelected ? AppColors.amber : colors.iconMuted,
       ),
       title: Text(
         label,
         style: TextStyle(
           fontSize: 13,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-          color: isSelected ? AppColors.darkNavy : Colors.grey[800],
+          color: isSelected ? AppColors.darkNavy : colors.textPrimary,
         ),
       ),
       trailing: Row(
@@ -93,13 +126,20 @@ class _CategoryItem extends StatelessWidget {
           if (count != null)
             Text(
               count!,
-              style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+              style: TextStyle(fontSize: 10, color: colors.textMuted),
             ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right_rounded, size: 14, color: Colors.grey),
+          Icon(Icons.chevron_right_rounded, size: 14, color: colors.iconMuted),
         ],
       ),
-      onTap: () {},
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label filter coming soon'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
     );
   }
 }

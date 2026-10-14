@@ -4,14 +4,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../../core/storage/storage_keys.dart';
 import '../../../../core/providers/navigation_provider.dart';
+import '../../../../core/providers/layout_provider.dart';
 import '../../../../theme/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
+import '../../../../core/services/reauth_service.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final user = ref.watch(currentUserProvider);
     final userType = user?.userType ?? 'tailor';
 
@@ -20,156 +24,160 @@ class SettingsPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-            _buildSectionHeader('ACCOUNT ARCHITECTURE'),
-            _buildSettingsCard([
-              _buildSettingsTile(
-                icon: Icons.person_outline_rounded,
-                title: 'Profile Details',
-                subtitle: 'Manage your professional identity',
-                onTap: () => ref.pushShell('/profile/edit', {'userId': user?.id}),
-              ),
-              _buildSettingsTile(
-                icon: Icons.security_rounded,
-                title: 'Security & Auth',
-                subtitle: 'Change password',
-                onTap: () => _showChangePasswordDialog(context),
-              ),
-              _buildSettingsTile(
-                icon: Icons.delete_forever_rounded,
-                title: 'Delete Account',
-                subtitle: 'Permanently remove your data',
-                onTap: () => _showDeleteAccountDialog(context, ref),
-              ),
-            ]),
-            
-            const SizedBox(height: 32),
-            _buildSectionHeader('SYSTEM CONFIGURATION'),
-            _buildSettingsCard([
-              _buildSettingsTile(
-                icon: Icons.straighten_rounded,
-                title: 'Measurement Units',
-                subtitle: 'Inches / Centimeters',
-                onTap: () => _showMeasurementUnitsDialog(context),
-              ),
-              _buildSettingsTile(
-                icon: Icons.notifications_active_outlined,
-                title: 'Smart Notifications',
-                subtitle: 'Configure real-time alerts',
-                onTap: () => _showNotificationsDialog(context),
-              ),
-              _buildSettingsTile(
-                icon: Icons.refresh_rounded,
-                title: 'Reset Onboarding',
-                subtitle: 'Re-start setup wizard',
-                onTap: () => _showResetOnboardingDialog(context, ref, userType),
-              ),
-            ]),
+          _buildSectionHeader(context, 'Account'),
+          _buildSettingsCard(context, [
+            _buildSettingsTile(
+              context,
+              icon: Icons.person_outline_rounded,
+              title: 'Profile Details',
+              subtitle: 'Manage your professional identity',
+              onTap: () => ref.pushShell('/profile/edit', {'userId': user?.id}),
+            ),
+            _buildSettingsTile(
+              context,
+              icon: Icons.security_rounded,
+              title: 'Security & Auth',
+              subtitle: 'Change password',
+              onTap: () => _showChangePasswordDialog(context),
+            ),
+            _buildSettingsTile(
+              context,
+              icon: Icons.delete_forever_rounded,
+              title: 'Delete Account',
+              subtitle: 'Permanently remove your data',
+              onTap: () => _showDeleteAccountDialog(context, ref),
+            ),
+          ]),
 
-            if (userType == 'tailor') ...[
-              const SizedBox(height: 32),
-              _buildSectionHeader('BUSINESS INFRASTRUCTURE'),
-              _buildSettingsCard([
+          const SizedBox(height: 32),
+          _buildSectionHeader(context, 'Preferences'),
+          _buildSettingsCard(context, [
+            _buildSettingsTile(
+              context,
+              icon: Icons.straighten_rounded,
+              title: 'Measurement Units',
+              subtitle: 'Inches / Centimeters',
+              onTap: () => _showMeasurementUnitsDialog(context),
+            ),
+            _buildSettingsTile(
+              context,
+              icon: Icons.notifications_active_outlined,
+              title: 'Smart Notifications',
+              subtitle: 'Configure real-time alerts',
+              onTap: () => _showNotificationsDialog(context),
+            ),
+            _buildSettingsTile(
+              context,
+              icon: Icons.refresh_rounded,
+              title: 'Reset Onboarding',
+              subtitle: 'Re-start setup wizard',
+              onTap: () => _showResetOnboardingDialog(context, ref, userType),
+            ),
+          ]),
+
+          if (userType == 'tailor' || userType == 'fabric_seller') ...[
+            const SizedBox(height: 32),
+            _buildSectionHeader(context, 'Your Business'),
+            _buildSettingsCard(context, [
+              if (userType == 'tailor') ...[
                 _buildSettingsTile(
+                  context,
                   icon: Icons.storefront_rounded,
                   title: 'Designer Shop Setup',
                   subtitle: 'Manage your digital storefront',
                   onTap: () => ref.pushShell('/shop-setup'),
                 ),
                 _buildSettingsTile(
+                  context,
                   icon: Icons.school_rounded,
                   title: 'Invite Apprentice',
                   subtitle: 'Onboard new academy talent',
-                  onTap: () => Navigator.pushNamed(context, '/apprentice-onboarding'),
+                  onTap: () => ref.pushShell('/unified-add-apprentice'),
                 ),
-                _buildSettingsTile(
-                  icon: Icons.payments_outlined,
-                  title: 'Secure Payments',
-                  subtitle: 'Bank details and Paystack config',
-                  onTap: () => _showPaymentsInfo(context),
-                ),
-              ]),
-            ],
-
-            const SizedBox(height: 32),
-            _buildSectionHeader('OS RESOURCES'),
-            _buildSettingsCard([
+              ],
               _buildSettingsTile(
-                icon: Icons.help_outline_rounded,
-                title: 'Support Center',
-                subtitle: 'Access technical documentation',
-                onTap: () => _showSupportDialog(context),
-              ),
-              _buildSettingsTile(
-                icon: Icons.info_outline_rounded,
-                title: 'About Desby OS',
-                subtitle: 'System version 1.0.0+1',
-                onTap: () => _showAboutDialog(context),
+                context,
+                icon: Icons.payments_outlined,
+                title: 'Secure Payments',
+                subtitle: 'Bank details for receiving payouts',
+                onTap: () => _showPaymentsInfo(context, ref),
               ),
             ]),
-
-            const SizedBox(height: 60),
-            _buildLogoutButton(ref, context),
-            const SizedBox(height: 40),
           ],
-        ),
+
+          const SizedBox(height: 32),
+          _buildSectionHeader(context, 'Help & Info'),
+          _buildSettingsCard(context, [
+            _buildSettingsTile(
+              context,
+              icon: Icons.help_outline_rounded,
+              title: 'Support Center',
+              subtitle: 'Access technical documentation',
+              onTap: () => _showSupportDialog(context),
+            ),
+            _buildSettingsTile(
+              context,
+              icon: Icons.info_outline_rounded,
+              title: 'About Desby OS',
+              subtitle: 'System version 1.0.0+1',
+              onTap: () => _showAboutDialog(context),
+            ),
+          ]),
+
+          const SizedBox(height: 60),
+          _buildLogoutButton(ref, context),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth > 1000;
-        if (isDesktop) {
-          return Container(color: AppColors.darkNavy, child: content);
-        }
-        return Scaffold(
-          backgroundColor: AppColors.darkNavy,
-          appBar: AppBar(
-            title: const Text('MASTER SETTINGS',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 2)),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.amber, size: 18),
-              onPressed: () {
-            if (ref.canPopShell) {
-              ref.popShell();
-            } else {
-              ref.setShell('/main');
-            }
-          },
-            ),
-          ),
-          body: content,
-        );
-      },
+    final isDesktop = ref.watch(isDesktopProvider);
+    if (isDesktop) {
+      return Container(color: colors.scaffoldBg, child: content);
+    }
+    return Scaffold(
+      backgroundColor: colors.scaffoldBg,
+      appBar: shellAppBar(context, title: 'MASTER SETTINGS'),
+      body: content,
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(left: 16, bottom: 12),
-      child: Text(title, 
-        style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: colors.textMuted,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.5,
+        ),
+      ),
     );
   }
 
-  Widget _buildSettingsCard(List<Widget> children) {
+  Widget _buildSettingsCard(BuildContext context, List<Widget> children) {
+    final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: colors.borderDefault),
       ),
       child: Column(children: children),
     );
   }
 
-  Widget _buildSettingsTile({
-    required IconData icon, 
-    required String title, 
-    required String subtitle, 
+  Widget _buildSettingsTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
     required VoidCallback onTap,
   }) {
+    final colors = context.colors;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       leading: Container(
@@ -180,9 +188,23 @@ class SettingsPage extends ConsumerWidget {
         ),
         child: Icon(icon, color: AppColors.amber, size: 22),
       ),
-      title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white10, size: 14),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: colors.textPrimary,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: colors.textMuted, fontSize: 11),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios_rounded,
+        color: colors.textMuted,
+        size: 14,
+      ),
       onTap: onTap,
     );
   }
@@ -194,16 +216,26 @@ class SettingsPage extends ConsumerWidget {
       child: ElevatedButton.icon(
         onPressed: () async {
           await ref.read(authStateProvider.notifier).logout();
-          if (context.mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+          if (context.mounted)
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/login',
+              (route) => false,
+            );
         },
         icon: const Icon(Icons.logout_rounded, size: 18),
-        label: const Text('LOGOUT OS SESSION', 
-          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+        label: const Text(
+          'Log Out',
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
           foregroundColor: Colors.redAccent,
           elevation: 0,
-shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.redAccent)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Colors.redAccent),
+          ),
         ),
       ),
     );
@@ -212,191 +244,102 @@ shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: con
   // --- DIALOGS ---
 
   void _showChangePasswordDialog(BuildContext context) {
-    final emailController = TextEditingController();
-    final currentPasswordController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmController = TextEditingController();
-    bool isLoading = false;
+    final colors = context.colors;
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkNavy,
-          title: const Text('Change Password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'A password reset link will be sent to your email.',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
-                ),
-                const SizedBox(height: 20),
-                _dialogTextField(controller: emailController, hint: 'Your email', keyboardType: TextInputType.emailAddress),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
-            ElevatedButton(
-              onPressed: isLoading ? null : () async {
-                if (emailController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Enter your email'), backgroundColor: Colors.red));
-                  return;
-                }
-                setDialogState(() => isLoading = true);
-                try {
-                  await Supabase.instance.client.auth.resetPasswordForEmail(emailController.text.trim());
-                  if (ctx.mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Password reset email sent! Check your inbox.'), backgroundColor: Colors.green),
-                    );
-                  }
-                } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-                  }
-                } finally {
-                  setDialogState(() => isLoading = false);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy),
-              child: isLoading
-                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Send Reset Link'),
-            ),
-          ],
-        ),
-      ),
+      builder: (ctx) =>
+          _ChangePasswordDialog(colors: colors, outerContext: context),
     );
   }
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
-    final passwordController = TextEditingController();
-    bool isLoading = false;
+    final colors = context.colors;
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkNavy,
-          title: const Text('Delete Account', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'This action is permanent and cannot be undone.',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'All your data including profiles, orders, and client records will be permanently deleted.',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
-                ),
-                const SizedBox(height: 20),
-                _dialogTextField(controller: passwordController, hint: 'Confirm with your password', obscure: true),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
-            ElevatedButton(
-              onPressed: isLoading ? null : () async {
-                if (passwordController.text.isEmpty) {
-                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Enter your password to confirm'), backgroundColor: Colors.red));
-                  return;
-                }
-                setDialogState(() => isLoading = true);
-                try {
-                  final user = ref.read(currentUserProvider);
-                  if (user == null) return;
-
-                  // Re-authenticate first
-                  final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-                  await Supabase.instance.client.auth.signInWithPassword(email: email, password: passwordController.text);
-
-                  // Delete profile from database
-                  await Supabase.instance.client.from('users').delete().eq('id', user.id);
-
-                  // Delete auth account
-                  await Supabase.instance.client.auth.admin.deleteUser(user.id);
-
-                  // Clear local storage
-                  await localStorage.clearAll();
-
-                  if (ctx.mounted) {
-                    Navigator.pop(ctx);
-                    await ref.read(authStateProvider.notifier).logout();
-                    if (context.mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-                  }
-                } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                      content: Text('Delete failed: ${e.toString().contains('Invalid login') ? 'Incorrect password' : e}'),
-                      backgroundColor: Colors.red,
-                    ));
-                  }
-                } finally {
-                  setDialogState(() => isLoading = false);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-              child: isLoading
-                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Delete Permanently'),
-            ),
-          ],
-        ),
-      ),
+      builder: (ctx) =>
+          _DeleteAccountDialog(colors: colors, outerContext: context, ref: ref),
     );
   }
 
   void _showMeasurementUnitsDialog(BuildContext context) {
-    String selectedUnit = localStorage.get('measurement_units', defaultValue: 'cm');
+    final colors = context.colors;
+    String selectedUnit = localStorage.get(
+      'measurement_units',
+      defaultValue: 'cm',
+    );
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkNavy,
-          title: const Text('Measurement Units', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+          backgroundColor: colors.scaffoldBg,
+          title: Text(
+            'Measurement Units',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              RadioListTile<String>(
-                title: const Text('Centimeters (cm)', style: TextStyle(color: Colors.white)),
-                value: 'cm',
+              RadioGroup<String>(
                 groupValue: selectedUnit,
-                activeColor: AppColors.amber,
-                onChanged: (v) => setDialogState(() => selectedUnit = v!),
-              ),
-              RadioListTile<String>(
-                title: const Text('Inches (in)', style: TextStyle(color: Colors.white)),
-                value: 'in',
-                groupValue: selectedUnit,
-                activeColor: AppColors.amber,
-                onChanged: (v) => setDialogState(() => selectedUnit = v!),
+                onChanged: (v) =>
+                    setDialogState(() => selectedUnit = v ?? selectedUnit),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text(
+                        'Centimeters (cm)',
+                        style: TextStyle(color: colors.textPrimary),
+                      ),
+                      value: 'cm',
+                      activeColor: AppColors.amber,
+                    ),
+                    RadioListTile<String>(
+                      title: Text(
+                        'Inches (in)',
+                        style: TextStyle(color: colors.textPrimary),
+                      ),
+                      value: 'in',
+                      activeColor: AppColors.amber,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: colors.textSecondary),
+              ),
+            ),
             ElevatedButton(
               onPressed: () async {
                 await localStorage.save('measurement_units', selectedUnit);
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Units set to ${selectedUnit == 'cm' ? 'Centimeters' : 'Inches'}'), backgroundColor: Colors.green),
+                    SnackBar(
+                      content: Text(
+                        'Units set to ${selectedUnit == 'cm' ? 'Centimeters' : 'Inches'}',
+                      ),
+                      backgroundColor: Colors.green,
+                    ),
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.amber,
+                foregroundColor: AppColors.darkNavy,
+              ),
               child: const Text('Save'),
             ),
           ],
@@ -406,38 +349,72 @@ shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: con
   }
 
   void _showNotificationsDialog(BuildContext context) {
-    bool orderUpdates = localStorage.get('notif_order_updates', defaultValue: true);
-    bool clientMessages = localStorage.get('notif_client_messages', defaultValue: true);
-    bool systemAlerts = localStorage.get('notif_system_alerts', defaultValue: true);
+    final colors = context.colors;
+    bool orderUpdates = localStorage.get(
+      'notif_order_updates',
+      defaultValue: true,
+    );
+    bool clientMessages = localStorage.get(
+      'notif_client_messages',
+      defaultValue: true,
+    );
+    bool systemAlerts = localStorage.get(
+      'notif_system_alerts',
+      defaultValue: true,
+    );
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkNavy,
-          title: const Text('Notifications', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+          backgroundColor: colors.scaffoldBg,
+          title: Text(
+            'Notifications',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SwitchListTile(
-                title: const Text('Order Updates', style: TextStyle(color: Colors.white, fontSize: 14)),
-                subtitle: const Text('Status changes and delivery alerts', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                title: Text(
+                  'Order Updates',
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                ),
+                subtitle: Text(
+                  'Status changes and delivery alerts',
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
                 value: orderUpdates,
-                activeColor: AppColors.amber,
+                activeThumbColor: AppColors.amber,
                 onChanged: (v) => setDialogState(() => orderUpdates = v),
               ),
               SwitchListTile(
-                title: const Text('Client Messages', style: TextStyle(color: Colors.white, fontSize: 14)),
-                subtitle: const Text('New messages from clients', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                title: Text(
+                  'Client Messages',
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                ),
+                subtitle: Text(
+                  'New messages from clients',
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
                 value: clientMessages,
-                activeColor: AppColors.amber,
+                activeThumbColor: AppColors.amber,
                 onChanged: (v) => setDialogState(() => clientMessages = v),
               ),
               SwitchListTile(
-                title: const Text('System Alerts', style: TextStyle(color: Colors.white, fontSize: 14)),
-                subtitle: const Text('App updates and maintenance', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                title: Text(
+                  'System Alerts',
+                  style: TextStyle(color: colors.textPrimary, fontSize: 14),
+                ),
+                subtitle: Text(
+                  'App updates and maintenance',
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
                 value: systemAlerts,
-                activeColor: AppColors.amber,
+                activeThumbColor: AppColors.amber,
                 onChanged: (v) => setDialogState(() => systemAlerts = v),
               ),
             ],
@@ -446,11 +423,17 @@ shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: con
             ElevatedButton(
               onPressed: () async {
                 await localStorage.save('notif_order_updates', orderUpdates);
-                await localStorage.save('notif_client_messages', clientMessages);
+                await localStorage.save(
+                  'notif_client_messages',
+                  clientMessages,
+                );
                 await localStorage.save('notif_system_alerts', systemAlerts);
                 if (ctx.mounted) Navigator.pop(ctx);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.darkNavy),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.amber,
+                foregroundColor: AppColors.darkNavy,
+              ),
               child: const Text('Save'),
             ),
           ],
@@ -459,155 +442,196 @@ shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: con
     );
   }
 
-  void _showPaymentsInfo(BuildContext context) {
+  void _showPaymentsInfo(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkNavy,
-        title: const Text('Secure Payments', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        backgroundColor: colors.dialogBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Bank Details',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Payments are processed securely via Paystack.',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+              'Your bank details are used for receiving payouts when clients confirm delivery.',
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 12,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 16),
-            _infoRow('Status', 'Active'),
-            _infoRow('Gateway', 'Paystack'),
-            _infoRow('Currency', 'NGN'),
+            Text(
+              'To update your bank details, go to Profile > Edit Profile > Bank Details section.',
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close', style: TextStyle(color: AppColors.amber))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Close', style: TextStyle(color: colors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.pushShell('/profile/edit');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.amber,
+              foregroundColor: AppColors.darkNavy,
+            ),
+            child: const Text('Edit Profile'),
+          ),
         ],
       ),
     );
   }
 
   void _showSupportDialog(BuildContext context) {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkNavy,
-        title: const Text('Support Center', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        backgroundColor: colors.scaffoldBg,
+        title: Text(
+          'Support Center',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Need help? Reach out to us:',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
-            _infoRow('Email', 'support@desby.app'),
-            _infoRow('Docs', 'docs.desby.app'),
+            _infoRow(context, 'Email', 'support@desby.app'),
+            _infoRow(context, 'Docs', 'docs.desby.app'),
             const SizedBox(height: 12),
             Text(
               'For urgent issues, include your User ID in the subject line.',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11),
+              style: TextStyle(color: colors.textMuted, fontSize: 11),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close', style: TextStyle(color: AppColors.amber))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: AppColors.amber),
+            ),
+          ),
         ],
       ),
     );
   }
 
   void _showAboutDialog(BuildContext context) {
+    final colors = context.colors;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkNavy,
+        backgroundColor: colors.scaffoldBg,
         title: Row(
           children: [
             Image.asset('assets/images/logo.png', height: 28),
             const SizedBox(width: 10),
-            const Text('Desby OS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+            Text(
+              'Desby OS',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _infoRow('Version', '1.0.0+1'),
-            _infoRow('Build', 'Flutter Web'),
-            _infoRow('Platform', 'Cross-platform'),
+            _infoRow(context, 'Version', '1.0.0+1'),
+            _infoRow(context, 'Build', 'Flutter Web'),
+            _infoRow(context, 'Platform', 'Cross-platform'),
             const SizedBox(height: 12),
             Text(
               'The operating system for tailors and fashion entrepreneurs.',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12, fontStyle: FontStyle.italic),
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close', style: TextStyle(color: AppColors.amber))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: AppColors.amber),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(BuildContext context, String label, String value) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _dialogTextField({
-    required TextEditingController controller,
-    required String hint,
-    bool obscure = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.amber),
-        ),
-      ),
-    );
-  }
-
-  void _showResetOnboardingDialog(BuildContext context, WidgetRef ref, String userType) {
+  void _showResetOnboardingDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String userType,
+  ) {
+    final colors = context.colors;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkNavy,
-        title: const Text(
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colors.scaffoldBg,
+        title: Text(
           'Reset Onboarding',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: colors.textPrimary),
         ),
-        content: const Text(
+        content: Text(
           'This will reset your onboarding progress. You will need to complete the setup wizard again.\n\nAre you sure?',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: colors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -619,32 +643,40 @@ shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: con
               // Clear onboarding flags based on user type
               switch (userType) {
                 case 'tailor':
-                  await localStorage.delete(StorageKeys.tailorOnboardingComplete);
+                  await localStorage.delete(
+                    StorageKeys.tailorOnboardingComplete,
+                  );
                   break;
                 case 'apprentice':
-                  await localStorage.delete(StorageKeys.apprenticeOnboardingComplete);
+                  await localStorage.delete(
+                    StorageKeys.apprenticeOnboardingComplete,
+                  );
                   break;
                 case 'client':
-                  await localStorage.delete(StorageKeys.clientOnboardingComplete);
+                  await localStorage.delete(
+                    StorageKeys.clientOnboardingComplete,
+                  );
                   break;
                 case 'fabric_seller':
-                  await localStorage.delete(StorageKeys.fabricSellerOnboardingComplete);
+                  await localStorage.delete(
+                    StorageKeys.fabricSellerOnboardingComplete,
+                  );
                   break;
               }
-              
+
               if (context.mounted) {
                 Navigator.pop(context); // Close dialog
-                
+
                 // Navigate to appropriate onboarding
-                final route = userType == 'tailor' 
+                final route = userType == 'tailor'
                     ? '/tailor-onboarding'
                     : userType == 'apprentice'
-                        ? '/apprentice-onboarding'
-                        : userType == 'client'
-                            ? '/client-onboarding'
-                            : '/fabric-seller-onboarding';
-                
-                Navigator.pushReplacementNamed(context, route);
+                    ? '/apprentice-onboarding'
+                    : userType == 'client'
+                    ? '/client-onboarding'
+                    : '/fabric-seller-onboarding';
+
+                ref.setShell(route);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -655,6 +687,346 @@ shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: con
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ChangePasswordDialog extends StatefulWidget {
+  final dynamic colors;
+  final BuildContext outerContext;
+
+  const _ChangePasswordDialog({
+    required this.colors,
+    required this.outerContext,
+  });
+
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  late final TextEditingController _emailController;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+    return AlertDialog(
+      backgroundColor: colors.scaffoldBg,
+      title: Text(
+        'Change Password',
+        style: TextStyle(
+          color: colors.textPrimary,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'A password reset link will be sent to your email.',
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Your email',
+                hintStyle: TextStyle(color: colors.textMuted),
+                filled: true,
+                fillColor: colors.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.amber),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel', style: TextStyle(color: colors.textSecondary)),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  if (_emailController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Enter your email'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+                  setState(() => _isLoading = true);
+                  try {
+                    await Supabase.instance.client.auth.resetPasswordForEmail(
+                      _emailController.text.trim(),
+                    );
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(widget.outerContext).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Password reset email sent! Check your inbox.',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Could not send reset email. Please try again.',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isLoading = false);
+                  }
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.amber,
+            foregroundColor: AppColors.darkNavy,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Send Reset Link'),
+        ),
+      ],
+    );
+  }
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  final dynamic colors;
+  final BuildContext outerContext;
+  final WidgetRef ref;
+
+  const _DeleteAccountDialog({
+    required this.colors,
+    required this.outerContext,
+    required this.ref,
+  });
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  late final TextEditingController _passwordController;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+    return AlertDialog(
+      backgroundColor: colors.scaffoldBg,
+      title: Text(
+        'Delete Account',
+        style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This action is permanent and cannot be undone.',
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'All your data including profiles, orders, and client records will be permanently deleted.',
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              style: TextStyle(color: colors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Confirm with your password',
+                hintStyle: TextStyle(color: colors.textMuted),
+                filled: true,
+                fillColor: colors.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.borderDefault),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.amber),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel', style: TextStyle(color: colors.textSecondary)),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  if (_passwordController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Enter your password to confirm'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+                  setState(() => _isLoading = true);
+                  try {
+                    final user = widget.ref.read(currentUserProvider);
+                    if (user == null) return;
+
+                    final email =
+                        Supabase.instance.client.auth.currentUser?.email ?? '';
+
+                    // The previous call to signInWithPassword ignored its
+                    // result. With MFA enabled that call returns no user and
+                    // throws nothing, so the account was deleted without the
+                    // identity ever being confirmed. ConfirmWithPassword
+                    // requires a user in the response.
+                    final confirmed = await ReauthService.instance
+                        .confirmWithPassword(
+                      email: email,
+                      password: _passwordController.text,
+                    );
+                    if (!confirmed) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Could not confirm your identity. Please check your password and try again.',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    await Supabase.instance.client
+                        .from('users')
+                        .delete()
+                        .eq('id', user.id);
+
+                    await Supabase.instance.client.auth.admin.deleteUser(
+                      user.id,
+                    );
+                    await localStorage.clearAll();
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      await widget.ref
+                          .read(authStateProvider.notifier)
+                          .logout();
+                      if (widget.outerContext.mounted) {
+                        Navigator.pushNamedAndRemoveUntil(
+                          widget.outerContext,
+                          '/login',
+                          (route) => false,
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Could not delete account. Please check your password and try again.',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isLoading = false);
+                  }
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            foregroundColor: context.colors.textPrimary,
+          ),
+          child: _isLoading
+              ? SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colors.textPrimary,
+                  ),
+                )
+              : const Text('Delete Permanently'),
+        ),
+      ],
     );
   }
 }

@@ -39,14 +39,14 @@ class ChatMessageModel with _$ChatMessageModel {
 
 extension ChatMessageModelX on ChatMessageModel {
   ChatMessage toEntity() => ChatMessage(
-        id: id,
-        conversationId: conversationId,
-        senderId: senderId,
-        content: content,
-        timestamp: timestamp,
-        type: ChatMessageType.values.byName(type),
-        isRead: isRead,
-        orderId: orderId,
-        metadata: metadata,
-      );
+    id: id,
+    conversationId: conversationId,
+    senderId: senderId,
+    content: content,
+    timestamp: timestamp,
+    type: ChatMessageType.values.byName(type),
+    isRead: isRead,
+    orderId: orderId,
+    metadata: metadata,
+  );
 }

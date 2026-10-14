@@ -23,7 +23,9 @@ void main() {
     getSellerInventory = GetSellerInventoryUsecase(mockRepo);
     deleteFabric = DeleteFabricUsecase(mockRepo);
     provideDummy<Result<Fabric>>(Failure(ServerFailure(message: 'dummy')));
-    provideDummy<Result<List<Fabric>>>(Failure(ServerFailure(message: 'dummy')));
+    provideDummy<Result<List<Fabric>>>(
+      Failure(ServerFailure(message: 'dummy')),
+    );
     provideDummy<Result<void>>(Failure(ServerFailure(message: 'dummy')));
   });
 
@@ -43,8 +45,9 @@ void main() {
 
   group('GetFabricByIdUsecase', () {
     test('should return Fabric on success', () async {
-      when(mockRepo.getFabricById('fab_1'))
-          .thenAnswer((_) async => Success(tFabric));
+      when(
+        mockRepo.getFabricById('fab_1'),
+      ).thenAnswer((_) async => Success(tFabric));
 
       final result = await getFabricById('fab_1');
 
@@ -56,8 +59,9 @@ void main() {
     });
 
     test('should return Failure when fabric not found', () async {
-      when(mockRepo.getFabricById('fab_1'))
-          .thenAnswer((_) async => Failure(ServerFailure(message: 'Not found')));
+      when(
+        mockRepo.getFabricById('fab_1'),
+      ).thenAnswer((_) async => Failure(ServerFailure(message: 'Not found')));
 
       final result = await getFabricById('fab_1');
 
@@ -67,8 +71,9 @@ void main() {
 
   group('GetSellerInventoryUsecase', () {
     test('should return list of fabrics', () async {
-      when(mockRepo.getSellerInventory('seller_1'))
-          .thenAnswer((_) async => Success([tFabric]));
+      when(
+        mockRepo.getSellerInventory('seller_1'),
+      ).thenAnswer((_) async => Success([tFabric]));
 
       final result = await getSellerInventory('seller_1');
 
@@ -82,8 +87,9 @@ void main() {
 
   group('DeleteFabricUsecase', () {
     test('should delete fabric successfully', () async {
-      when(mockRepo.deleteFabric('fab_1'))
-          .thenAnswer((_) async => const Success(null));
+      when(
+        mockRepo.deleteFabric('fab_1'),
+      ).thenAnswer((_) async => const Success(null));
 
       final result = await deleteFabric('fab_1');
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../theme/colors.dart';
 
 class StatCard extends StatelessWidget {
   final String title;
@@ -6,7 +7,8 @@ class StatCard extends StatelessWidget {
   final IconData icon;
   final Color? color;
 
-  const StatCard({super.key,
+  const StatCard({
+    super.key,
     required this.title,
     required this.value,
     required this.icon,
@@ -15,11 +17,12 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final cardColor = color ?? Theme.of(context).colorScheme.primary;
 
-return Card(
+    return Card(
       elevation: 0,
-      color: Colors.white.withValues(alpha: 0.02),
+      color: colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: cardColor.withValues(alpha: 0.1)),
@@ -42,7 +45,7 @@ return Card(
                     style: TextStyle(
                       fontSize: 7,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white38,
+                      color: colors.textMuted,
                       letterSpacing: 0.8,
                     ),
                   ),
@@ -52,10 +55,10 @@ return Card(
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
+                color: colors.textPrimary,
               ),
             ),
           ],

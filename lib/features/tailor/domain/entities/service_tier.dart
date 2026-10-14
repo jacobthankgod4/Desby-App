@@ -21,8 +21,8 @@ enum ServiceTier {
   /// Get tier from string name
   static ServiceTier? fromString(String value) {
     return ServiceTier.values.cast<ServiceTier?>().firstWhere(
-          (tier) => tier?.displayName.toLowerCase() == value.toLowerCase(),
-          orElse: () => null,
-        );
+      (tier) => tier?.displayName.toLowerCase() == value.toLowerCase(),
+      orElse: () => null,
+    );
   }
 }

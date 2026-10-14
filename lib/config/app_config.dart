@@ -88,7 +88,7 @@ class AppConfig {
     'gif',
     'pdf',
     'doc',
-    'docx'
+    'docx',
   ];
 
   // Image Settings

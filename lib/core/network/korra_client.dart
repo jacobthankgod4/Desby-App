@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import '../../config/environment.dart';
 
 /// Korra AI API Client
@@ -23,6 +24,51 @@ class KorraClient {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+        },
+      ),
+    );
+
+    // Attach the signed-in user's Supabase access token to every request.
+    //
+    // The Korra API accepts either an `X-API-Key` (service-to-service) or a
+    // `Authorization: Bearer <supabase jwt>` (per-user). Endpoints scoped to a
+    // single person — /measurements history, get, delete, PDF — have no service
+    // key that maps to a user_id, so they 401 without this header. Sending the
+    // caller's own token lets the backend derive user_id from the verified JWT
+    // instead of trusting anything client-supplied.
+    _dio.interceptors.add(_SupabaseAuthInterceptor());
+
+    // E5: transient connection failures between the app and the API were
+    // surfaced straight to users as "Cannot reach Korra AI service". Retry
+    // idempotent GETs with backoff (max 2 retries); writes are never retried
+    // so a dropped POST cannot double-submit.
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (DioException e, ErrorInterceptorHandler handler) async {
+          final opts = e.requestOptions;
+          final attempts = (opts.extra['retryAttempt'] as int?) ?? 0;
+          final retryableError =
+              e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout;
+          if (opts.method == 'GET' &&
+              retryableError &&
+              attempts < 2 &&
+              opts.extra['noRetry'] != true) {
+            opts.extra['retryAttempt'] = attempts + 1;
+            await Future<void>.delayed(
+              Duration(milliseconds: 350 * (attempts + 1)),
+            );
+            try {
+              final response = await _dio.fetch<dynamic>(opts);
+              handler.resolve(response);
+              return;
+            } on DioException catch (retryError) {
+              handler.next(retryError);
+              return;
+            }
+          }
+          handler.next(e);
         },
       ),
     );
@@ -52,6 +98,8 @@ class KorraClient {
   /// Check if an API key is already set
   bool get hasApiKey => _apiKey != null && _apiKey!.isNotEmpty;
 
+  /// Sends the service key when we have one. The Supabase bearer token is added
+  /// separately by [_SupabaseAuthInterceptor] on every request.
   Options get _authOptions =>
       Options(headers: {if (_apiKey != null) 'X-API-Key': _apiKey});
 
@@ -74,12 +122,12 @@ class KorraClient {
     }
 
     try {
+      final data = <String, dynamic>{'partner_user_id': partnerUserId};
+      if (tier != null) data['tier'] = tier;
+
       final response = await _dio.post(
         '/api/v2/keys/partner-provision',
-        data: {
-          'partner_user_id': partnerUserId,
-          if (tier != null) 'tier': tier,
-        },
+        data: data,
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -89,10 +137,14 @@ class KorraClient {
       );
 
       if (response.data['status'] == true) {
-        final apiKey = response.data['data']['api_key'] as String?;
+        final apiKey = (response.data['data']?['api_key'] as String?);
         if (apiKey != null) {
           setApiKey(apiKey);
-          debugPrint('[KORRA] API key provisioned: ${apiKey.substring(0, 12)}...');
+          if (kDebugMode) {
+            debugPrint(
+              '[KORRA] API key provisioned: ${apiKey.substring(0, 12)}...',
+            );
+          }
           return apiKey;
         }
       }
@@ -138,26 +190,31 @@ class KorraClient {
     required double heightCm,
     required String gender,
   }) async {
+    debugPrint(
+      '[KORRA] extractMeasurements — front: ${frontImageBytes.lengthInBytes}B, side: ${sideImageBytes.lengthInBytes}B, height: $heightCm, gender: $gender',
+    );
+    debugPrint('[KORRA] baseUrl: $_baseUrl, hasApiKey: $hasApiKey');
     try {
       final formData = FormData.fromMap({
         'front': MultipartFile.fromBytes(
           frontImageBytes,
           filename: 'front.jpg',
         ),
-        'side': MultipartFile.fromBytes(
-          sideImageBytes,
-          filename: 'side.jpg',
-        ),
+        'side': MultipartFile.fromBytes(sideImageBytes, filename: 'side.jpg'),
         'height': heightCm.toString(),
         'gender': gender,
       });
 
+      debugPrint('[KORRA] Sending POST /api/v2/measurements/extract ...');
       final response = await _dio.post(
         '/api/v2/measurements/extract',
         data: formData,
         options: _authOptions,
       );
 
+      debugPrint(
+        '[KORRA] Extract response: ${response.statusCode} — ${response.data}',
+      );
       final data = response.data;
 
       // If response already has measurements (sync response), return directly
@@ -168,13 +225,19 @@ class KorraClient {
       // Otherwise it's async — poll for results
       final taskId = data['task_id'];
       if (taskId != null) {
+        debugPrint('[KORRA] Async task_id: $taskId — polling...');
         return await _pollTaskResult(taskId);
       }
 
       return KorraMeasurementResult.fromJson(data);
     } on DioException catch (e) {
+      debugPrint('[KORRA] extractMeasurements DioException: ${_dioError(e)}');
+      debugPrint(
+        '[KORRA] response: ${e.response?.statusCode} ${e.response?.data}',
+      );
       return KorraMeasurementResult.error(_dioError(e));
     } catch (e) {
+      debugPrint('[KORRA] extractMeasurements exception: $e');
       return KorraMeasurementResult.error('Unexpected error: $e');
     }
   }
@@ -390,7 +453,9 @@ class KorraClient {
         ),
       );
 
-      return response.data as List<int>;
+      return response.data is List
+          ? (response.data as List).cast<int>().toList()
+          : <int>[];
     } on DioException catch (e) {
       debugPrint('[KORRA] Download PDF failed: ${_dioError(e)}');
       return null;
@@ -691,7 +756,9 @@ class KorraClient {
   Future<Map<String, dynamic>?> getProfile() async {
     try {
       final response = await _dio.get('/api/v2/profile', options: _authOptions);
-      return response.data as Map<String, dynamic>;
+      return response.data is Map<String, dynamic>
+          ? response.data as Map<String, dynamic>
+          : null;
     } on DioException catch (e) {
       debugPrint('[KORRA] Get profile failed: ${_dioError(e)}');
       return null;
@@ -870,13 +937,15 @@ class KorraClient {
     double? heightCm,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'measurements': measurements,
+        'gender': gender,
+      };
+      if (heightCm != null) data['height'] = heightCm;
+
       final response = await _dio.post(
         '/api/v2/refinement/impute',
-        data: {
-          'measurements': measurements,
-          'gender': gender,
-          if (heightCm != null) 'height': heightCm,
-        },
+        data: data,
         options: _authOptions,
       );
 
@@ -947,13 +1016,18 @@ class KorraMeasurementResult {
 
   factory KorraMeasurementResult.fromJson(Map<String, dynamic> json) {
     return KorraMeasurementResult(
-      success: json['success'] == true || json['status'] == 'success' || json['status'] == 'accepted',
+      success:
+          json['success'] == true ||
+          json['status'] == 'success' ||
+          json['status'] == 'accepted' ||
+          json['status'] == 'completed',
       measurements: (json['measurements'] as Map<String, dynamic>?)?.map(
         (key, value) => MapEntry(key, (value as num).toDouble()),
       ),
       error: json['error'] ?? json['detail'],
       processingTime: json['processing_time_seconds']?.toDouble(),
-      measurementId: json['measurement_id'] ?? json['image_id'] ?? json['task_id'],
+      measurementId:
+          json['measurement_id'] ?? json['image_id'] ?? json['task_id'],
       gender: json['gender'],
       heightCm:
           json['user_height_cm']?.toDouble() ?? json['height']?.toDouble(),
@@ -1270,5 +1344,59 @@ class KorraNotification {
           ? DateTime.tryParse(json['created_at'])
           : null,
     );
+  }
+}
+
+/// Injects the current Supabase session token into outgoing Korra API calls.
+///
+/// The Korra API accepts either an `X-API-Key` (service-to-service) or an
+/// `Authorization: Bearer <supabase jwt>` (per-user). Endpoints scoped to a
+/// single person — measurement history, get, delete, PDF — have no service key
+/// that maps to a `user_id`, so they 401 without this header. Sending the
+/// caller's own token lets the backend derive `user_id` from the verified JWT
+/// instead of trusting anything client-supplied.
+///
+/// The token is read per-request rather than cached, so a refreshed session is
+/// picked up immediately and an expired one is never replayed.
+class _SupabaseAuthInterceptor extends Interceptor {
+  static const String _retryFlag = '__korraAuthRetry';
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    try {
+      final token = Supabase.instance.client.auth.currentSession?.accessToken;
+      if (token != null && token.isNotEmpty) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
+    } catch (_) {
+      // No Supabase session yet (boot, or logged out). The request proceeds
+      // unauthenticated and the API returns its own 401 if it needs identity.
+    }
+    handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    final isAuthFailure = err.response?.statusCode == 401;
+    final alreadyRetried = err.requestOptions.extra[_retryFlag] == true;
+
+    if (isAuthFailure && !alreadyRetried) {
+      // One silent refresh-and-retry: Supabase rotates short-lived access
+      // tokens, and a stale one should not surface to the user as an error.
+      try {
+        await Supabase.instance.client.auth.refreshSession();
+        final token = Supabase.instance.client.auth.currentSession?.accessToken;
+        if (token != null && token.isNotEmpty) {
+          final options = err.requestOptions
+            ..headers['Authorization'] = 'Bearer $token'
+            ..extra[_retryFlag] = true;
+          final response = await Dio().fetch<dynamic>(options);
+          return handler.resolve(response);
+        }
+      } catch (_) {
+        // Refresh failed — fall through and surface the original 401.
+      }
+    }
+    handler.next(err);
   }
 }

@@ -1,36 +1,35 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/notification.dart';
 import '../../domain/repositories/notification_repository.dart';
 
+final _uuidPattern = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  caseSensitive: false,
+);
+
 class SupabaseNotificationRepository implements NotificationRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  bool _isValidUuid(String? id) =>
+      id != null && id.isNotEmpty && _uuidPattern.hasMatch(id);
+
   @override
   Future<Result<List<AppNotification>>> getNotifications(String userId) async {
+    if (!_isValidUuid(userId)) return const Success([]);
     try {
-      // Try with user_id (snake_case) first, fallback to userId (camelCase)
-      List<dynamic> response;
-      try {
-        response = await _supabase
-            .from('notifications')
-            .select()
-            .eq('user_id', userId)
-            .order('created_at', ascending: false);
-      } catch (_) {
-        // Fallback to camelCase column names
-        response = await _supabase
-            .from('notifications')
-            .select()
-            .eq('userId', userId)
-            .order('timestamp', ascending: false);
-      }
-
-      return Success((response as List)
-          .map((data) => _mapToEntity(data))
-          .toList());
+      final response = await _supabase
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+      return Success(
+        (response as List).map((data) => _mapToEntity(data)).toList(),
+      );
     } catch (e) {
-      // Return empty list on any error (table may not exist yet)
+      debugPrint('[Notifications] Query failed: $e');
       return const Success([]);
     }
   }
@@ -50,6 +49,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
 
   @override
   Future<Result<void>> markAllAsRead(String userId) async {
+    if (!_isValidUuid(userId)) return const Success(null);
     try {
       await _supabase
           .from('notifications')
@@ -65,10 +65,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
   @override
   Future<Result<void>> deleteNotification(String notificationId) async {
     try {
-      await _supabase
-          .from('notifications')
-          .delete()
-          .eq('id', notificationId);
+      await _supabase.from('notifications').delete().eq('id', notificationId);
       return const Success(null);
     } catch (e) {
       return Failure(AuthFailure(message: e.toString()));
@@ -77,6 +74,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
 
   @override
   Stream<AppNotification> getNotificationStream(String userId) {
+    if (!_isValidUuid(userId)) return const Stream.empty();
     return _supabase
         .from('notifications')
         .stream(primaryKey: ['id'])
@@ -88,8 +86,7 @@ class SupabaseNotificationRepository implements NotificationRepository {
   }
 
   AppNotification _mapToEntity(Map<String, dynamic> data) {
-    // Support both snake_case and camelCase column names
-    final timestampStr = data['created_at'] as String? ?? data['timestamp'] as String? ?? '';
+    final timestampStr = data['created_at'] as String? ?? '';
     DateTime timestamp;
     try {
       timestamp = DateTime.parse(timestampStr);

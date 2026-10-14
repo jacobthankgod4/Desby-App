@@ -101,6 +101,36 @@ class MockApprenticeshipRepository extends _i1.Mock
           as _i3.Future<_i4.Result<_i5.Apprenticeship>>);
 
   @override
+  _i3.Future<_i4.Result<_i5.Apprenticeship?>> getApprenticeshipByInviteToken(
+    String? token,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getApprenticeshipByInviteToken, [token]),
+            returnValue: _i3.Future<_i4.Result<_i5.Apprenticeship?>>.value(
+              _i6.dummyValue<_i4.Result<_i5.Apprenticeship?>>(
+                this,
+                Invocation.method(#getApprenticeshipByInviteToken, [token]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<_i5.Apprenticeship?>>);
+
+  @override
+  _i3.Future<_i4.Result<String>> generateInviteToken(
+    String? apprenticeshipId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#generateInviteToken, [apprenticeshipId]),
+            returnValue: _i3.Future<_i4.Result<String>>.value(
+              _i6.dummyValue<_i4.Result<String>>(
+                this,
+                Invocation.method(#generateInviteToken, [apprenticeshipId]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<String>>);
+
+  @override
   _i3.Future<_i4.Result<List<_i7.ApprenticeTask>>> getApprenticeTasks(
     String? apprenticeshipId,
   ) =>
@@ -189,4 +219,279 @@ class MockApprenticeshipRepository extends _i1.Mock
             ),
           )
           as _i3.Future<_i4.Result<_i8.ApprenticeLesson>>);
+
+  @override
+  _i3.Future<_i4.Result<_i8.ApprenticeModule>> createModule(
+    String? title,
+    String? description,
+    int? orderIndex, {
+    String? tailorId,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #createModule,
+              [title, description, orderIndex],
+              {#tailorId: tailorId},
+            ),
+            returnValue: _i3.Future<_i4.Result<_i8.ApprenticeModule>>.value(
+              _i6.dummyValue<_i4.Result<_i8.ApprenticeModule>>(
+                this,
+                Invocation.method(
+                  #createModule,
+                  [title, description, orderIndex],
+                  {#tailorId: tailorId},
+                ),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<_i8.ApprenticeModule>>);
+
+  @override
+  _i3.Future<_i4.Result<_i8.ApprenticeModule>> updateModule(
+    String? moduleId, {
+    String? title,
+    String? description,
+    int? orderIndex,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #updateModule,
+              [moduleId],
+              {
+                #title: title,
+                #description: description,
+                #orderIndex: orderIndex,
+              },
+            ),
+            returnValue: _i3.Future<_i4.Result<_i8.ApprenticeModule>>.value(
+              _i6.dummyValue<_i4.Result<_i8.ApprenticeModule>>(
+                this,
+                Invocation.method(
+                  #updateModule,
+                  [moduleId],
+                  {
+                    #title: title,
+                    #description: description,
+                    #orderIndex: orderIndex,
+                  },
+                ),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<_i8.ApprenticeModule>>);
+
+  @override
+  _i3.Future<_i4.Result<void>> deleteModule(String? moduleId) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteModule, [moduleId]),
+            returnValue: _i3.Future<_i4.Result<void>>.value(
+              _i6.dummyValue<_i4.Result<void>>(
+                this,
+                Invocation.method(#deleteModule, [moduleId]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<void>>);
+
+  @override
+  _i3.Future<_i4.Result<void>> reorderModules(List<String>? moduleIds) =>
+      (super.noSuchMethod(
+            Invocation.method(#reorderModules, [moduleIds]),
+            returnValue: _i3.Future<_i4.Result<void>>.value(
+              _i6.dummyValue<_i4.Result<void>>(
+                this,
+                Invocation.method(#reorderModules, [moduleIds]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<void>>);
+
+  @override
+  _i3.Future<_i4.Result<_i8.ApprenticeLesson>> createLesson(
+    String? moduleId,
+    String? title,
+    String? content,
+    int? orderIndex, {
+    String? videoUrl,
+    String? shortDescription,
+    String? thumbnailUrl,
+    int? durationMinutes,
+    String? lessonType,
+    bool? isPublished,
+    bool? isFreePreview,
+    List<String>? attachments,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #createLesson,
+              [moduleId, title, content, orderIndex],
+              {
+                #videoUrl: videoUrl,
+                #shortDescription: shortDescription,
+                #thumbnailUrl: thumbnailUrl,
+                #durationMinutes: durationMinutes,
+                #lessonType: lessonType,
+                #isPublished: isPublished,
+                #isFreePreview: isFreePreview,
+                #attachments: attachments,
+              },
+            ),
+            returnValue: _i3.Future<_i4.Result<_i8.ApprenticeLesson>>.value(
+              _i6.dummyValue<_i4.Result<_i8.ApprenticeLesson>>(
+                this,
+                Invocation.method(
+                  #createLesson,
+                  [moduleId, title, content, orderIndex],
+                  {
+                    #videoUrl: videoUrl,
+                    #shortDescription: shortDescription,
+                    #thumbnailUrl: thumbnailUrl,
+                    #durationMinutes: durationMinutes,
+                    #lessonType: lessonType,
+                    #isPublished: isPublished,
+                    #isFreePreview: isFreePreview,
+                    #attachments: attachments,
+                  },
+                ),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<_i8.ApprenticeLesson>>);
+
+  @override
+  _i3.Future<_i4.Result<_i8.ApprenticeLesson>> updateLesson(
+    String? lessonId, {
+    String? title,
+    String? content,
+    String? videoUrl,
+    int? orderIndex,
+    String? shortDescription,
+    String? thumbnailUrl,
+    int? durationMinutes,
+    String? lessonType,
+    bool? isPublished,
+    bool? isFreePreview,
+    List<String>? attachments,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #updateLesson,
+              [lessonId],
+              {
+                #title: title,
+                #content: content,
+                #videoUrl: videoUrl,
+                #orderIndex: orderIndex,
+                #shortDescription: shortDescription,
+                #thumbnailUrl: thumbnailUrl,
+                #durationMinutes: durationMinutes,
+                #lessonType: lessonType,
+                #isPublished: isPublished,
+                #isFreePreview: isFreePreview,
+                #attachments: attachments,
+              },
+            ),
+            returnValue: _i3.Future<_i4.Result<_i8.ApprenticeLesson>>.value(
+              _i6.dummyValue<_i4.Result<_i8.ApprenticeLesson>>(
+                this,
+                Invocation.method(
+                  #updateLesson,
+                  [lessonId],
+                  {
+                    #title: title,
+                    #content: content,
+                    #videoUrl: videoUrl,
+                    #orderIndex: orderIndex,
+                    #shortDescription: shortDescription,
+                    #thumbnailUrl: thumbnailUrl,
+                    #durationMinutes: durationMinutes,
+                    #lessonType: lessonType,
+                    #isPublished: isPublished,
+                    #isFreePreview: isFreePreview,
+                    #attachments: attachments,
+                  },
+                ),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<_i8.ApprenticeLesson>>);
+
+  @override
+  _i3.Future<_i4.Result<void>> deleteLesson(String? lessonId) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteLesson, [lessonId]),
+            returnValue: _i3.Future<_i4.Result<void>>.value(
+              _i6.dummyValue<_i4.Result<void>>(
+                this,
+                Invocation.method(#deleteLesson, [lessonId]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<void>>);
+
+  @override
+  _i3.Future<_i4.Result<void>> reorderLessons(
+    String? moduleId,
+    List<String>? lessonIds,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#reorderLessons, [moduleId, lessonIds]),
+            returnValue: _i3.Future<_i4.Result<void>>.value(
+              _i6.dummyValue<_i4.Result<void>>(
+                this,
+                Invocation.method(#reorderLessons, [moduleId, lessonIds]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<void>>);
+
+  @override
+  _i3.Future<_i4.Result<void>> markLessonComplete(
+    String? apprenticeshipId,
+    String? lessonId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#markLessonComplete, [
+              apprenticeshipId,
+              lessonId,
+            ]),
+            returnValue: _i3.Future<_i4.Result<void>>.value(
+              _i6.dummyValue<_i4.Result<void>>(
+                this,
+                Invocation.method(#markLessonComplete, [
+                  apprenticeshipId,
+                  lessonId,
+                ]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<void>>);
+
+  @override
+  _i3.Future<_i4.Result<Set<String>>> getCompletedLessons(
+    String? apprenticeshipId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getCompletedLessons, [apprenticeshipId]),
+            returnValue: _i3.Future<_i4.Result<Set<String>>>.value(
+              _i6.dummyValue<_i4.Result<Set<String>>>(
+                this,
+                Invocation.method(#getCompletedLessons, [apprenticeshipId]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<Set<String>>>);
+
+  @override
+  _i3.Future<_i4.Result<double>> calculateProgress(String? apprenticeshipId) =>
+      (super.noSuchMethod(
+            Invocation.method(#calculateProgress, [apprenticeshipId]),
+            returnValue: _i3.Future<_i4.Result<double>>.value(
+              _i6.dummyValue<_i4.Result<double>>(
+                this,
+                Invocation.method(#calculateProgress, [apprenticeshipId]),
+              ),
+            ),
+          )
+          as _i3.Future<_i4.Result<double>>);
 }

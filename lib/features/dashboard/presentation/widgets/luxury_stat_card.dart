@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/colors.dart';
-import '../../../../core/widgets/luxury_glass_card.dart';
 
 class LuxuryStatCard extends StatefulWidget {
   final String title;
@@ -37,9 +36,10 @@ class _LuxuryStatCardState extends State<LuxuryStatCard>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _pulseAnim = Tween<double>(begin: 1.0, end: 1.03).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
-    );
+    _pulseAnim = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
   }
 
   @override
@@ -50,6 +50,7 @@ class _LuxuryStatCardState extends State<LuxuryStatCard>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovered = true);
@@ -62,92 +63,102 @@ class _LuxuryStatCardState extends State<LuxuryStatCard>
       child: AnimatedBuilder(
         animation: _pulseAnim,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _pulseAnim.value,
-            child: child,
-          );
+          return Transform.scale(scale: _pulseAnim.value, child: child);
         },
-        child: LuxuryGlassCard(
-          padding: const EdgeInsets.all(16),
-          borderColor: _isHovered
-              ? widget.color.withValues(alpha: 0.3)
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isHovered
+                  ? widget.color.withValues(alpha: 0.3)
+                  : colors.borderSubtle,
+            ),
+          ),
+          child: Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _isHovered
-                          ? widget.color.withValues(alpha: 0.2)
-                          : widget.color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _isHovered
+                      ? widget.color.withValues(alpha: 0.2)
+                      : widget.color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(widget.icon, color: widget.color, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.value,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                        height: 1.1,
+                      ),
                     ),
-                    child: Icon(widget.icon, color: widget.color, size: 18),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.title.toUpperCase(),
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (widget.trend != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
-                  if (widget.trend != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: (widget.isPositiveTrend
-                                ? const Color(0xFF00FF7F)
-                                : Colors.redAccent)
+                  decoration: BoxDecoration(
+                    color:
+                        (widget.isPositiveTrend
+                                ? AppColors.successGreen
+                                : colors.statusError)
                             .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        widget.isPositiveTrend
+                            ? Icons.trending_up_rounded
+                            : Icons.trending_down_rounded,
+                        color: widget.isPositiveTrend
+                            ? AppColors.successGreen
+                            : colors.statusError,
+                        size: 12,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            widget.isPositiveTrend
-                                ? Icons.trending_up_rounded
-                                : Icons.trending_down_rounded,
-                            color: widget.isPositiveTrend
-                                ? const Color(0xFF00FF7F)
-                                : Colors.redAccent,
-                            size: 10,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            widget.trend!,
-                            style: TextStyle(
-                              color: widget.isPositiveTrend
-                                  ? const Color(0xFF00FF7F)
-                                  : Colors.redAccent,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 4),
+                      Text(
+                        widget.trend!,
+                        style: TextStyle(
+                          color: widget.isPositiveTrend
+                              ? AppColors.successGreen
+                              : colors.statusError,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                widget.value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                widget.title.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white38,
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
             ],
           ),
         ),

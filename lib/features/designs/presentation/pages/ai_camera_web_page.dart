@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:js' as js;
-import 'dart:js_util' as js_util;
 import 'dart:math';
 import 'dart:typed_data';
 // ignore: avoid_web_libraries_in_flutter
@@ -61,8 +60,9 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
         return _video!;
       });
 
-      final stream = await html.window.navigator.mediaDevices!
-          .getUserMedia({'video': true});
+      final stream = await html.window.navigator.mediaDevices!.getUserMedia({
+        'video': true,
+      });
 
       _video!.srcObject = stream;
       _video!.style.pointerEvents = 'none';
@@ -120,7 +120,11 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
 
   void _startFrameLoop() {
     _frameTimer = Timer.periodic(const Duration(milliseconds: 66), (_) {
-      if (!_cameraReady || !_poseReady || _isReviewing || _capturedImageBytes != null) return;
+      if (!_cameraReady ||
+          !_poseReady ||
+          _isReviewing ||
+          _capturedImageBytes != null)
+        return;
       _processFrame();
     });
   }
@@ -130,7 +134,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
       final raw = js.context.callMethod('detectPose', []);
       if (raw == null) return;
 
-      final results = js_util.dartify(raw);
+      final results = raw;
       final landmarksList = results as List?;
       if (landmarksList == null || landmarksList.isEmpty) {
         if (mounted && !_isReviewing && _capturedImageBytes == null) {
@@ -144,12 +148,14 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
       }
 
       final lmList = landmarksList
-          .map((lm) => _Landmark(
-                x: (lm as Map)['x']?.toDouble() ?? 0,
-                y: lm['y']?.toDouble() ?? 0,
-                z: lm['z']?.toDouble() ?? 0,
-                visibility: lm['visibility']?.toDouble() ?? 0,
-              ))
+          .map(
+            (lm) => _Landmark(
+              x: (lm as Map)['x']?.toDouble() ?? 0,
+              y: lm['y']?.toDouble() ?? 0,
+              z: lm['z']?.toDouble() ?? 0,
+              visibility: lm['visibility']?.toDouble() ?? 0,
+            ),
+          )
           .toList();
 
       if (mounted && !_isReviewing && _capturedImageBytes == null) {
@@ -189,7 +195,8 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
       aligned = false;
     } else if (widget.perspective == 'front') {
       // Front view A-pose check (Korra logic)
-      final bool handsDown = leftWrist.visibility > 0.5 &&
+      final bool handsDown =
+          leftWrist.visibility > 0.5 &&
           rightWrist.visibility > 0.5 &&
           leftShoulder.visibility > 0.5 &&
           rightShoulder.visibility > 0.5 &&
@@ -208,7 +215,8 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
       }
     } else if (widget.perspective == 'side') {
       // Side view check (Korra yaw estimation logic)
-      final bool bothShouldersVisible = leftShoulder.visibility > 0.5 &&
+      final bool bothShouldersVisible =
+          leftShoulder.visibility > 0.5 &&
           rightShoulder.visibility > 0.5 &&
           leftHip.visibility > 0.5;
 
@@ -325,25 +333,29 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
   Widget build(BuildContext context) {
     if (!_cameraReady) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: context.colors.scaffoldBg,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_statusMessage != 'Initializing camera...')
-                const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                const Icon(
+                  Icons.error_outline,
+                  color: AppColors.error,
+                  size: 48,
+                ),
               const SizedBox(height: 16),
               Text(
                 _statusMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                style: TextStyle(color: context.colors.textMuted, fontSize: 14),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.amber,
-                  foregroundColor: Colors.black,
+                  foregroundColor: context.colors.textPrimary,
                 ),
                 child: const Text('GO BACK'),
               ),
@@ -354,7 +366,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.colors.scaffoldBg,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -381,10 +393,14 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               decoration: BoxDecoration(
-                color: _isAligned ? const Color(0xFF76FF03) : Colors.black.withAlpha(200),
+                color: _isAligned
+                    ? const Color(0xFF76FF03)
+                    : context.colors.scaffoldBg,
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: _isAligned ? const Color(0xFF76FF03) : Colors.white.withAlpha(25),
+                  color: _isAligned
+                      ? const Color(0xFF76FF03)
+                      : context.colors.borderSubtle,
                   width: 2,
                 ),
               ),
@@ -392,7 +408,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
                 _statusMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: _isAligned ? Colors.black : Colors.white,
+                  color: _isAligned ? Colors.black : context.colors.textPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
                 ),
@@ -410,10 +426,10 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(150),
+                  color: context.colors.scaffoldBg,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.close, color: Colors.white, size: 20),
+                child: Icon(Icons.close, color: context.colors.textPrimary, size: 20),
               ),
             ),
           ),
@@ -422,7 +438,7 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
           if (_isReviewing && _capturedImageBytes != null)
             Positioned.fill(
               child: Container(
-                color: Colors.black,
+                color: context.colors.scaffoldBg,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -437,13 +453,23 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
                             child: ElevatedButton(
                               onPressed: _retakePhoto,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white.withAlpha(25),
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white24),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                backgroundColor: context.colors.borderSubtle,
+                                foregroundColor: context.colors.textPrimary,
+                                side: BorderSide(color: context.colors.borderSubtle),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
                               ),
-                              child: const Text('RECAPTURE', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                              child: const Text(
+                                'RECAPTURE',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -453,11 +479,21 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
                               onPressed: _keepPhoto,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.amber,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  foregroundColor: context.colors.textPrimary,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
                               ),
-                              child: const Text('KEEP PHOTO', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                              child: const Text(
+                                'KEEP PHOTO',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -511,7 +547,12 @@ class _AiCameraWebPageState extends State<AiCameraWebPage>
 
 class _Landmark {
   final double x, y, z, visibility;
-  _Landmark({required this.x, required this.y, required this.z, required this.visibility});
+  _Landmark({
+    required this.x,
+    required this.y,
+    required this.z,
+    required this.visibility,
+  });
 }
 
 // ─── Exact same skeleton painter as mobile Korra ──────────────────────────
@@ -520,10 +561,7 @@ class _WebSkeletonPainter extends CustomPainter {
   final List<_Landmark> landmarks;
   final bool isAligned;
 
-  _WebSkeletonPainter({
-    required this.landmarks,
-    required this.isAligned,
-  });
+  _WebSkeletonPainter({required this.landmarks, required this.isAligned});
 
   @override
   void paint(Canvas canvas, Size size) {

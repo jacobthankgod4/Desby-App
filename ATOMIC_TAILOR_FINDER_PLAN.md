@@ -304,7 +304,7 @@ CTA text: "BOOK CONSULTATION"
 ## 🗺️ MAP INTEGRATION: OpenStreetMap (Free)
 
 ### Package Selection
-Use `flutter_map` + `latlong2` - free, open-source, no API key required
+Use `flutter_map` + `latlong2` - free, open-source, keyless OpenStreetMap tiles
 
 ### pubspec.yaml Dependencies
 ```yaml

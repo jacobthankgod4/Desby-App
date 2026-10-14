@@ -54,6 +54,7 @@ class _ServiceTierChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -61,10 +62,10 @@ class _ServiceTierChip extends StatelessWidget {
         width: 126,
         height: 54,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.black : Colors.white,
+          color: isSelected ? colors.barrierColor : colors.surface,
           borderRadius: BorderRadius.circular(27),
           border: Border.all(
-            color: isSelected ? Colors.black : Colors.white.withValues(alpha: 0.3),
+            color: isSelected ? colors.barrierColor : colors.borderSubtle,
             width: 1.5,
           ),
           boxShadow: isSelected
@@ -84,14 +85,14 @@ class _ServiceTierChip extends StatelessWidget {
             Icon(
               _getTierIcon(tier),
               size: 18,
-              color: isSelected ? Colors.white : Colors.black,
+              color: isSelected ? colors.textPrimary : colors.textMuted,
             ),
             const SizedBox(height: 2),
             // Tier name
             Text(
               tier.displayName,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? colors.textPrimary : colors.textMuted,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
               ),
@@ -135,16 +136,19 @@ class ServiceTierInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.amber.withValues(alpha: 0.1) : AppColors.surfaceDark,
+          color: isSelected
+              ? AppColors.amber.withValues(alpha: 0.1)
+              : colors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.amber : Colors.transparent,
+            color: isSelected ? AppColors.amber : colors.borderSubtle,
             width: 2,
           ),
         ),
@@ -155,12 +159,12 @@ class ServiceTierInfoTile extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.amber : Colors.white12,
+                color: isSelected ? AppColors.amber : colors.borderSubtle,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 _getTierIcon(tier),
-                color: isSelected ? AppColors.darkNavy : AppColors.textMuted,
+                color: isSelected ? AppColors.darkNavy : colors.textMuted,
                 size: 24,
               ),
             ),
@@ -173,7 +177,7 @@ class ServiceTierInfoTile extends StatelessWidget {
                   Text(
                     tier.displayName,
                     style: TextStyle(
-                      color: isSelected ? AppColors.amber : AppColors.textPrimary,
+                      color: isSelected ? AppColors.amber : colors.textPrimary,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -196,7 +200,7 @@ class ServiceTierInfoTile extends StatelessWidget {
                 Text(
                   '₦${startingPrice.toStringAsFixed(0)}',
                   style: TextStyle(
-                    color: isSelected ? AppColors.amber : AppColors.textPrimary,
+                    color: isSelected ? AppColors.amber : colors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
                   ),

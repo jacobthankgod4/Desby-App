@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/colors.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class NeuralScanPreview extends StatefulWidget {
   final String? imageUrl;
@@ -38,6 +39,7 @@ class _NeuralScanPreviewState extends State<NeuralScanPreview>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       width: double.infinity,
       height: 350,
@@ -62,10 +64,7 @@ class _NeuralScanPreviewState extends State<NeuralScanPreview>
           // BASE IMAGE
           Positioned.fill(
             child: widget.imageUrl != null
-                ? Image.network(
-                    widget.imageUrl!,
-                    fit: BoxFit.cover,
-                  )
+                ? AppNetworkImage(url: widget.imageUrl!, fit: BoxFit.cover)
                 : Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -89,7 +88,7 @@ class _NeuralScanPreviewState extends State<NeuralScanPreview>
             Positioned.fill(
               child: Container(
                 color: Colors.black.withValues(alpha: 0.4),
-                child: const Center(
+                child: Center(
                   child: CircularProgressIndicator(color: AppColors.amber),
                 ),
               ),
@@ -131,16 +130,22 @@ class _NeuralScanPreviewState extends State<NeuralScanPreview>
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.amber.withValues(alpha: 0.4)),
+                border: Border.all(
+                  color: AppColors.amber.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.psychology_outlined, color: AppColors.amber, size: 14),
+                  const Icon(
+                    Icons.psychology_outlined,
+                    color: AppColors.amber,
+                    size: 14,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     widget.label,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 2,

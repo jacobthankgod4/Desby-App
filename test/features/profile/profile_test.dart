@@ -32,8 +32,9 @@ void main() {
 
   group('GetProfileUsecase', () {
     test('should return UserProfile on success', () async {
-      when(mockRepository.getProfile(any))
-          .thenAnswer((_) async => Success(tProfile));
+      when(
+        mockRepository.getProfile(any),
+      ).thenAnswer((_) async => Success(tProfile));
 
       final result = await getProfile('user_1');
 
@@ -45,8 +46,9 @@ void main() {
     });
 
     test('should return Failure when profile not found', () async {
-      when(mockRepository.getProfile(any))
-          .thenAnswer((_) async => Failure(ServerFailure(message: 'Not found')));
+      when(
+        mockRepository.getProfile(any),
+      ).thenAnswer((_) async => Failure(ServerFailure(message: 'Not found')));
 
       final result = await getProfile('user_1');
 
@@ -56,8 +58,9 @@ void main() {
 
   group('UpdateProfileUsecase', () {
     test('should update profile successfully', () async {
-      when(mockRepository.updateProfile(any))
-          .thenAnswer((_) async => Success(tProfile));
+      when(
+        mockRepository.updateProfile(any),
+      ).thenAnswer((_) async => Success(tProfile));
 
       final result = await updateProfile(tProfile);
 
@@ -66,8 +69,9 @@ void main() {
     });
 
     test('should return Failure on update error', () async {
-      when(mockRepository.updateProfile(any))
-          .thenAnswer((_) async => Failure(ValidationFailure(message: 'Invalid data')));
+      when(mockRepository.updateProfile(any)).thenAnswer(
+        (_) async => Failure(ValidationFailure(message: 'Invalid data')),
+      );
 
       final result = await updateProfile(tProfile);
 

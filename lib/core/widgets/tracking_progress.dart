@@ -23,7 +23,7 @@ class TrackingProgressBar extends StatelessWidget {
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
           final stepWidth = totalWidth / (steps.length - 1);
-          
+
           return Stack(
             children: [
               // Background track
@@ -35,7 +35,7 @@ class TrackingProgressBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Progress fill
               AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
@@ -60,12 +60,12 @@ class TrackingProgressBar extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Step indicators
               ...List.generate(steps.length, (index) {
                 final isCompleted = index <= currentStep;
                 final isCurrent = index == currentStep;
-                
+
                 return Positioned(
                   left: stepWidth * index - 12,
                   top: height / 2 - 12,
@@ -111,9 +111,10 @@ class _StepIndicatorState extends State<_StepIndicator>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _bounceAnimation = Tween<double>(begin: 0, end: -4).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.bounceOut),
-    );
+    _bounceAnimation = Tween<double>(
+      begin: 0,
+      end: -4,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.bounceOut));
     if (widget.isCurrent) {
       _controller.repeat(reverse: true);
     }
@@ -134,6 +135,7 @@ class _StepIndicatorState extends State<_StepIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return AnimatedBuilder(
       animation: _bounceAnimation,
       builder: (context, child) {
@@ -145,10 +147,7 @@ class _StepIndicatorState extends State<_StepIndicator>
             decoration: BoxDecoration(
               color: widget.isCompleted ? _color : Colors.transparent,
               shape: BoxShape.circle,
-              border: Border.all(
-                color: _color,
-                width: 2,
-              ),
+              border: Border.all(color: _color, width: 2),
               boxShadow: widget.isCurrent
                   ? [
                       BoxShadow(
@@ -161,11 +160,9 @@ class _StepIndicatorState extends State<_StepIndicator>
             child: Center(
               child: widget.isCompleted
                   ? Icon(
-                      widget.isCurrent
-                          ? Icons.circle
-                          : Icons.check,
+                      widget.isCurrent ? Icons.circle : Icons.check,
                       size: 12,
-                      color: Colors.white,
+                      color: colors.textPrimary,
                     )
                   : null,
             ),
@@ -182,11 +179,7 @@ class TrackingStep {
   final String? icon;
   final Color? color;
 
-  const TrackingStep({
-    required this.label,
-    this.icon,
-    this.color,
-  });
+  const TrackingStep({required this.label, this.icon, this.color});
 
   // Using Desby brand colors
   static const List<TrackingStep> defaultSteps = [
@@ -200,7 +193,7 @@ class TrackingStep {
 
 /// CompactProgressBar - For use in cards
 class CompactProgressBar extends StatelessWidget {
-  final double progress; // 0.0 to 1.0
+  final double progress;
   final Color? color;
   final double height;
 

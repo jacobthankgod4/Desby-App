@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:desby_app/theme/colors.dart';
 
 import '../../../orders/presentation/providers/order_provider.dart';
 import '../../../../core/widgets/error_state_widget.dart';
-import '../../../../theme/colors.dart';
 
 /// Client Digital Closet (shell-safe)
 ///
@@ -14,6 +14,7 @@ class ClientDigitalClosetPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
     final ordersAsync = ref.watch(ordersProvider(null));
 
     return SingleChildScrollView(
@@ -31,15 +32,23 @@ class ClientDigitalClosetPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-Text(
+          Text(
             'Your saved garment assets and recent snapshots.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 28),
           ordersAsync.when(
             data: (orders) {
               final active = orders
-                  .where((o) => o.materialAssetUrl != null && o.materialAssetUrl!.isNotEmpty)
+                  .where(
+                    (o) =>
+                        o.materialAssetUrl != null &&
+                        o.materialAssetUrl!.isNotEmpty,
+                  )
                   .toList();
 
               if (active.isEmpty) {
@@ -58,7 +67,9 @@ Text(
                 itemCount: active.length,
                 itemBuilder: (context, index) {
                   final order = active[index];
-                  final garmentType = order.items.isNotEmpty ? order.items.first.garmentType : 'Garment';
+                  final garmentType = order.items.isNotEmpty
+                      ? order.items.first.garmentType
+                      : 'Garment';
 
                   return _ClosetAssetCard(
                     garmentType: garmentType,
@@ -68,8 +79,12 @@ Text(
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.amber)),
-            error: (err, _) => const ErrorStateWidget(message: 'Failed to load closet assets.'),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.amber),
+            ),
+            error: (err, _) => const ErrorStateWidget(
+              message: 'Failed to load closet assets.',
+            ),
           ),
         ],
       ),
@@ -82,12 +97,18 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 40),
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: Text(
           'CLOSET EMPTY',
-          style: TextStyle(color: Colors.white12, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2),
+          style: TextStyle(
+            color: colors.divider,
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+            letterSpacing: 2,
+          ),
         ),
       ),
     );
@@ -107,10 +128,11 @@ class _ClosetAssetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: Colors.black26,
+        color: colors.overlayLight,
         image: imageUrl != null && imageUrl!.isNotEmpty
             ? DecorationImage(image: NetworkImage(imageUrl!), fit: BoxFit.cover)
             : null,
@@ -122,7 +144,7 @@ class _ClosetAssetCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+            colors: [Colors.transparent, context.colors.scaffoldBg],
           ),
         ),
         child: Column(
@@ -131,7 +153,12 @@ class _ClosetAssetCard extends StatelessWidget {
           children: [
             Text(
               garmentType.toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1),
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -141,11 +168,18 @@ class _ClosetAssetCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.amber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.amber.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AppColors.amber.withValues(alpha: 0.2),
+                ),
               ),
               child: Text(
                 status.toUpperCase(),
-                style: const TextStyle(color: AppColors.amber, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+                style: const TextStyle(
+                  color: AppColors.amber,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ],
@@ -154,4 +188,3 @@ class _ClosetAssetCard extends StatelessWidget {
     );
   }
 }
-

@@ -107,7 +107,7 @@ class MarketplaceFilterNotifier extends StateNotifier<MarketplaceFilter> {
   void setSearchQueryImmediate(String query) {
     _debounceTimer?.cancel();
     state = state.copyWith(searchQuery: query);
-    
+
     // Add to search history if non-empty
     if (query.isNotEmpty && !_searchHistory.contains(query)) {
       _searchHistory.insert(0, query);
@@ -204,8 +204,8 @@ class MarketplaceFilterNotifier extends StateNotifier<MarketplaceFilter> {
 /// Provider for marketplace filter state
 final marketplaceFilterProvider =
     StateNotifierProvider<MarketplaceFilterNotifier, MarketplaceFilter>((ref) {
-  return MarketplaceFilterNotifier();
-});
+      return MarketplaceFilterNotifier();
+    });
 
 /// Convenience provider for filter count
 final activeFilterCountProvider = Provider<int>((ref) {

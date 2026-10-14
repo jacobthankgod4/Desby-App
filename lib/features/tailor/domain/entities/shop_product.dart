@@ -100,12 +100,13 @@ class ShopProduct {
       currency: map['currency'] as String? ?? 'NGN',
       imageUrls: (map['image_urls'] as List?)?.cast<String>() ?? [],
       category: map['category'] as String? ?? 'Custom',
-      availableFabrics: (map['available_fabrics'] as List?)?.cast<String>() ?? [],
+      availableFabrics:
+          (map['available_fabrics'] as List?)?.cast<String>() ?? [],
       availableSizes: (map['available_sizes'] as List?)?.cast<String>() ?? [],
       isVisible: map['is_visible'] as bool? ?? true,
       isAvailable: map['is_available'] as bool? ?? true,
       orderCount: map['order_count'] as int? ?? 0,
-      createdAt: map['created_at'] != null 
+      createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'] as String)
           : DateTime.now(),
       updatedAt: map['updated_at'] != null

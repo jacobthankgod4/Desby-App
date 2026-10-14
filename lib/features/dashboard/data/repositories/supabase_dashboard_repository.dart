@@ -11,37 +11,60 @@ class SupabaseDashboardRepository implements DashboardRepository {
   Future<Result<DashboardStats>> getDashboardStats(String userId) async {
     try {
       debugPrint('[DASHBOARD] Fetching stats for user: $userId');
-      
-      // Industrialized Fetch: Separate calls with timeouts to prevent hanging
-      final ordersTask = _supabase
-          .from('orders')
-          .select()
-          .eq('tailor_id', userId)
-          .timeout(const Duration(seconds: 15));
-      
-      final clientsTask = _supabase
-          .from('clients')
-          .select()
-          .eq('tailor_id', userId)
-          .timeout(const Duration(seconds: 15));
-      
-      final apprenticeTask = _supabase
-          .from('apprenticeships')
-          .select()
-          .eq('tailor_id', userId)
-          .timeout(const Duration(seconds: 15));
 
-      // Execute tasks and handle empty results gracefully
-      final results = await Future.wait([ordersTask, clientsTask, apprenticeTask]);
-      
-      final List<dynamic> orders = results[0] as List<dynamic>? ?? [];
-      final List<dynamic> clients = results[1] as List<dynamic>? ?? [];
-      final List<dynamic> apprentices = results[2] as List<dynamic>? ?? [];
+      // Execute each query individually with error handling
+      // to prevent one failing query from blocking all stats
+      List<dynamic> orders = [];
+      List<dynamic> clients = [];
+      List<dynamic> apprentices = [];
+
+      try {
+        orders =
+            await _supabase
+                    .from('orders')
+                    .select()
+                    .eq('tailor_id', userId)
+                    .timeout(const Duration(seconds: 15))
+                as List<dynamic>? ??
+            [];
+      } catch (e) {
+        debugPrint('[DASHBOARD] Orders query failed: $e');
+      }
+
+      try {
+        clients =
+            await _supabase
+                    .from('clients')
+                    .select('id')
+                    .eq('tailor_id', userId)
+                    .timeout(const Duration(seconds: 15))
+                as List<dynamic>? ??
+            [];
+      } catch (e) {
+        debugPrint('[DASHBOARD] Clients query failed: $e');
+      }
+
+      try {
+        apprentices =
+            await _supabase
+                    .from('apprenticeships')
+                    .select('id')
+                    .eq('tailor_id', userId)
+                    .timeout(const Duration(seconds: 15))
+                as List<dynamic>? ??
+            [];
+      } catch (e) {
+        debugPrint('[DASHBOARD] Apprentices query failed: $e');
+      }
 
       final pendingOrders = orders
-          .where((doc) => (doc['status'] ?? 'pending') != 'delivered' && (doc['status'] ?? 'pending') != 'cancelled')
+          .where(
+            (doc) =>
+                (doc['status'] ?? 'pending') != 'delivered' &&
+                (doc['status'] ?? 'pending') != 'cancelled',
+          )
           .length;
-      
+
       final completedOrders = orders
           .where((doc) => (doc['status'] ?? 'pending') == 'delivered')
           .length;
@@ -49,8 +72,9 @@ class SupabaseDashboardRepository implements DashboardRepository {
       double totalRevenueValue = 0.0;
       for (final doc in orders) {
         final status = doc['status'] ?? 'pending';
-        if (status == 'delivered' || status == 'completed') {
-          final amount = doc['total_amount'] ?? doc['totalAmount'] ?? doc['amount'] ?? 0;
+        if (status == 'delivered') {
+          final amount =
+              doc['total_amount'] ?? doc['totalAmount'] ?? doc['amount'] ?? 0;
           totalRevenueValue += (amount as num).toDouble();
         }
       }
@@ -63,46 +87,55 @@ class SupabaseDashboardRepository implements DashboardRepository {
         try {
           final dueDate = DateTime.parse(dueDateData as String);
           final status = doc['status'] ?? 'pending';
-          return dueDate.isBefore(urgentThreshold) && status != 'delivered' && status != 'cancelled';
+          return dueDate.isBefore(urgentThreshold) &&
+              status != 'delivered' &&
+              status != 'cancelled';
         } catch (_) {
           return false;
         }
       }).length;
 
-      return Success(DashboardStats(
-        totalOrders: orders.length,
-        pendingOrders: pendingOrders,
-        completedOrders: completedOrders,
-        totalRevenue: totalRevenueValue,
-        totalClients: clients.length,
-        urgentDeadlines: urgentCount,
-        totalApprentices: apprentices.length,
-        fabricInventoryLevel: 0.75,
-        growthPercentage: 15.5,
-        unreadMessages: 3,
-        lastUpdated: DateTime.now(),
-      ));
+      return Success(
+        DashboardStats(
+          totalOrders: orders.length,
+          pendingOrders: pendingOrders,
+          completedOrders: completedOrders,
+          totalRevenue: totalRevenueValue,
+          totalClients: clients.length,
+          urgentDeadlines: urgentCount,
+          totalApprentices: apprentices.length,
+          fabricInventoryLevel: 0.75,
+          growthPercentage: 15.5,
+          unreadMessages: 3,
+          lastUpdated: DateTime.now(),
+        ),
+      );
     } catch (e) {
       debugPrint('[DASHBOARD] Stats fetch failure: $e');
       // Return empty stats instead of hard failure to allow UI to render
-      return Success(DashboardStats(
-        totalOrders: 0,
-        pendingOrders: 0,
-        completedOrders: 0,
-        totalRevenue: 0.0,
-        totalClients: 0,
-        urgentDeadlines: 0,
-        totalApprentices: 0,
-        fabricInventoryLevel: 0,
-        growthPercentage: 0,
-        unreadMessages: 0,
-        lastUpdated: DateTime.now(),
-      ));
+      return Success(
+        DashboardStats(
+          totalOrders: 0,
+          pendingOrders: 0,
+          completedOrders: 0,
+          totalRevenue: 0.0,
+          totalClients: 0,
+          urgentDeadlines: 0,
+          totalApprentices: 0,
+          fabricInventoryLevel: 0,
+          growthPercentage: 0,
+          unreadMessages: 0,
+          lastUpdated: DateTime.now(),
+        ),
+      );
     }
   }
 
   @override
-  Future<Result<List<dynamic>>> getRecentOrders(String userId, {int limit = 10}) async {
+  Future<Result<List<dynamic>>> getRecentOrders(
+    String userId, {
+    int limit = 10,
+  }) async {
     try {
       final response = await _supabase
           .from('orders')
@@ -119,7 +152,10 @@ class SupabaseDashboardRepository implements DashboardRepository {
   }
 
   @override
-  Future<Result<List<dynamic>>> getRecentClients(String userId, {int limit = 5}) async {
+  Future<Result<List<dynamic>>> getRecentClients(
+    String userId, {
+    int limit = 5,
+  }) async {
     try {
       final response = await _supabase
           .from('clients')

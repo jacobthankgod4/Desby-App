@@ -1,18 +1,8 @@
 import 'package:equatable/equatable.dart';
 
-enum PaymentStatus {
-  pending,
-  completed,
-  failed,
-  refunded
-}
+enum PaymentStatus { pending, completed, failed, refunded }
 
-enum PaymentMethod {
-  card,
-  bankTransfer,
-  mobileMoney,
-  cash
-}
+enum PaymentMethod { card, bankTransfer, mobileMoney, cash }
 
 class Payment extends Equatable {
   final String id;
@@ -28,7 +18,7 @@ class Payment extends Equatable {
     required this.id,
     required this.orderId,
     required this.amount,
-    this.currency = 'USD',
+    this.currency = 'NGN',
     required this.status,
     required this.method,
     required this.timestamp,
@@ -36,5 +26,14 @@ class Payment extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, orderId, amount, currency, status, method, timestamp, transactionReference];
+  List<Object?> get props => [
+    id,
+    orderId,
+    amount,
+    currency,
+    status,
+    method,
+    timestamp,
+    transactionReference,
+  ];
 }

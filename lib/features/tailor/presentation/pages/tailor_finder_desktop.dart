@@ -10,6 +10,9 @@ import '../../../../core/widgets/tailor_finder_responsive.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import 'package:desby_app/features/profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../designs/domain/entities/design.dart';
+import '../../../designs/presentation/providers/design_provider.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 /// TailorFinderDesktop - Uber-style Tailor Discovery Page
 /// Responsive: adapts to 600px+ screens (mobile, tablet, desktop)
@@ -17,37 +20,30 @@ class TailorFinderDesktop extends ConsumerStatefulWidget {
   const TailorFinderDesktop({super.key});
 
   @override
-  ConsumerState<TailorFinderDesktop> createState() => _TailorFinderDesktopState();
+  ConsumerState<TailorFinderDesktop> createState() =>
+      _TailorFinderDesktopState();
 }
 
 class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
-  // Track if showing tailor details inline
   bool _showTailorDetails = false;
-  // Track view mode: true = show map+grid (Uber), false = list only (Classic)
-  // Default to true (Uber style), will be updated based on user preference
   bool _showMap = true;
-  
+
   @override
   void initState() {
     super.initState();
-    // Load nearby tailors on init
     Future.microtask(() {
       ref.read(tailorFinderProvider.notifier).loadNearbyTailors();
     });
-// Apply user's preferred finder style from onboarding
     _applyUserPreference();
   }
 
-  /// Apply user's preferred finder style from their profile
   void _applyUserPreference() {
     final currentUser = ref.read(currentUserProvider);
     if (currentUser != null) {
       final profileAsync = ref.read(userProfileProvider(currentUser.id));
-      // Handle the async profile data
       profileAsync.when(
         data: (profile) {
           if (profile?.preferredFinderStyle != null) {
-            // If user chose 'classic' during onboarding, hide map by default
             final useClassic = profile!.preferredFinderStyle == 'classic';
             if (mounted) {
               setState(() {
@@ -70,24 +66,16 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final state = ref.watch(tailorFinderProvider);
     final selectedTailor = state.selectedTailor;
 
     return Container(
-      color: AppColors.darkNavy,
+      color: colors.scaffoldBg,
       child: Row(
         children: [
-          // LEFT: MAP - ALWAYS VISIBLE IN UBER MODE
-          Expanded(
-            flex: 1,
-            child: _buildMap(state, selectedTailor),
-          ),
-          
-          // RIGHT: DATA PANEL
-          Expanded(
-            flex: 1,
-            child: _buildRightPanel(state),
-          ),
+          Expanded(flex: 1, child: _buildMap(state, selectedTailor)),
+          Expanded(flex: 1, child: _buildRightPanel(state)),
         ],
       ),
     );
@@ -108,17 +96,18 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return _buildPanel(
-          state, 
-          state.selectedTailor, 
-          state.selectedServiceTier, 
-          state.currentQuote, 
-          constraints
+          state,
+          state.selectedTailor,
+          state.selectedServiceTier,
+          state.currentQuote,
+          constraints,
         );
       },
     );
   }
 
   Widget _buildErrorState(String error) {
+    final colors = context.colors;
     final bool isClockError = error.contains('issued at future');
 
     return Container(
@@ -127,33 +116,51 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            isClockError ? Icons.access_time_rounded : Icons.error_outline, 
-            size: 64, 
-            color: AppColors.uberError
+            isClockError ? Icons.access_time_rounded : Icons.error_outline,
+            size: 64,
+            color: AppColors.uberError,
           ),
           const SizedBox(height: 24),
           Text(
             isClockError ? 'SYSTEM CLOCK DESYNC' : 'SYNC FAILED',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1),
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
-            isClockError 
-              ? 'Your Mac system clock is slightly in the past. Please Sync your Clock in System Settings to restore secure access.' 
-              : error,
+            isClockError
+                ? 'Your Mac system clock is slightly in the past. Please Sync your Clock in System Settings to restore secure access.'
+                : error,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white38, fontSize: 12, height: 1.5),
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 12,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 32),
           ElevatedButton(
-            onPressed: () => ref.read(tailorFinderProvider.notifier).loadNearbyTailors(),
+            onPressed: () =>
+                ref.read(tailorFinderProvider.notifier).loadNearbyTailors(),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.amber,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text('RETRY SYNC', style: TextStyle(color: AppColors.darkNavy, fontWeight: FontWeight.w900)),
+            child: Text(
+              'RETRY SYNC',
+              style: TextStyle(
+                color: colors.scaffoldBg,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ),
         ],
       ),
@@ -165,7 +172,9 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
       label: TailorFinderSemantics.mapLabel,
       child: TailorMapView(
         tailors: state.markers,
-        selectedTailor: selectedTailor != null ? TailorMarker.fromProfile(selectedTailor) : null,
+        selectedTailor: selectedTailor != null
+            ? TailorMarker.fromProfile(selectedTailor)
+            : null,
         userLocation: state.userLocation,
         onTailorSelected: (marker) {
           ref.read(tailorFinderProvider.notifier).selectTailor(marker);
@@ -184,39 +193,25 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
     );
   }
 
-  Widget _buildPanel(TailorFinderState state, UserProfile? selectedTailor, ServiceTier? selectedTier, dynamic currentQuote, BoxConstraints constraints) {
+  Widget _buildPanel(
+    TailorFinderState state,
+    UserProfile? selectedTailor,
+    ServiceTier? selectedTier,
+    dynamic currentQuote,
+    BoxConstraints constraints,
+  ) {
     final padding = _padding;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWide = screenWidth >= TailorFinderBreakpoints.tablet;
-    
+
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D1E26), // DARK NAVY PANEL
-        borderRadius: BorderRadius.horizontal(
-          left: const Radius.circular(28),
-          right: Radius.circular(isWide ? 28 : 0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 60,
-            offset: const Offset(-20, 0),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: context.colors.scaffoldBg),
       child: Column(
         children: [
-          // Filter buttons row - with dropdown menus only (hide when showing details)
           if (!_showTailorDetails) _buildFilterButtonsRow(state),
-          
-          // Content area - switch between tailor list and inline details
           Expanded(
             child: _showTailorDetails && selectedTailor != null
                 ? _buildTailorDetailsView(selectedTailor)
                 : _buildTailorListForSelection(state, padding),
           ),
-          
-          // Action Buttons row - switch between grid CTA and details back CTA
           _showTailorDetails
               ? _buildBackToListCTA(ref)
               : _buildUberActionButtons(context, selectedTailor),
@@ -225,29 +220,32 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
     );
   }
 
-/// Filter buttons row - with dropdown menus (not bottom sheets)
   Widget _buildFilterButtonsRow(TailorFinderState state) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.only(top: 16, left: 36, right: 36),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-// MAP/LIST TOGGLE - new feature
             GestureDetector(
               onTap: () {
                 setState(() {
                   _showMap = !_showMap;
                 });
-                // FIX: Force reload when toggling view to ensure tailors load properly
                 ref.read(tailorFinderProvider.notifier).loadNearbyTailors();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: _showMap ? AppColors.amber : AppColors.surfaceDark,
+                  color: _showMap ? AppColors.amber : AppColors.deepBlue,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _showMap ? AppColors.amber : Colors.grey.shade300),
+                  border: Border.all(
+                    color: _showMap ? AppColors.amber : colors.textMuted,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -255,14 +253,18 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
                     Icon(
                       _showMap ? Icons.map : Icons.list,
                       size: 16,
-                      color: _showMap ? AppColors.darkNavy : AppColors.textSecondary,
+                      color: _showMap
+                          ? colors.scaffoldBg
+                          : colors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       _showMap ? 'MAP' : 'LIST',
                       style: TextStyle(
                         fontSize: 12,
-                        color: _showMap ? AppColors.darkNavy : AppColors.textSecondary,
+                        color: _showMap
+                            ? colors.scaffoldBg
+                            : colors.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -271,7 +273,6 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
               ),
             ),
             const SizedBox(width: 12),
-            // Service type filter - dropdown
             _buildDropdownFilter(
               context: context,
               label: state.filters.serviceTier?.displayName ?? 'Service',
@@ -283,103 +284,130 @@ class _TailorFinderDesktopState extends ConsumerState<TailorFinderDesktop> {
                   (t) => t.displayName == value,
                   orElse: () => ServiceTier.custom,
                 );
-                ref.read(tailorFinderProvider.notifier).updateFilters(
-                  state.filters.copyWith(serviceTier: tier),
-                );
+                ref
+                    .read(tailorFinderProvider.notifier)
+                    .updateFilters(state.filters.copyWith(serviceTier: tier));
               },
               onClear: () {
-                ref.read(tailorFinderProvider.notifier).updateFilters(
-                  state.filters.copyWith(clearServiceTier: true),
-                );
+                ref
+                    .read(tailorFinderProvider.notifier)
+                    .updateFilters(
+                      state.filters.copyWith(clearServiceTier: true),
+                    );
               },
             ),
             const SizedBox(width: 8),
-            // Price filter - dropdown
             _buildDropdownFilter(
               context: context,
-              label: state.filters.maxPrice != null 
-                  ? '₦${state.filters.maxPrice!.toStringAsFixed(0)}'
+              label: state.filters.maxPrice != null
+                  ? '\u20A6${state.filters.maxPrice!.toStringAsFixed(0)}'
                   : 'Price',
               icon: Icons.attach_money,
               isActive: state.filters.maxPrice != null,
-              items: const ['₦10,000', '₦15,000', '₦20,000', '₦25,000', '₦30,000', '₦40,000', '₦50,000'],
+              items: const [
+                '\u20A610,000',
+                '\u20A615,000',
+                '\u20A620,000',
+                '\u20A625,000',
+                '\u20A630,000',
+                '\u20A640,000',
+                '\u20A650,000',
+              ],
               onSelected: (value) {
-                final price = double.tryParse(value.replaceAll('₦', '').replaceAll(',', ''));
+                final price = double.tryParse(
+                  value.replaceAll('\u20A6', '').replaceAll(',', ''),
+                );
                 if (price != null) {
-                  ref.read(tailorFinderProvider.notifier).updateFilters(
-                    state.filters.copyWith(maxPrice: price),
-                  );
+                  ref
+                      .read(tailorFinderProvider.notifier)
+                      .updateFilters(state.filters.copyWith(maxPrice: price));
                 }
               },
               onClear: () {
-                ref.read(tailorFinderProvider.notifier).updateFilters(
-                  state.filters.copyWith(clearMaxPrice: true),
-                );
+                ref
+                    .read(tailorFinderProvider.notifier)
+                    .updateFilters(state.filters.copyWith(clearMaxPrice: true));
               },
             ),
             const SizedBox(width: 8),
-            // Rating filter - dropdown
             _buildDropdownFilter(
               context: context,
               label: state.filters.minRating != null
-                  ? '${state.filters.minRating}+ ★'
+                  ? '${state.filters.minRating}+ \u2605'
                   : 'Rating',
               icon: Icons.star,
               isActive: state.filters.minRating != null,
-              items: const ['3.0+ ★', '3.5+ ★', '4.0+ ★', '4.5+ ★', '4.8+ ★'],
+              items: const [
+                '3.0+ \u2605',
+                '3.5+ \u2605',
+                '4.0+ \u2605',
+                '4.5+ \u2605',
+                '4.8+ \u2605',
+              ],
               onSelected: (value) {
-                final rating = double.tryParse(value.replaceAll('+ ★', ''));
+                final rating = double.tryParse(
+                  value.replaceAll('+ \u2605', ''),
+                );
                 if (rating != null) {
-                  ref.read(tailorFinderProvider.notifier).updateFilters(
-                    state.filters.copyWith(minRating: rating),
-                  );
+                  ref
+                      .read(tailorFinderProvider.notifier)
+                      .updateFilters(state.filters.copyWith(minRating: rating));
                 }
               },
               onClear: () {
-                ref.read(tailorFinderProvider.notifier).updateFilters(
-                  state.filters.copyWith(clearMinRating: true),
-                );
+                ref
+                    .read(tailorFinderProvider.notifier)
+                    .updateFilters(
+                      state.filters.copyWith(clearMinRating: true),
+                    );
               },
             ),
             const SizedBox(width: 8),
-            // Availability toggle - AMBER when active
-AmberFilterChip(
+            AmberFilterChip(
               label: 'Available',
               icon: Icons.check_circle,
               isActive: state.filters.onlyAvailable,
               isToggle: true,
               onTap: () {
-                ref.read(tailorFinderProvider.notifier).updateFilters(
-                  state.filters.copyWith(onlyAvailable: !state.filters.onlyAvailable),
-                );
+                ref
+                    .read(tailorFinderProvider.notifier)
+                    .updateFilters(
+                      state.filters.copyWith(
+                        onlyAvailable: !state.filters.onlyAvailable,
+                      ),
+                    );
               },
             ),
             const SizedBox(width: 8),
-            // Clear all filters
             if (_hasActiveFilters(state.filters))
               GestureDetector(
                 onTap: () {
-                  ref.read(tailorFinderProvider.notifier).updateFilters(
-                    const TailorFinderFilters(),
-                  );
+                  ref
+                      .read(tailorFinderProvider.notifier)
+                      .updateFilters(const TailorFinderFilters());
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.red.shade300),
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.clear, size: 14, color: Colors.red.shade700),
+                      Icon(Icons.clear, size: 14, color: AppColors.error),
                       const SizedBox(width: 4),
                       Text(
                         'Clear',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.red.shade700,
+                          color: AppColors.error,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -390,18 +418,16 @@ AmberFilterChip(
           ],
         ),
       ),
-);
+    );
   }
 
   bool _hasActiveFilters(TailorFinderFilters filters) {
-    // Check if any filter has been modified from default values
     return filters.serviceTier != null ||
         filters.maxPrice != null ||
         filters.minRating != null ||
-        filters.onlyAvailable == false;
+        filters.onlyAvailable == true;
   }
 
-  /// Build dropdown filter menu
   Widget _buildDropdownFilter({
     required BuildContext context,
     required String label,
@@ -411,14 +437,12 @@ AmberFilterChip(
     required Function(String) onSelected,
     required VoidCallback onClear,
   }) {
+    final colors = context.colors;
     return PopupMenuButton<String>(
-      // Ultra-modern white dropdown with custom styling
-      color: Colors.white,  // White dropdown background
+      color: colors.surface,
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (value) {
         if (value == '__CLEAR__') {
           onClear();
@@ -431,34 +455,44 @@ AmberFilterChip(
           value: '__CLEAR__',
           child: Row(
             children: [
-              Icon(Icons.clear, size: 16, color: Colors.red.shade400),
+              Icon(Icons.clear, size: 16, color: AppColors.error),
               const SizedBox(width: 8),
-              Text('Clear', style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
+              Text(
+                'Clear',
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
         const PopupMenuDivider(),
-        ...items.map((item) => PopupMenuItem(
-          value: item,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              item,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+        ...items.map(
+          (item) => PopupMenuItem(
+            value: item,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                item,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
-        )),
+        ),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.amber : Colors.white,
+          color: isActive ? AppColors.amber : colors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isActive ? AppColors.amber : Colors.grey.shade300),
+          border: Border.all(
+            color: isActive ? AppColors.amber : colors.borderSubtle,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -470,26 +504,34 @@ AmberFilterChip(
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? AppColors.darkNavy : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 16,
+              color: isActive ? colors.scaffoldBg : colors.textSecondary,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isActive ? AppColors.darkNavy : AppColors.textSecondary,
+                color: isActive ? colors.scaffoldBg : colors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(width: 4),
-            Icon(Icons.arrow_drop_down, size: 16, color: isActive ? AppColors.darkNavy : AppColors.textSecondary),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 16,
+              color: isActive ? colors.scaffoldBg : colors.textSecondary,
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// Back to list CTA button - appears when viewing tailor details
   Widget _buildBackToListCTA(WidgetRef ref) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.only(left: 36, right: 36, bottom: 24, top: 16),
       child: Row(
@@ -504,19 +546,23 @@ AmberFilterChip(
               child: Container(
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppColors.darkNavy,
+                  color: colors.scaffoldBg,
                   borderRadius: BorderRadius.circular(28),
                 ),
-                child: const Center(
+                child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-                      SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: colors.textPrimary,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         'BACK TO TAILORS',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: colors.textPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1,
@@ -533,7 +579,6 @@ AmberFilterChip(
     );
   }
 
-  /// Inline tailor details view - shows full details in right panel
   Widget _buildTailorDetailsView(UserProfile tailor) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(_padding.left),
@@ -546,6 +591,8 @@ AmberFilterChip(
           const SizedBox(height: 20),
           _buildServicesSection(tailor),
           const SizedBox(height: 20),
+          _buildPortfolioSection(tailor),
+          const SizedBox(height: 20),
           _buildDetailsBookingCTA(tailor),
         ],
       ),
@@ -553,16 +600,14 @@ AmberFilterChip(
   }
 
   Widget _buildDetailsHeader(UserProfile tailor) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.darkNavy,
-            AppColors.darkNavy.withValues(alpha: 0.8),
-          ],
+          colors: [colors.scaffoldBg, colors.scaffoldBg.withValues(alpha: 0.8)],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -571,12 +616,11 @@ AmberFilterChip(
         children: [
           Row(
             children: [
-              // Profile avatar
               Container(
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: colors.textPrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: AppColors.amber.withValues(alpha: 0.4),
@@ -601,22 +645,29 @@ AmberFilterChip(
                   children: [
                     Text(
                       tailor.name.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colors.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.star_rounded, color: AppColors.amber, size: 16),
-                        SizedBox(width: 4),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: AppColors.amber,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
-                          '4.5 (12 reviews)',
+                          (tailor is UserProfileDetails &&
+                                  tailor.rating != null)
+                              ? '${(tailor as UserProfileDetails).rating}'
+                              : 'New',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: colors.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -626,13 +677,17 @@ AmberFilterChip(
                     if (tailor.address != null)
                       Row(
                         children: [
-                          const Icon(Icons.location_on, color: Colors.white54, size: 14),
+                          Icon(
+                            Icons.location_on,
+                            color: colors.textMuted,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               tailor.address!,
-                              style: const TextStyle(
-                                color: Colors.white54,
+                              style: TextStyle(
+                                color: colors.textMuted,
                                 fontSize: 11,
                               ),
                             ),
@@ -645,7 +700,6 @@ AmberFilterChip(
             ],
           ),
           const SizedBox(height: 16),
-          // Availability badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -655,11 +709,7 @@ AmberFilterChip(
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.check_circle,
-                  color: AppColors.amber,
-                  size: 14,
-                ),
+                Icon(Icons.check_circle, color: AppColors.amber, size: 14),
                 SizedBox(width: 6),
                 Text(
                   'Available now',
@@ -692,24 +742,25 @@ AmberFilterChip(
   }
 
   Widget _buildShortcutButton(IconData icon, String label, VoidCallback onTap) {
+    final colors = context.colors;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.textPrimary,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: colors.borderSubtle),
           ),
           child: Column(
             children: [
-              Icon(icon, color: AppColors.darkNavy, size: 20),
+              Icon(icon, color: colors.scaffoldBg, size: 20),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: colors.textSecondary,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -722,24 +773,29 @@ AmberFilterChip(
   }
 
   Widget _buildServicesSection(UserProfile tailor) {
-    final services = (tailor.services ?? []).map((s) => ServiceTier.values.firstWhere(
-      (t) => t.displayName.toLowerCase() == s.toLowerCase(),
-      orElse: () => ServiceTier.custom,
-    )).toList();
+    final colors = context.colors;
+    final services = (tailor.services ?? [])
+        .map(
+          (s) => ServiceTier.values.firstWhere(
+            (t) => t.displayName.toLowerCase() == s.toLowerCase(),
+            orElse: () => ServiceTier.custom,
+          ),
+        )
+        .toList();
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.textPrimary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'SERVICES',
             style: TextStyle(
-              color: AppColors.darkNavy,
+              color: colors.scaffoldBg,
               fontSize: 12,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
@@ -747,63 +803,206 @@ AmberFilterChip(
           ),
           const SizedBox(height: 12),
           if (services.isEmpty)
-            const Text(
+            Text(
               'Custom tailoring, alterations, and more',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
             )
           else
-            ...services.map((service) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.amber.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+            ...services.map(
+              (service) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.amber.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.checkroom_rounded,
+                        color: AppColors.amber,
+                        size: 18,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.checkroom_rounded,
-                      color: AppColors.amber,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          service.displayName.toUpperCase(),
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            service.displayName.toUpperCase(),
+                            style: TextStyle(
+                              color: colors.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        Text(
-                          service.description,
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 10,
+                          Text(
+                            service.description,
+                            style: TextStyle(
+                              color: colors.textMuted,
+                              fontSize: 10,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
         ],
       ),
     );
   }
 
-Widget _buildDetailsBookingCTA(UserProfile tailor) {
+  Widget _buildPortfolioSection(UserProfile tailor) {
+    final colors = context.colors;
+    final designsAsync = ref.watch(tailorDesignsProvider(tailor.id));
+    final previewDesigns = (designsAsync.valueOrNull ?? []).take(3).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.textPrimary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'PORTFOLIO',
+            style: TextStyle(
+              color: colors.scaffoldBg,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (designsAsync.isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else if (designsAsync.hasError || previewDesigns.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No public designs yet',
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
+              ),
+            )
+          else ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < previewDesigns.length; i++) ...[
+                  Expanded(child: _buildDesignCard(previewDesigns[i])),
+                  if (i < previewDesigns.length - 1) const SizedBox(width: 12),
+                ],
+              ],
+            ),
+            const SizedBox(height: 14),
+            GestureDetector(
+              onTap: () {
+                ref.pushShell('/tailor-profile', {'tailorId': tailor.id});
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.amber.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    'VIEW FULL PROFILE',
+                    style: TextStyle(
+                      color: AppColors.amber,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesignCard(Design design) {
+    final colors = context.colors;
+    final imageUrl = design.imageUrls.isNotEmpty
+        ? design.imageUrls.first
+        : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 110,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: imageUrl != null
+              ? AppNetworkImage(url: imageUrl, fit: BoxFit.cover)
+              : Icon(
+                  Icons.image_not_supported_outlined,
+                  color: colors.textMuted,
+                ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          design.title,
+          style: TextStyle(
+            color: colors.scaffoldBg,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '\u20A6${design.price.toStringAsFixed(0)}',
+          style: TextStyle(
+            color: AppColors.amber,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailsBookingCTA(UserProfile tailor) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: () {
-        // Navigate to booking with tailor details
+        ref.pushShell('/booking-cart', {
+          'id': tailor.id,
+          'tailorId': tailor.id,
+          'name': tailor.businessName?.isNotEmpty == true
+              ? tailor.businessName!
+              : tailor.name,
+        });
       },
       child: Container(
         width: double.infinity,
@@ -812,11 +1011,11 @@ Widget _buildDetailsBookingCTA(UserProfile tailor) {
           color: AppColors.amber,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             'BOOK APPOINTMENT',
             style: TextStyle(
-              color: AppColors.darkNavy,
+              color: colors.scaffoldBg,
               fontSize: 16,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.5,
@@ -827,11 +1026,13 @@ Widget _buildDetailsBookingCTA(UserProfile tailor) {
     );
   }
 
-  /// Tailor list for initial selection (before service tier picked)
-  Widget _buildTailorListForSelection(TailorFinderState state, EdgeInsets padding) {
+  Widget _buildTailorListForSelection(
+    TailorFinderState state,
+    EdgeInsets padding,
+  ) {
+    final colors = context.colors;
     return Column(
       children: [
-        // Info prompt
         Padding(
           padding: EdgeInsets.all(padding.left),
           child: Container(
@@ -840,25 +1041,24 @@ Widget _buildDetailsBookingCTA(UserProfile tailor) {
               color: AppColors.amber.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.amber, size: 20),
-                SizedBox(width: 12),
+                const Icon(
+                  Icons.info_outline,
+                  color: AppColors.amber,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Select a service type above to see price quotes',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 13),
                   ),
                 ),
               ],
             ),
           ),
         ),
-        
-        // Tailor grid - scrollable
         Expanded(
           child: GridView.builder(
             padding: EdgeInsets.all(padding.left),
@@ -886,13 +1086,18 @@ Widget _buildDetailsBookingCTA(UserProfile tailor) {
     );
   }
 
-  /// CTA Button Row - Now shows full Uber-style action buttons
-  Widget _buildUberActionButtons(BuildContext context, UserProfile? selectedTailor) {
+  Widget _buildUberActionButtons(
+    BuildContext context,
+    UserProfile? selectedTailor,
+  ) {
     return _buildBottomActionRow(context, selectedTailor);
   }
 
-  /// Bottom action buttons row - ONLY Book Now CTA (no Money/Clock)
-  Widget _buildBottomActionRow(BuildContext context, UserProfile? selectedTailor) {
+  Widget _buildBottomActionRow(
+    BuildContext context,
+    UserProfile? selectedTailor,
+  ) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
       child: SizedBox(
@@ -900,25 +1105,26 @@ Widget _buildDetailsBookingCTA(UserProfile tailor) {
         child: GestureDetector(
           onTap: selectedTailor != null
               ? () {
-                  // Navigate to tailor profile page with ID
-                  Navigator.pushNamed(
-                    context,
-                    '/tailor-profile',
-                    arguments: selectedTailor.id,
-                  );
+                  ref.pushShell('/tailor-profile', {
+                    'tailorId': selectedTailor.id,
+                  });
                 }
               : null,
           child: Container(
             height: 56,
             decoration: BoxDecoration(
-              color: selectedTailor != null ? AppColors.darkNavy : Colors.grey.shade400,
+              color: selectedTailor != null
+                  ? colors.scaffoldBg
+                  : colors.textMuted,
               borderRadius: BorderRadius.circular(28),
             ),
             child: Center(
               child: Text(
                 selectedTailor != null ? 'BOOK NOW' : 'SELECT A TAILOR',
                 style: TextStyle(
-                  color: selectedTailor != null ? AppColors.amber : Colors.white70,
+                  color: selectedTailor != null
+                      ? AppColors.amber
+                      : colors.textSecondary,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
@@ -932,7 +1138,7 @@ Widget _buildDetailsBookingCTA(UserProfile tailor) {
   }
 }
 
-/// AMBER filter chip widget - all filter buttons use amber styling (defined at file level)
+/// AMBER filter chip widget
 class AmberFilterChip extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -951,32 +1157,41 @@ class AmberFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.amber : Colors.white,
+          color: isActive ? AppColors.amber : colors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? AppColors.amber : Colors.grey.shade300,
+            color: isActive ? AppColors.amber : colors.borderSubtle,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? AppColors.darkNavy : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 16,
+              color: isActive ? colors.scaffoldBg : colors.textSecondary,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isActive ? AppColors.darkNavy : AppColors.textSecondary,
+                color: isActive ? colors.scaffoldBg : colors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(width: 4),
-            Icon(Icons.arrow_drop_down, size: 16, color: isActive ? AppColors.darkNavy : AppColors.textSecondary),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 16,
+              color: isActive ? colors.scaffoldBg : colors.textSecondary,
+            ),
           ],
         ),
       ),

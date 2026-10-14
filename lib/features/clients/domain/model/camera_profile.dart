@@ -8,10 +8,10 @@ class CameraProfile extends Equatable {
   final double targetY;
   final double targetZ;
   final double orbitTheta; // Yaw in degrees
-  final double orbitPhi;   // Pitch in degrees
-  final double radius;     // Distance in meters
-  final double fov;        // Field of view
-  final int transitionMs;  // Animation duration
+  final double orbitPhi; // Pitch in degrees
+  final double radius; // Distance in meters
+  final double fov; // Field of view
+  final int transitionMs; // Animation duration
 
   const CameraProfile({
     required this.id,
@@ -27,6 +27,14 @@ class CameraProfile extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, targetX, targetY, targetZ, orbitTheta, orbitPhi, radius, fov, transitionMs,
-      ];
+    id,
+    targetX,
+    targetY,
+    targetZ,
+    orbitTheta,
+    orbitPhi,
+    radius,
+    fov,
+    transitionMs,
+  ];
 }

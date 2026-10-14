@@ -1,13 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import '../../../../theme/colors.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../profile/presentation/providers/profile_provider.dart';
-import '../../../../core/network/korra_client.dart';
+import 'package:desby_app/theme/colors.dart';
+import '../../../../core/providers/navigation_provider.dart';
+import '../../../../core/providers/layout_provider.dart';
 import '../../../../core/services/body_measurement_service.dart';
+import '../../../../core/network/korra_client.dart';
+import '../../../../core/widgets/shell_app_bar.dart';
 
 class MeasurementProfilePage extends ConsumerStatefulWidget {
   const MeasurementProfilePage({super.key});
@@ -19,572 +17,554 @@ class MeasurementProfilePage extends ConsumerStatefulWidget {
 
 class _MeasurementProfilePageState
     extends ConsumerState<MeasurementProfilePage> {
-  final _numberOnlyFormatter = FilteringTextInputFormatter.allow(
-    RegExp(r'[\d.]'),
-  );
-  bool _isEditing = false;
-  String _unit = 'Inches';
   final BodyMeasurementService _service = BodyMeasurementService();
+  List<KorraMeasurementSummary> _scans = [];
+  bool _loading = true;
+  KorraMeasurementSummary? _latestScan;
+  Map<String, double>? _latestMeasurements;
 
-  List<KorraMeasurementSummary> _korraScans = [];
-  bool _isLoadingScans = false;
-
-  final Map<String, TextEditingController> _controllers = {};
-
-  final List<String> _maleMeasurements = [
-    'Shoulder',
-    'Neck Round',
-    'Chest Round',
-    'Stomach Round',
-    'Waist Round',
-    'Half Length',
-    'Full Top Length',
-    'Across Back',
-    'Across Chest',
-    'Hip Round',
-    'Thigh Round',
-    'Knee Round',
-    'Calf Round',
-    'Ankle Round',
-    'Trouser Waist',
-    'Trouser Length',
-    'Inseam',
-    'Crotch Depth',
-  ];
-
-  final List<String> _femaleMeasurements = [
-    'Shoulder',
-    'Neck Round',
-    'Bust Round',
-    'High Bust',
-    'Under Bust',
-    'Bust Point',
-    'Shoulder to Bust Point',
-    'Shoulder to Under Bust',
-    'Shoulder to Waist',
-    'Front Waist Length',
-    'Back Waist Length',
-    'Across Chest',
-    'Across Back',
-    'Armhole Round',
-    'Sleeve Length',
-    'Bicep Round',
-    'Elbow Round',
-    'Wrist Round',
-    'Waist Round',
-    'Half Length',
-    'Waist to Hip',
-    'Upper Hip',
-    'Hip Round',
-    'Thigh Round',
-    'Knee Round',
-    'Calf Round',
-    'Ankle Round',
-  ];
+  static const Map<String, String> _labels = {
+    'neck': 'Neck',
+    'shoulder': 'Shoulder',
+    'chest': 'Chest',
+    'waist': 'Waist',
+    'hip': 'Hip',
+    'inseam': 'Inseam',
+    'outseam': 'Outseam',
+    'thigh': 'Thigh',
+    'bicep': 'Bicep',
+    'wrist': 'Wrist',
+    'bust': 'Bust',
+    'underbust': 'Underbust',
+    'arm_length': 'Arm Length',
+    'torso': 'Torso',
+    'shoulder_width': 'Shoulder Width',
+    'back_width': 'Back Width',
+  };
 
   @override
   void initState() {
     super.initState();
-    _initializeControllers();
-    _loadProfileData();
-    _loadKorraScans();
+    _loadScans();
   }
 
-  Future<void> _loadKorraScans() async {
-    setState(() => _isLoadingScans = true);
+  Future<void> _loadScans() async {
+    setState(() => _loading = true);
     try {
-      _korraScans = await _service.listMeasurements();
-    } catch (e) {
-      debugPrint('[MEASUREMENT_PROFILE] Failed to load Korra scans: $e');
-    }
-    if (mounted) setState(() => _isLoadingScans = false);
-  }
-
-  void _initializeControllers() {
-    final allParams = [..._maleMeasurements, ..._femaleMeasurements];
-    for (var p in allParams.toSet()) {
-      _controllers[p] = TextEditingController();
-    }
-  }
-
-  void _loadProfileData() async {
-    final user = ref.read(currentUserProvider);
-    if (user == null) return;
-
-    final profileAsync = ref.read(userProfileProvider(user.id));
-    profileAsync.whenData((profile) {
-      if (profile != null) {
-        _unit = profile.measurementUnit ?? 'Inches';
-        final measurements = profile.personalMeasurements;
-        if (measurements != null) {
-          measurements.forEach((key, value) {
-            if (_controllers.containsKey(key)) {
-              _controllers[key]!.text = value;
-            }
-          });
+      _scans = await _service.listMeasurements();
+      if (_scans.isNotEmpty) {
+        _latestScan = _scans.first;
+        final detail = await _service.getMeasurement(_latestScan!.id);
+        if (detail != null && detail.measurements != null) {
+          _latestMeasurements = detail.measurements;
         }
-        if (mounted) setState(() {});
       }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controllers.forEach((_, c) => c.dispose());
-    super.dispose();
+    } catch (e) {
+      debugPrint('[MEASUREMENTS] Failed to load scans: $e');
+    }
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDesktop = ref.watch(isDesktopProvider);
+
     return Scaffold(
-      backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
-        title: const Text(
-          'PROFESSIONAL DOSSIER',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 13,
-            letterSpacing: 2,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.amber,
-            size: 18,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (!_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit_note_rounded, color: AppColors.amber),
-              onPressed: () => setState(() => _isEditing = true),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildUnitSelector(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInfoCard(),
-                  if (_korraScans.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    _buildKorraScansSection(),
-                  ],
-                  const SizedBox(height: 32),
-                  _buildGenderTabs(),
-                ],
+      backgroundColor: colors.scaffoldBg,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: colors.scaffoldBg,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            toolbarHeight: 60,
+            // Inside the shell the header already owns the back control, and
+            // `shellLeading` returns null there. Without this, AppBar adds its
+            // own implied back arrow on top and the page renders two.
+            automaticallyImplyLeading: false,
+            leading: shellLeading(context),
+            title: shellTitle(context, 'MY MEASUREMENTS'),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: colors.textSecondary,
+                  size: 20,
+                ),
+                onPressed: _loadScans,
               ),
-            ),
+            ],
           ),
-          if (_isEditing) _buildSaveButton(),
+          if (_loading)
+            const SliverFillRemaining(
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.amber),
+              ),
+            )
+          else if (_latestMeasurements == null || _latestScan == null)
+            SliverFillRemaining(child: _buildEmptyState(isDesktop))
+          else
+            SliverToBoxAdapter(child: _buildResults(isDesktop)),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
         ],
       ),
     );
   }
 
-  Widget _buildUnitSelector() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: ['Inches', 'Centimeters'].map((u) {
-          final isSelected = _unit == u;
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: InkWell(
-                onTap: () {
-                  if (_isEditing) setState(() => _unit = u);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.amber
-                        : Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? AppColors.amber : Colors.white10,
+  /// Scan entry for the merged measurements + AI Body Scan page.
+  ///
+  /// The saved measurements list lives below this. The standalone
+  /// `/ai-body-scan` route stays registered for deep links, so this only
+  /// provides the entry point from the merged page.
+  Widget _buildEmptyState(bool isDesktop) {
+    final colors = context.colors;
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.amber.withValues(alpha: 0.08),
+                border: Border.all(
+                  color: AppColors.amber.withValues(alpha: 0.2),
+                ),
+              ),
+              child: const Icon(
+                Icons.accessibility_new_rounded,
+                color: AppColors.amber,
+                size: 44,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'NO BODY SCANS YET',
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Complete your first AI body scan to see accurate measurements here. The scan takes less than 2 minutes.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: colors.textMuted,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 40),
+            GestureDetector(
+              onTap: () => ref.pushShell('/ai-body-scan'),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                decoration: BoxDecoration(
+                  color: AppColors.amber,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.camera_alt_rounded,
+                      color: context.colors.textOnAmber,
+                      size: 20,
                     ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    u.toUpperCase(),
-                    style: TextStyle(
-                      color: isSelected ? AppColors.darkNavy : Colors.white24,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11,
-                      letterSpacing: 1,
+                    const SizedBox(width: 10),
+                    Text(
+                      'START BODY SCAN',
+                      style: TextStyle(
+                        color: context.colors.textOnAmber,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
-          );
-        }).toList(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _buildResults(bool isDesktop) {
+    final colors = context.colors;
+    final scan = _latestScan!;
+    final measurements = _latestMeasurements!;
+    final entries = measurements.entries.toList();
+
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(maxWidth: isDesktop ? 900 : 600),
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 40 : 20,
+          vertical: 20,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildScanInfoCard(scan),
+            const SizedBox(height: 28),
+
+            _buildQuickStats(scan),
+            const SizedBox(height: 28),
+
+            GestureDetector(
+              onTap: () => ref.pushShell('/ai-body-scan'),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.amber.withValues(alpha: 0.3),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.camera_alt_rounded,
+                      color: AppColors.amber,
+                      size: 18,
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'NEW BODY SCAN',
+                      style: TextStyle(
+                        color: AppColors.amber,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            Row(
+              children: [
+                Text(
+                  'MEASUREMENTS',
+                  style: TextStyle(
+                    color: AppColors.amber.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(height: 1, color: colors.surfaceHover),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            if (isDesktop)
+              _buildDesktopGrid(entries)
+            else
+              _buildMobileList(entries),
+
+            const SizedBox(height: 32),
+
+            if (_scans.length > 1) ...[
+              Row(
+                children: [
+                  Text(
+                    'SCAN HISTORY',
+                    style: TextStyle(
+                      color: colors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(height: 1, color: colors.surfaceHover),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ..._scans.skip(1).take(5).map((s) => _buildHistoryItem(s)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScanInfoCard(KorraMeasurementSummary scan) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.amber.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.straighten_rounded,
-            color: AppColors.amber,
-            size: 28,
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppColors.amber.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              scan.gender == 'female'
+                  ? Icons.female_rounded
+                  : Icons.male_rounded,
+              color: AppColors.amber,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 20),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'FIT INTELLIGENCE',
+                  'LATEST BODY SCAN',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.textPrimary,
                     fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                    letterSpacing: 1,
+                    fontSize: 14,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Accurate metrics ensure a masterpiece finish. Keep your profile updated for a perfect drape.',
-                  style: TextStyle(
-                    color: Colors.white38,
-                    fontSize: 11,
-                    height: 1.4,
-                  ),
+                  '${scan.gender != null ? (scan.gender == 'female' ? 'Female' : 'Male') : 'Unknown'}  •  ${scan.heightCm?.toInt() ?? "?"} cm  •  ${scan.measurementCount ?? "?"} measurements',
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
                 ),
+                if (scan.createdAt != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Scanned ${scan.createdAt!.day}/${scan.createdAt!.month}/${scan.createdAt!.year}',
+                    style: TextStyle(color: colors.textMuted, fontSize: 11),
+                  ),
+                ],
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGenderTabs() {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
           Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.03),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: TabBar(
-              indicator: BoxDecoration(
-                color: AppColors.amber,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              labelColor: AppColors.darkNavy,
-              unselectedLabelColor: Colors.white38,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 10,
-                letterSpacing: 1,
-              ),
-              tabs: const [
-                Tab(text: 'MALE METRICS'),
-                Tab(text: 'FEMALE METRICS'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            height: 600,
-            child: TabBarView(
-              children: [
-                _buildMeasurementGrid(_maleMeasurements),
-                _buildMeasurementGrid(_femaleMeasurements),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMeasurementGrid(List<String> fields) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2.2,
-      ),
-      itemCount: fields.length,
-      itemBuilder: (context, index) => _buildMeasurementField(fields[index]),
-    );
-  }
-
-  Widget _buildMeasurementField(String label) {
-    final controller = _controllers[label];
-    if (controller == null) return const SizedBox.shrink();
-
-    return TextField(
-      controller: controller,
-      enabled: _isEditing,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [_numberOnlyFormatter],
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w900,
-        fontSize: 16,
-      ),
-      decoration: InputDecoration(
-        labelText: label.toUpperCase(),
-        labelStyle: const TextStyle(
-          color: Colors.white24,
-          fontSize: 8,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1,
-        ),
-        suffixText: _unit == 'Inches' ? 'IN' : 'CM',
-        suffixStyle: const TextStyle(
-          color: AppColors.amber,
-          fontSize: 8,
-          fontWeight: FontWeight.w900,
-        ),
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.03),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.amber),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-      ),
-    );
-  }
-
-  Widget _buildKorraScansSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.amber.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.amber.withValues(alpha: 0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.biotech_rounded,
-                color: AppColors.amber,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'KORRA AI SCANS (${_korraScans.length})',
-                style: const TextStyle(
-                  color: AppColors.amber,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-              const Spacer(),
-              if (_isLoadingScans)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.amber,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...(_korraScans
-              .take(5)
-              .map(
-                (scan) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${scan.gender ?? "Unknown"} — ${scan.heightCm?.toInt() ?? "?"}cm',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '${scan.measurementCount ?? "?"} measurements • ${scan.accuracyMode ?? "dual"}',
-                              style: const TextStyle(
-                                color: Colors.white38,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (scan.id.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(
-                            Icons.picture_as_pdf_rounded,
-                            color: Colors.white38,
-                            size: 18,
-                          ),
-                          onPressed: () => _downloadPdf(scan.id),
-                          tooltip: 'Download PDF',
-                        ),
-                    ],
-                  ),
-                ),
-              )),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _downloadPdf(String measurementId) async {
-    try {
-      final pdfBytes = await _service.downloadMeasurementPdf(measurementId);
-      if (pdfBytes != null) {
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/measurement_$measurementId.pdf');
-        await file.writeAsBytes(pdfBytes);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('PDF saved to: ${file.path}'),
-              backgroundColor: const Color(0xFF00FF7F),
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () {},
-              ),
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to download PDF'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildSaveButton() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: AppColors.darkNavy,
-        border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          height: 64,
-          child: ElevatedButton(
-            onPressed: _saveMeasurements,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.amber,
-              foregroundColor: AppColors.darkNavy,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 0,
+              color: AppColors.success.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
-              'SYNCHRONIZE DOSSIER',
-              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5),
+              'ACCURATE',
+              style: TextStyle(
+                color: AppColors.success,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Future<void> _saveMeasurements() async {
-    final user = ref.read(currentUserProvider);
-    if (user == null) return;
+  Widget _buildQuickStats(KorraMeasurementSummary scan) {
+    final colors = context.colors;
+    final stats = [
+      ('${scan.measurementCount ?? 0}', 'Measurements'),
+      ('${scan.heightCm?.toInt() ?? 0} cm', 'Height'),
+      (scan.accuracyMode ?? 'dual', 'Mode'),
+    ];
+    return Row(
+      children: stats
+          .map(
+            (s) => Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: colors.surfaceHover),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      s.$1,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      s.$2,
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
 
-    final measurements = <String, String>{};
-    _controllers.forEach((key, controller) {
-      if (controller.text.isNotEmpty) measurements[key] = controller.text;
-    });
+  Widget _buildDesktopGrid(List<MapEntry<String, double>> entries) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 2.8,
+      ),
+      itemCount: entries.length,
+      itemBuilder: (context, index) => _buildMeasurementTile(entries[index]),
+    );
+  }
 
-    try {
-      final profile = await ref.read(userProfileProvider(user.id).future);
-      if (profile != null) {
-        final updatedProfile = profile.copyWith(
-          measurementUnit: _unit,
-          personalMeasurements: measurements,
-          updatedAt: DateTime.now(),
-        );
-        await ref.read(updateProfileUsecaseProvider)(updatedProfile);
-        ref.invalidate(userProfileProvider(user.id));
-      }
+  Widget _buildMobileList(List<MapEntry<String, double>> entries) {
+    return Column(
+      children: entries
+          .map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildMeasurementTile(e),
+            ),
+          )
+          .toList(),
+    );
+  }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('DOSSIER SYNCHRONIZED!'),
-            backgroundColor: Color(0xFF00FF7F),
+  Widget _buildMeasurementTile(MapEntry<String, double> entry) {
+    final colors = context.colors;
+    final label = _labels[entry.key] ?? entry.key.replaceAll('_', ' ');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.amber,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        );
-        setState(() => _isEditing = false);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Sync Error: $e'),
-            backgroundColor: Colors.redAccent,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              label.toUpperCase(),
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
           ),
-        );
-      }
-    }
+          Text(
+            '${entry.value.toStringAsFixed(1)} cm',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryItem(KorraMeasurementSummary scan) {
+    final colors = context.colors;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.borderSubtle),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.amber.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              scan.gender == 'female'
+                  ? Icons.female_rounded
+                  : Icons.male_rounded,
+              color: AppColors.amber,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${scan.gender != null ? (scan.gender == 'female' ? 'Female' : 'Male') : 'Unknown'}  •  ${scan.heightCm?.toInt() ?? "?"} cm',
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${scan.measurementCount ?? "?"} measurements  •  ${scan.accuracyMode ?? "dual"}',
+                  style: TextStyle(color: colors.textMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          if (scan.createdAt != null)
+            Text(
+              '${scan.createdAt!.day}/${scan.createdAt!.month}/${scan.createdAt!.year}',
+              style: TextStyle(color: colors.textMuted, fontSize: 11),
+            ),
+        ],
+      ),
+    );
   }
 }

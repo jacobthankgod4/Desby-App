@@ -31,9 +31,10 @@ class _StatusPillState extends State<StatusPill>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     if (widget.isLive) {
       _controller.repeat(reverse: true);
     }
@@ -122,7 +123,9 @@ class _StatusPillState extends State<StatusPill>
             boxShadow: widget.isLive
                 ? [
                     BoxShadow(
-                      color: _statusColor.withValues(alpha: 0.3 * _pulseAnimation.value),
+                      color: _statusColor.withValues(
+                        alpha: 0.3 * _pulseAnimation.value,
+                      ),
                       blurRadius: 12 * _pulseAnimation.value,
                       spreadRadius: 2,
                     ),
@@ -133,11 +136,7 @@ class _StatusPillState extends State<StatusPill>
             mainAxisSize: MainAxisSize.min,
             children: [
               if (widget.showIcon) ...[
-                Icon(
-                  _statusIcon,
-                  size: 14,
-                  color: _statusColor,
-                ),
+                Icon(_statusIcon, size: 14, color: _statusColor),
                 const SizedBox(width: 6),
               ],
               Text(
@@ -157,12 +156,7 @@ class _StatusPillState extends State<StatusPill>
                   decoration: BoxDecoration(
                     color: _statusColor,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: _statusColor,
-                        blurRadius: 4,
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: _statusColor, blurRadius: 4)],
                   ),
                 ),
               ],
@@ -227,7 +221,9 @@ class _StatusDotState extends State<StatusDot>
             boxShadow: widget.isPulsing
                 ? [
                     BoxShadow(
-                      color: widget.color.withValues(alpha: 0.5 * _controller.value),
+                      color: widget.color.withValues(
+                        alpha: 0.5 * _controller.value,
+                      ),
                       blurRadius: widget.size * (1 + _controller.value),
                     ),
                   ]

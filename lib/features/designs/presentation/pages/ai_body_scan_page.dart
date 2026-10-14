@@ -5,26 +5,56 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../../../../core/services/tts_service.dart';
+import '../../../../core/services/scan_guidance.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/services/body_measurement_service.dart';
 import '../../../../core/network/korra_client.dart';
 import '../../../../theme/colors.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'ai_camera_capture_page.dart';
 import 'ai_camera_web_page.dart';
+import '../../../../core/widgets/shell_scope.dart';
 
 class AiBodyScanPage extends ConsumerStatefulWidget {
-  const AiBodyScanPage({super.key});
+  const AiBodyScanPage({
+    super.key,
+    this.onMeasurementsReady,
+    this.inFlow = false,
+    this.expanded = false,
+    this.onToggleExpanded,
+  });
+
+  /// When set, measurements are handed back through this callback on save
+  /// instead of being written to `body_scans` by this page.
+  final void Function(
+    Map<String, dynamic> measurements,
+    String gender,
+    double heightCm,
+  )? onMeasurementsReady;
+
+  /// Hosted inside another page's layout: render without our own app bar so the
+  /// host's header stays the only chrome.
+  final bool inFlow;
+
+  /// The host has given the scan the full screen.
+  final bool expanded;
+
+  /// Lets the embedded scan ask the host to collapse it again.
+  final VoidCallback? onToggleExpanded;
 
   @override
   ConsumerState<AiBodyScanPage> createState() => _AiBodyScanPageState();
 }
 
+/// Where the client's photos come from. Chosen before the camera is touched.
+enum _CaptureMode { camera, upload }
+
 class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
     with TickerProviderStateMixin {
   final BodyMeasurementService _service = BodyMeasurementService();
-  final FlutterTts _tts = FlutterTts();
 
   Uint8List? _frontImage;
   Uint8List? _sideImage;
@@ -47,6 +77,40 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   int _processingSeconds = 0;
 
   bool _showCelebration = false;
+
+  /// How the client wants their photos taken. Null until they choose.
+  ///
+  /// Opening straight into a live camera asked for a permission prompt before
+  /// anyone had agreed to use the camera, and left no obvious way to say "I
+  /// already have pictures". Choosing first also lets the primary button on the
+  /// photo steps match the choice instead of offering the camera with an upload
+  /// buried underneath it.
+  _CaptureMode? _captureMode;
+
+  void _chooseCaptureMode(_CaptureMode mode) {
+    setState(() => _captureMode = mode);
+    _speak(mode == _CaptureMode.camera
+        ? ScanGuidance.modeCamera
+        : ScanGuidance.modeUpload);
+  }
+
+  /// Flip the method from inside a photo step without losing progress.
+  void _switchCaptureMode(_CaptureMode mode) {
+    if (_captureMode == mode) return;
+    setState(() => _captureMode = mode);
+  }
+
+  void _resetScan() {
+    setState(() {
+      _currentStep = 0;
+      _measurements = null;
+      _frontImage = null;
+      _sideImage = null;
+      _errorMessage = null;
+      _showCelebration = false;
+      _captureMode = null;
+    });
+  }
 
   static const Map<String, String> _measurementLabels = {
     'neck': 'NECK',
@@ -98,6 +162,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
     _loadScanHistory();
     _initTts();
     _speakStepGuidance(0);
+    _checkExistingMeasurements();
   }
 
   @override
@@ -107,7 +172,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
     _pulseController.dispose();
     _processingController.dispose();
     _processingTimer?.cancel();
-    _tts.stop();
+    TtsService.instance.stop();
     _service.dispose();
     super.dispose();
   }
@@ -117,33 +182,91 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   // ---------------------------------------------------------------------------
 
   Future<void> _initTts() async {
-    await _tts.setLanguage('en-US');
-    await _tts.setSpeechRate(0.45);
-    await _tts.setVolume(1.0);
-    await _tts.setPitch(1.0);
+    await TtsService.instance.configure();
   }
 
-  Future<void> _speak(String text) async {
+  /// Check if the user already has a saved scan in the database.
+  /// If yes, auto-populate measurements and jump to the results step.
+  /// If no, show the normal scan interface.
+  Future<void> _checkExistingMeasurements() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final tailorId = user.id;
+
+    try {
+      final response = await Supabase.instance.client
+          .from('body_scans')
+          .select('id, measurements, created_at, front_image_url, side_image_url, metadata')
+          .eq('tailor_id', tailorId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) {
+        // No existing measurements found — start normal scan flow
+        debugPrint('[SCAN] No existing measurements found — starting fresh scan');
+        if (!mounted) return;
+        setState(() {
+          _currentStep = 0;
+        });
+        return;
+      }
+
+      // ✅ Existing measurements found — auto-populate
+      debugPrint('[SCAN] Found existing measurement from ${response['created_at']} — auto-populating');
+
+      final measurements = response['measurements'];
+      final metadata = response['metadata'] ?? {};
+
+      setState(() {
+        _measurements = measurements;
+        _heightCm = metadata['height_cm'] ?? 170.0;
+        _accuracyDescription =
+            metadata['accuracy'] ?? 'Professional accuracy (±1-3cm)';
+        _gender = metadata['gender'] ?? 'male';
+        _currentStep = 4; // Jump directly to results step
+        _isProcessing = false;
+      });
+
+      // Show the celebration banner (green "EXTRACTION SUCCESSFUL" banner)
+      setState(() => _showCelebration = true);
+      _resultsController.forward();
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) setState(() => _showCelebration = false);
+      });
+    } catch (e) {
+      debugPrint('[SCAN] Failed to check existing measurements: $e');
+      if (!mounted) return;
+      // On error, fall back to normal scan flow
+      if (!mounted) return;
+      setState(() {
+        _currentStep = 0;
+      });
+    }
+  }
+
+  Future<void> _speak(String text, {bool force = false}) async {
     if (!_voiceEnabled) return;
-    await _tts.speak(text);
+    await TtsService.instance.speak(text, force: force);
   }
 
+  /// Spoken guidance for the current step.
+  ///
+  /// The upload path has no shutter button, so it must not tell the user to
+  /// press one — it tells them to choose a photo instead. Both paths describe
+  /// the same A-pose the capture screen validates.
   void _speakStepGuidance(int step) {
+    final usingUpload = _captureMode == _CaptureMode.upload;
     switch (step) {
       case 0:
-        _speak(
-          'Stand facing the camera with your arms relaxed at your sides. '
-          'Make sure your full body is visible. Press the capture button when ready.',
-        );
+        _speak(usingUpload ? ScanGuidance.uploadFront : ScanGuidance.poseFront);
         break;
       case 1:
-        _speak(
-          'Now turn 90 degrees to the side. Stand sideways to the camera '
-          'with your arms at your sides. Press the capture button when ready.',
-        );
+        _speak(usingUpload ? ScanGuidance.uploadSide : ScanGuidance.poseSide);
         break;
       case 2:
-        _speak('Enter your height for accurate measurements.');
+        _speak(ScanGuidance.heightPrompt);
         break;
     }
   }
@@ -153,9 +276,44 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   // ---------------------------------------------------------------------------
   Future<void> _startCountdownAndCapture(String perspective) async {
     HapticFeedback.selectionClick();
-    await _speak('Opening AI camera. Follow the pose guidance.');
+    await _speak(ScanGuidance.poseFront, force: true);
     _capturePhoto(perspective);
   }
+  /// Lets the user supply a photo from their gallery instead of the camera.
+  ///
+  /// The measurement pipeline only needs two full-body JPEGs, so an existing
+  /// photo is equivalent to a fresh capture. Not everyone can pose and shoot
+  /// themselves in one go, and re-taking a photo to satisfy the flow is the
+  /// single most common reason people abandon the scan step.
+  Future<void> _uploadPhoto(String perspective) async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        // Downscaling keeps the upload light; HMR resizes internally anyway.
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 90,
+      );
+      if (picked == null) return;
+
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+
+      HapticFeedback.heavyImpact();
+      setState(() {
+        if (perspective == 'front') {
+          _frontImage = bytes;
+        } else {
+          _sideImage = bytes;
+        }
+      });
+      await _speak(ScanGuidance.photoAdded);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage = 'Could not open that photo: $e');
+    }
+  }
+
   Future<void> _capturePhoto(String perspective) async {
     try {
       Uint8List? imageBytes;
@@ -178,7 +336,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
             _sideImage = imageBytes;
           }
         });
-        await _speak('Photo captured successfully.');
+        await _speak(ScanGuidance.captured);
       }
     } catch (e) {
       setState(() => _errorMessage = 'Failed to capture photo: $e');
@@ -213,7 +371,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
       _processingSeconds = 0;
       _currentStep = 3;
     });
-    _speak('Processing your photos. This may take a few seconds.');
+    _speak(ScanGuidance.processing);
     _processingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) setState(() => _processingSeconds++);
     });
@@ -239,9 +397,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
         _transitionToStep(4);
         _resultsController.forward();
         _loadScanHistory();
-        await _speak(
-          'Scan complete! ${result.measurements!.length} measurements extracted.',
-        );
+        await _speak(ScanGuidance.done, force: true);
         setState(() => _showCelebration = true);
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) setState(() => _showCelebration = false);
@@ -252,7 +408,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
           _errorMessage = result.error ?? 'Failed to process';
           _isProcessing = false;
         });
-        await _speak('Scan failed. Please try again.');
+        await _speak(ScanGuidance.failed, force: true);
       }
     } catch (e) {
       _processingTimer?.cancel();
@@ -265,18 +421,34 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
 
   Future<void> _saveMeasurements() async {
     HapticFeedback.selectionClick();
+    final measurements = _measurements;
+    if (measurements == null) return;
+
+    final onReady = widget.onMeasurementsReady;
+    if (onReady != null) {
+      final payload = Map<String, dynamic>.from(measurements);
+      onReady(payload, _gender, _heightCm);
+      if (!widget.inFlow && mounted) {
+        Navigator.pop(context, payload);
+      }
+      return;
+    }
+
     bool saved = false;
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user != null && _measurements != null) {
+      if (user != null) {
         await Supabase.instance.client.from('body_scans').insert({
-          'user_id': user.id,
-          'measurements': _measurements,
-          'gender': _gender,
-          'height_cm': _heightCm,
-          'accuracy_mode': 'dual_photo',
-          'accuracy': _accuracyDescription,
-          'measurement_count': _measurements!.length,
+          'tailor_id': user.id,
+          'measurements': measurements,
+          'client_gender': _gender,
+          'metadata': {
+            'gender': _gender,
+            'height_cm': _heightCm,
+            'accuracy': _accuracyDescription,
+            'accuracy_mode': 'dual_photo',
+            'measurement_count': measurements.length,
+          },
         });
         saved = true;
       }
@@ -293,7 +465,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
     }
 
     if (mounted) {
-      Navigator.pop(context, saved ? _measurements : null);
+      Navigator.pop(context, saved ? measurements : null);
     }
   }
 
@@ -458,6 +630,8 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
 
   bool _canProceed() {
     if (_isProcessing) return false;
+    // Before a method is chosen there is nothing to continue past.
+    if (_captureMode == null) return false;
     switch (_currentStep) {
       case 0:
         return _frontImage != null;
@@ -487,13 +661,15 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.darkNavy,
-      appBar: AppBar(
+      appBar: widget.inFlow ? null : AppBar(
         backgroundColor: AppColors.darkNavy,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: ShellScope.isInside(context)
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
         title: const Text(
           'AI BODY SCAN',
           style: TextStyle(
@@ -517,9 +693,22 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
             ),
             onPressed: () {
               setState(() => _voiceEnabled = !_voiceEnabled);
-              if (_voiceEnabled) _speak('Voice guidance enabled.');
+              _speak(_voiceEnabled ? ScanGuidance.voiceOn : ScanGuidance.voiceOff);
             },
           ),
+          if (_showCelebration)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: CircleAvatar(
+                radius: 8,
+                backgroundColor: AppColors.success,
+                child: const Icon(
+                  Icons.check,
+                  size: 12,
+                  color: AppColors.darkNavy,
+                ),
+              ),
+            ),
         ],
       ),
       body: Column(
@@ -528,6 +717,20 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 400),
+              // The default layoutBuilder stacks children and sizes itself to
+              // the largest one, handing each a *loose* height. The per-step
+              // SingleChildScrollView then took the full content height instead
+              // of the viewport height, so it had nothing to scroll and the
+              // step could not be moved on a phone. StackFit.expand pins every
+              // child to the available height, which is what a scroll view needs.
+              layoutBuilder: (currentChild, previousChildren) => Stack(
+                fit: StackFit.expand,
+                alignment: Alignment.topCenter,
+                children: <Widget>[
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              ),
               transitionBuilder: (child, animation) {
                 return SlideTransition(
                   position: Tween<Offset>(
@@ -548,7 +751,11 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
           ),
         ],
       ),
-      bottomSheet: _buildBottomActions(),
+      // bottomNavigationBar, not bottomSheet: a bottomSheet is free to paint
+      // over the body, which is what buried the last control on a small phone.
+      // bottomNavigationBar always reserves its own height, so the scrolling
+      // area ends above it and nothing is ever hidden underneath.
+      bottomNavigationBar: _buildBottomActions(),
     );
   }
 
@@ -558,30 +765,52 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
 
   Widget _buildProgressIndicator() {
     const totalSteps = 4;
-    final completedSteps = _currentStep >= 4 ? 4 : _currentStep;
+    // Nothing is finished until they have actually chosen how to take the
+    // photos, otherwise the bar claimed progress they never made.
+    final completedSteps = (_captureMode == null || _currentStep >= 4)
+        ? 0
+        : _currentStep;
+    final showCollapse = widget.inFlow && widget.expanded;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
-        children: List.generate(totalSteps, (index) {
-          final isDone = index < completedSteps;
-          final isActive = index == completedSteps && _currentStep < 4;
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDone || isActive
-                      ? AppColors.amber
-                      : Colors.white.withAlpha(26),
-                  borderRadius: BorderRadius.circular(2),
+        children: [
+          if (showCollapse)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: IconButton(
+                tooltip: 'Collapse scan',
+                icon: const Icon(
+                  Icons.close_fullscreen,
+                  color: Colors.white70,
+                  size: 20,
                 ),
+                onPressed: widget.onToggleExpanded,
               ),
             ),
-          );
-        }),
+          ...List.generate(totalSteps, (index) {
+            final isDone = index < completedSteps;
+            final isActive = _captureMode != null &&
+                index == completedSteps &&
+                _currentStep < 4;
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDone || isActive
+                        ? AppColors.amber
+                        : Colors.white.withAlpha(26),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -591,6 +820,15 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   // ---------------------------------------------------------------------------
 
   Widget _buildStepContent() {
+    // Ask how they want to photograph themselves before anything else. The
+    // camera is not opened, and no permission is requested, until they pick it.
+    if (_captureMode == null && _measurements == null) {
+      return _buildCaptureModeStep();
+    }
+    // ✅ If measurements already loaded from DB, jump to results step
+    if (_measurements != null && _measurements!.isNotEmpty) {
+      return _buildResultsStep();
+    }
     switch (_currentStep) {
       case 0:
         return _buildFrontPhotoStep();
@@ -608,6 +846,145 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
     }
   }
 
+  /// ---------------------------------------------------------------------------
+  /// STEP -1: HOW DO YOU WANT TO SUPPLY YOUR PHOTOS
+  /// ---------------------------------------------------------------------------
+
+  Widget _buildCaptureModeStep() {
+    return SingleChildScrollView(
+      key: const ValueKey('capture_mode'),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'GET STARTED',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.amber,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'How should we take\nyour photos?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'You need one front photo and one side photo. Pick whichever is '
+            'easier right now — you can switch later.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 28),
+          _buildModeOption(
+            icon: Icons.photo_camera_rounded,
+            title: 'Use my camera',
+            blurb: 'Take the photos now. Nothing is saved to your gallery.',
+            onTap: () => _chooseCaptureMode(_CaptureMode.camera),
+          ),
+          const SizedBox(height: 12),
+          _buildModeOption(
+            icon: Icons.photo_library_rounded,
+            title: 'Upload photos',
+            blurb: 'Choose a front and a side photo you already took.',
+            onTap: () => _chooseCaptureMode(_CaptureMode.upload),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline, size: 16, color: Colors.white38),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Stand in the T-pose with both arms out level with your shoulders, '
+                  'whole body in frame. Measurements are accurate to about 1–3cm.',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: 11.5,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeOption({
+    required IconData icon,
+    required String title,
+    required String blurb,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: AppColors.amber, size: 26),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      blurb,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.white38,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // STEP 0: FRONT PHOTO
   // ---------------------------------------------------------------------------
@@ -615,7 +992,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   Widget _buildFrontPhotoStep() {
     return SingleChildScrollView(
       key: const ValueKey('front_photo'),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -639,7 +1016,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
           ),
           const SizedBox(height: 16),
           const Text(
-            'Stand facing the camera with arms relaxed\nat your sides. Full body must be visible.',
+            'Stand facing the camera in the T-pose, arms straight out\nto the sides. Full body must be visible.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
@@ -650,25 +1027,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
             isFront: true,
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: () => _startCountdownAndCapture('front'),
-              icon: const Icon(Icons.camera_alt_rounded),
-              label: Text(
-                _frontImage != null ? 'RECAPTURE FRONT' : 'CAPTURE FRONT PHOTO',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.amber,
-                foregroundColor: AppColors.darkNavy,
-              ),
-            ),
-          ),
+          _buildPhotoAction('front'),
         ],
       ),
     );
@@ -681,7 +1040,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   Widget _buildSidePhotoStep() {
     return SingleChildScrollView(
       key: const ValueKey('side_photo'),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -716,26 +1075,86 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
             isFront: false,
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: () => _startCountdownAndCapture('side'),
-              icon: const Icon(Icons.camera_alt_rounded),
-              label: Text(
-                _sideImage != null ? 'RECAPTURE SIDE' : 'CAPTURE SIDE PHOTO',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.amber,
-                foregroundColor: AppColors.darkNavy,
+          _buildPhotoAction('side'),
+        ],
+      ),
+    );
+  }
+
+  /// Primary action for a photo step, driven by the method chosen up front.
+  ///
+  /// Whichever method they picked is the big obvious button; the other one is
+  /// offered underneath as a secondary link, so the choice is a starting point
+  /// rather than a trap.
+  Widget _buildPhotoAction(String perspective) {
+    final isFront = perspective == 'front';
+    final hasImage = isFront ? _frontImage != null : _sideImage != null;
+    final noun = isFront ? 'FRONT' : 'SIDE';
+    final useCamera = _captureMode != _CaptureMode.upload;
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton.icon(
+            onPressed: () => useCamera
+                ? _startCountdownAndCapture(perspective)
+                : _uploadPhoto(perspective),
+            icon: Icon(
+              useCamera ? Icons.camera_alt_rounded : Icons.photo_library_rounded,
+            ),
+            label: Text(
+              useCamera
+                  ? (hasImage ? 'RECAPTURE $noun' : 'CAPTURE $noun PHOTO')
+                  : (hasImage ? 'CHOOSE ANOTHER $noun PHOTO' : 'UPLOAD $noun PHOTO'),
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
               ),
             ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.amber,
+              foregroundColor: AppColors.darkNavy,
+            ),
           ),
-        ],
+        ),
+        const SizedBox(height: 12),
+        _buildUploadAlternative(perspective),
+      ],
+    );
+  }
+
+  /// Secondary link that switches to the other method.
+  ///
+  /// It is a switch, not just an extra upload link: tapping it also flips which
+  /// method is primary, so the client never ends up with a "Upload front photo"
+  /// screen whose main button opens the camera again.
+  Widget _buildUploadAlternative(String perspective) {
+    final useCamera = _captureMode != _CaptureMode.upload;
+
+    return TextButton.icon(
+      onPressed: () => useCamera
+          ? _switchCaptureMode(_CaptureMode.upload)
+          : _switchCaptureMode(_CaptureMode.camera),
+      icon: Icon(
+        useCamera ? Icons.photo_library_outlined : Icons.camera_alt_outlined,
+        size: 18,
+      ),
+      label: Text(
+        useCamera
+            ? 'Use photos from my gallery instead'
+            : 'Use the camera instead',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: AppColors.amber,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.amber,
+        minimumSize: const Size(double.infinity, 44),
       ),
     );
   }
@@ -747,7 +1166,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   Widget _buildHeightInputStep() {
     return SingleChildScrollView(
       key: const ValueKey('height_input'),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -1104,44 +1523,6 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (_showCelebration)
-            AnimatedOpacity(
-              opacity: _showCelebration ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withAlpha(25),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.success.withAlpha(80)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: AppColors.success,
-                      size: 18,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'EXTRACTION SUCCESSFUL',
-                      style: TextStyle(
-                        color: AppColors.success,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           const Text(
             'SCAN COMPLETE',
             style: TextStyle(
@@ -1406,6 +1787,9 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
   // ---------------------------------------------------------------------------
 
   Widget _buildBottomActions() {
+    // No bar while choosing a method: the two cards are the only actions, and a
+    // permanently disabled CONTINUE beside them just looked broken.
+    if (_captureMode == null) return const SizedBox.shrink();
     if (_currentStep == 3) {
       return const SizedBox.shrink();
     }
@@ -1425,14 +1809,7 @@ class _AiBodyScanPageState extends ConsumerState<AiBodyScanPage>
                 child: OutlinedButton(
                   onPressed: () {
                     HapticFeedback.selectionClick();
-                    setState(() {
-                      _currentStep = 0;
-                      _measurements = null;
-                      _frontImage = null;
-                      _sideImage = null;
-                      _errorMessage = null;
-                      _showCelebration = false;
-                    });
+                    _resetScan();
                     _speakStepGuidance(0);
                   },
                   style: OutlinedButton.styleFrom(

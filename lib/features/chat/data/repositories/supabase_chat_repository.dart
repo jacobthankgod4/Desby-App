@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/chat_message.dart';
@@ -10,25 +13,38 @@ class SupabaseChatRepository implements ChatRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   @override
-  Future<Result<Conversation>> createConversation(List<String> participantIds) async {
+  Future<Result<Conversation>> createConversation(
+    List<String> participantIds,
+  ) async {
     try {
-      // Sort IDs to ensure consistent conversation ID generation if needed
-      // but Supabase uses primary key, so we'll just check if one exists
+      final uuidIds = participantIds
+          .where(
+            (id) => RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+              caseSensitive: false,
+            ).hasMatch(id),
+          )
+          .toList();
+      if (uuidIds.isEmpty)
+        return Failure(AuthFailure(message: 'Invalid participant IDs'));
+
       final existing = await _supabase
           .from('conversations')
           .select()
-          .contains('participant_ids', participantIds);
-      
+          .contains('participant_ids', uuidIds);
+
       if ((existing as List).isNotEmpty) {
         return Success(ConversationModel.fromJson(existing.first).toEntity());
       }
 
-      final id = 'CONV_${DateTime.now().millisecondsSinceEpoch}';
-      final response = await _supabase.from('conversations').insert({
-        'id': id,
-        'participant_ids': participantIds,
-        'created_at': DateTime.now().toIso8601String(),
-      }).select().single();
+      final response = await _supabase
+          .from('conversations')
+          .insert({
+            'participant_ids': uuidIds,
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
 
       return Success(ConversationModel.fromJson(response).toEntity());
     } catch (e) {
@@ -38,14 +54,21 @@ class SupabaseChatRepository implements ChatRepository {
 
   @override
   Future<Result<List<Conversation>>> getConversations(String userId) async {
+    final uuidPattern = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
+    if (!uuidPattern.hasMatch(userId)) return const Success([]);
     try {
-      final response = await _supabase
-          .from('conversations')
-          .select()
-          .contains('participant_ids', [userId]);
-      return Success((response as List)
-          .map((data) => ConversationModel.fromJson(data).toEntity())
-          .toList());
+      final response = await _supabase.from('conversations').select().contains(
+        'participant_ids',
+        [userId],
+      );
+      return Success(
+        (response as List)
+            .map((data) => ConversationModel.fromJson(data).toEntity())
+            .toList(),
+      );
     } catch (e) {
       return Failure(AuthFailure(message: e.toString()));
     }
@@ -59,9 +82,11 @@ class SupabaseChatRepository implements ChatRepository {
           .select()
           .eq('conversation_id', conversationId)
           .order('timestamp', ascending: false);
-      return Success((response as List)
-          .map((data) => ChatMessageModel.fromJson(data).toEntity())
-          .toList());
+      return Success(
+        (response as List)
+            .map((data) => ChatMessageModel.fromJson(data).toEntity())
+            .toList(),
+      );
     } catch (e) {
       return Failure(AuthFailure(message: e.toString()));
     }
@@ -71,18 +96,22 @@ class SupabaseChatRepository implements ChatRepository {
   Future<Result<ChatMessage>> sendMessage(ChatMessage message) async {
     try {
       final model = ChatMessageModel.fromEntity(message);
+      final insertJson = model.toJson()..remove('id');
       final response = await _supabase
           .from('messages')
-          .insert(model.toJson())
+          .insert(insertJson)
           .select()
           .single();
-      
       final sentModel = ChatMessageModel.fromJson(response);
 
-      // Update conversation last message
-      await _supabase.from('conversations').update({
-        'last_message': sentModel.toJson(),
-      }).eq('id', message.conversationId);
+      try {
+        await _supabase
+            .from('conversations')
+            .update({'last_message': sentModel.toJson()})
+            .eq('id', message.conversationId);
+      } catch (e) {
+        debugPrint('[ERROR] update conversation last_message: $e');
+      }
 
       return Success(sentModel.toEntity());
     } catch (e) {
@@ -93,9 +122,10 @@ class SupabaseChatRepository implements ChatRepository {
   @override
   Future<Result<void>> markAsRead(String conversationId) async {
     try {
-      await _supabase.from('conversations').update({
-        'unread_count': 0,
-      }).eq('id', conversationId);
+      await _supabase
+          .from('conversations')
+          .update({'unread_count': 0})
+          .eq('id', conversationId);
       return const Success(null);
     } catch (e) {
       return Failure(AuthFailure(message: e.toString()));

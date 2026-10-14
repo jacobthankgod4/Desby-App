@@ -34,12 +34,16 @@ class LocalStorageService {
       _initialized = true;
       logger.info('Local storage initialized successfully');
     } catch (e, stackTrace) {
-      logger.error('Failed to initialize local storage', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Failed to initialize local storage',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
 
-Future<void> saveAuthValue(String key, dynamic value) async {
+  Future<void> saveAuthValue(String key, dynamic value) async {
     if (!_initialized) {
       // Silently return if not initialized - will be saved after init
       return;
@@ -87,7 +91,8 @@ Future<void> saveAuthValue(String key, dynamic value) async {
   }
 
   Future<void> save(String key, dynamic value) => saveAuthValue(key, value);
-  dynamic get(String key, {dynamic defaultValue}) => getAuthValue(key, defaultValue: defaultValue);
+  dynamic get(String key, {dynamic defaultValue}) =>
+      getAuthValue(key, defaultValue: defaultValue);
   Future<void> delete(String key) => deleteAuthValue(key);
 
   Future<void> saveCache(String key, dynamic value) async {

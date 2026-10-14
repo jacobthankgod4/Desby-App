@@ -6,20 +6,31 @@ final merchantRepositoryProvider = Provider<MerchantRepository>((ref) {
   return SupabaseMerchantRepository();
 });
 
-final walletBalanceProvider = FutureProvider.family<Map<String, dynamic>, String>((ref, merchantId) async {
-  final repo = ref.watch(merchantRepositoryProvider);
-  final result = await repo.getWalletBalance(merchantId);
-  return result.fold(
-    (failure) => throw Exception('Unable to load wallet balance.'),
-    (balance) => balance,
-  );
-});
+final walletBalanceProvider =
+    FutureProvider.family<Map<String, dynamic>, String>((
+      ref,
+      merchantId,
+    ) async {
+      if (merchantId.isEmpty) {
+        return {'balance': 0.0, 'pending_payout': 0.0};
+      }
+      final repo = ref.watch(merchantRepositoryProvider);
+      final result = await repo.getWalletBalance(merchantId);
+      return result.fold(
+        (failure) => throw Exception('Unable to load wallet balance.'),
+        (balance) => balance,
+      );
+    });
 
-final payoutHistoryProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, merchantId) async {
-  final repo = ref.watch(merchantRepositoryProvider);
-  final result = await repo.getPayoutHistory(merchantId);
-  return result.fold(
-    (failure) => throw Exception('Unable to load payout history.'),
-    (history) => history,
-  );
-});
+final payoutHistoryProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>((
+      ref,
+      merchantId,
+    ) async {
+      final repo = ref.watch(merchantRepositoryProvider);
+      final result = await repo.getPayoutHistory(merchantId);
+      return result.fold(
+        (failure) => throw Exception('Unable to load payout history.'),
+        (history) => history,
+      );
+    });

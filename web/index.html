@@ -1,4 +1,4 @@
-<html>
+<html style="background-color: #0A1921;">
 <head>
   <base href="$FLUTTER_BASE_HREF">
 
@@ -28,26 +28,268 @@
        Firebase is initialized from Dart via firebase_core (no JS CDN needed).
        3D viewer cross-platform: o3d for mobile, direct model-viewer for web. -->
 
-  <!-- model-viewer for web platform (Standard CDN approach with non-blocking check) -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js" defer></script>
+  <!-- Flutterwave inline checkout v3 (lazy-loaded when payment triggered) -->
+  <script>
+    let _fwLoaded = false;
+    window.__fwCheckoutReady = false;
 
-  <!-- MediaPipe Pose Detection for web (matches ML Kit on mobile) -->
+    window.__isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 0 && window.innerWidth < 768);
+
+    function __ensureFlutterwave() {
+      return new Promise(function(resolve) {
+        if (window.FlutterwaveCheckout) { window.__fwCheckoutReady = true; resolve(); return; }
+        if (_fwLoaded) {
+          var check = setInterval(function() {
+            if (window.FlutterwaveCheckout) { clearInterval(check); window.__fwCheckoutReady = true; resolve(); }
+          }, 100);
+          setTimeout(function() { clearInterval(check); resolve(); }, 8000);
+          return;
+        }
+        _fwLoaded = true;
+        var s = document.createElement('script');
+        s.src = 'https://checkout.flutterwave.com/v3.js';
+        s.onload = function() { window.__fwCheckoutReady = true; resolve(); };
+        s.onerror = function() { resolve(); };
+        document.head.appendChild(s);
+      });
+    }
+
+    // Strip allow-modals from Flutterwave iframe sandbox to suppress native confirm() popup
+    function __stripIframeModals() {
+      try {
+        var iframes = document.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {
+          var sb = iframes[i].getAttribute('sandbox');
+          if (sb && sb.indexOf('allow-modals') !== -1 && sb.indexOf('checkout') !== -1) {
+            // This is Flutterwave's iframe — strip allow-modals silently
+            iframes[i].setAttribute('sandbox', sb.replace(/\s*allow-modals\s*/g, ' ').trim());
+          }
+        }
+      } catch(_) {}
+    }
+
+    // MutationObserver to catch Flutterwave iframe creation
+    var _fwSandboxObserver = null;
+    function __startFwSandboxObserver() {
+      if (_fwSandboxObserver) return;
+      try {
+        _fwSandboxObserver = new MutationObserver(function(mutations) {
+          for (var m = 0; m < mutations.length; m++) {
+            for (var n = 0; n < mutations[m].addedNodes.length; n++) {
+              var node = mutations[m].addedNodes[n];
+              if (node.nodeType === 1) {
+                if (node.tagName === 'IFRAME') __stripIframeModals();
+                if (node.querySelector) { node.querySelectorAll('iframe').forEach(function() { __stripIframeModals(); }); }
+              }
+            }
+          }
+          // Also check all existing iframes on every mutation
+          __stripIframeModals();
+        });
+        _fwSandboxObserver.observe(document.body, { childList: true, subtree: true });
+      } catch(_) {}
+    }
+    if (document.body) { __startFwSandboxObserver(); } else {
+      document.addEventListener('DOMContentLoaded', __startFwSandboxObserver);
+    }
+
+    function __openFwCheckout(jsonConfig) {
+      var config = JSON.parse(jsonConfig);
+      window.__fwResult = null;
+      window.__fwDone = false;
+      window.__fwClosed = false;
+      window.__fwLastConfig = jsonConfig;
+      window.__fwModalOpen = true;
+
+      config.callback = function(response) {
+        window.__fwResult = JSON.stringify(response);
+        window.__fwDone = true;
+      };
+      config.onclose = function() {
+        window.__fwModalOpen = false;
+        if (window.__fwDone) {
+          window.__fwClosed = true;
+          return;
+        }
+        window.__showCancelDialog();
+      };
+
+      window.FlutterwaveCheckout(config);
+
+      // Double-check sandbox after a brief delay (Flutterwave creates iframe async)
+      setTimeout(__stripIframeModals, 300);
+      setTimeout(__stripIframeModals, 800);
+      setTimeout(__stripIframeModals, 1500);
+    }
+
+    // Hosted checkout redirect — no iframe, no confirm dialog (used on mobile)
+    function __openFwHosted(jsonConfig) {
+      var config = JSON.parse(jsonConfig);
+      var redirectUrl = window.location.href.split('#')[0] + '#/payment-callback';
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://checkout.flutterwave.com/v3/hosted/pay';
+      form.target = '_self';
+
+      var fields = {
+        'public_key': config.public_key,
+        'tx_ref': config.tx_ref,
+        'amount': config.amount,
+        'currency': config.currency || 'NGN',
+        'customer[email]': config.customer.email,
+        'customer[name]': config.customer.name || '',
+        'redirect_url': redirectUrl,
+        'customizations[title]': config.customizations.title || 'Desby',
+        'customizations[description]': config.customizations.description || 'Payment',
+        'customizations[logo]': config.customizations.logo || ''
+      };
+
+      for (var key in fields) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+    }
+
+    window.__showCancelDialog = function() {
+      // Remove any existing dialog
+      var existing = document.getElementById('__fw_cancel_overlay');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = '__fw_cancel_overlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+
+      var dialog = document.createElement('div');
+      dialog.style.cssText = 'background:#0D1B2A;border:1px solid rgba(198,255,0,0.2);border-radius:16px;padding:32px 28px;max-width:340px;width:90%;text-align:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;box-shadow:0 20px 60px rgba(0,0,0,0.5);';
+
+      var icon = document.createElement('div');
+      icon.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C6FF00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+      icon.style.cssText = 'margin-bottom:16px;';
+
+      var title = document.createElement('div');
+      title.textContent = 'Cancel Payment?';
+      title.style.cssText = 'color:#FFFFFF;font-size:18px;font-weight:800;letter-spacing:1px;margin-bottom:8px;';
+
+      var message = document.createElement('div');
+      message.textContent = 'Are you sure you want to cancel this payment? Your subscription will not be activated.';
+      message.style.cssText = 'color:#8899AA;font-size:13px;line-height:1.5;margin-bottom:28px;';
+
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:12px;';
+
+      var btnContinue = document.createElement('button');
+      btnContinue.textContent = 'CONTINUE PAYMENT';
+      btnContinue.style.cssText = 'flex:1;padding:14px 8px;background:#C6FF00;color:#0A1921;border:none;border-radius:10px;font-size:11px;font-weight:900;letter-spacing:1px;cursor:pointer;';
+      btnContinue.onmouseenter = function() { btnContinue.style.background = '#B0E600'; };
+      btnContinue.onmouseleave = function() { btnContinue.style.background = '#C6FF00'; };
+
+      var btnCancel = document.createElement('button');
+      btnCancel.textContent = 'YES, CANCEL';
+      btnCancel.style.cssText = 'flex:1;padding:14px 8px;background:transparent;color:#8899AA;border:1px solid rgba(136,153,170,0.3);border-radius:10px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;';
+      btnCancel.onmouseenter = function() { btnCancel.style.borderColor = 'rgba(255,100,100,0.5)'; btnCancel.style.color = '#FF6464'; };
+      btnCancel.onmouseleave = function() { btnCancel.style.borderColor = 'rgba(136,153,170,0.3)'; btnCancel.style.color = '#8899AA'; };
+
+      btnContinue.onclick = function() {
+        overlay.remove();
+        // Reopen checkout with same config
+        if (window.__fwLastConfig) {
+          window.__fwDone = false;
+          window.__fwClosed = false;
+          window.__fwResult = null;
+          var cfg = JSON.parse(window.__fwLastConfig);
+          cfg.callback = function(response) {
+            window.__fwResult = JSON.stringify(response);
+            window.__fwDone = true;
+          };
+          cfg.onclose = function() {
+            if (window.__fwDone) {
+              window.__fwClosed = true;
+              return;
+            }
+            window.__showCancelDialog();
+          };
+          window.FlutterwaveCheckout(cfg);
+        }
+      };
+
+      btnCancel.onclick = function() {
+        overlay.remove();
+        window.__fwClosed = true;
+      };
+
+      btnRow.appendChild(btnContinue);
+      btnRow.appendChild(btnCancel);
+      dialog.appendChild(icon);
+      dialog.appendChild(title);
+      dialog.appendChild(message);
+      dialog.appendChild(btnRow);
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+    };
+  </script>
+
+  <!-- model-viewer for web platform — lazy-loaded only when needed -->
+  <script>
+    // Only load model-viewer when a <model-viewer> element is added to DOM
+    let _mvLoaded = false;
+    function _startMvObserver() {
+      if (_mvLoaded || !document.body) return;
+      try {
+        const _mvObserver = new MutationObserver((mutations) => {
+          if (_mvLoaded) return;
+          for (const m of mutations) {
+            for (const node of m.addedNodes) {
+              if (node.nodeType === 1 && (node.tagName === 'MODEL-VIEWER' || node.querySelector?.('model-viewer'))) {
+                const s = document.createElement('script');
+                s.type = 'module';
+                s.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js';
+                s.defer = true;
+                document.head.appendChild(s);
+                _mvLoaded = true;
+                _mvObserver.disconnect();
+                return;
+              }
+            }
+          }
+        });
+        _mvObserver.observe(document.body, { childList: true, subtree: true });
+      } catch (_) {}
+    }
+    if (document.body) {
+      _startMvObserver();
+    } else {
+      document.addEventListener('DOMContentLoaded', _startMvObserver);
+    }
+  </script>
+
+  <!-- MediaPipe Pose Detection for web (lazy-init: only loads WASM when detectPose is called) -->
   <script type="module">
-    import { FilesetResolver, PoseLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
+    import { FilesetResolver, PoseLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35";
 
     let _poseLandmarker = null;
+    let _initStarted = false;
 
     window.__mpReady = false;
-    window.__mpInitPromise = null;
 
-    // Start init immediately when module loads
-    (async function() {
-      console.log("[MEDIAPIPE] Module loaded, starting init...");
+    async function _ensureMediaPipe() {
+      if (_poseLandmarker) return _poseLandmarker;
+      if (_initStarted) {
+        // Wait for ongoing init
+        await new Promise(r => { const i = setInterval(() => { if (_poseLandmarker || !_initStarted) { clearInterval(i); r(); } }, 100); });
+        return _poseLandmarker;
+      }
+      _initStarted = true;
       try {
         const vision = await FilesetResolver.forVisionTasks(
-          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm"
         );
-        console.log("[MEDIAPIPE] WASM resolved, loading model...");
         _poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task",
@@ -60,44 +302,49 @@
           minTrackingConfidence: 0.5
         });
         window.__mpReady = true;
-        console.log("[MEDIAPIPE] Pose detection ready!");
       } catch (e) {
-        console.error("[MEDIAPIPE] Init failed:", e);
+        _initStarted = false;
       }
-    })();
+      return _poseLandmarker;
+    }
 
     window.detectPose = function(timestamp) {
-      if (!_poseLandmarker || !window.__cameraVideo) return null;
-      if (window.__cameraVideo.readyState < 2) return null;
-      try {
-        const ts = performance.now();
-        const r = _poseLandmarker.detectForVideo(window.__cameraVideo, ts);
-        if (r && r.landmarks && r.landmarks.length > 0) {
-          return r.landmarks[0].map(function(lm) {
-            return { x: lm.x, y: lm.y, z: lm.z, visibility: lm.visibility || 0 };
-          });
-        }
-        return [];
-      } catch (e) {
-        return null;
-      }
+      if (!window.__cameraVideo) return null;
+      return _ensureMediaPipe().then(function(lm) {
+        if (!lm || !window.__cameraVideo || window.__cameraVideo.readyState < 2) return null;
+        try {
+          var r = lm.detectForVideo(window.__cameraVideo, performance.now());
+          if (r && r.landmarks && r.landmarks.length > 0) {
+            return r.landmarks[0].map(function(l) {
+              return { x: l.x, y: l.y, z: l.z, visibility: l.visibility || 0 };
+            });
+          }
+          return [];
+        } catch (e) { return null; }
+      });
     };
   </script>
 
 <style>
-    body {
-      background-color: #0A1921; /* Dark Navy matches main app */
+html, body, flutter-view, flt-glass-pane {
+          background-color: #0A1921 !important;
+        }
+        body {
+          background-color: #0A1921;
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       width: 100vw;
       color: white;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .logo-container {
       margin-bottom: 40px;
@@ -150,36 +397,58 @@
     <div class="logo-container">
       <img src="logo.png" alt="Desby OS" class="logo" width="120" height="120">
     </div>
-    <div id="status">Initializing Engine</div>
+    <div id="status">Loading Desby…</div>
   </div>
 
 <script src="flutter_bootstrap.js" defer></script>
 <script>
     // Global error handler to catch and suppress Flutter runtime errors
-    // particularly removeChild errors during debugging communication
     window.onerror = function(message, source, lineno, colno, error) {
       // Suppress removeChild errors during DOM manipulation
       if (message && message.includes && message.includes('removeChild')) {
-        console.log("[DEBUG] Suppressed DOM error:", message);
-        return true; // Prevent default error handling
+        return true;
       }
-      return false; // Let other errors propagate
+      // Suppress model-viewer/M_ID initialization race condition
+      if (message && message.includes && message.includes('M_ID')) {
+        return true;
+      }
+      // Suppress MutationObserver errors when body is null
+      if (message && message.includes && message.includes('observe') && message.includes('MutationObserver')) {
+        return true;
+      }
+      // Suppress Supabase GoTrue auth polling errors on web (non-fatal)
+      if (message && message.includes && message.includes('setInterval')) {
+        return true;
+      }
+      // Suppress Dart minified auth errors (GoTrue stream errors from main.dart.js)
+      // These are non-fatal errors from Supabase's internal auth state polling
+      if (source && source.includes && source.includes('main.dart.js')) {
+        var msg = (message || '').toLowerCase();
+        if (msg.includes('uncaught') || msg.includes('error')) {
+          return true;
+        }
+      }
+      return false;
     };
     
     // Capture unhandled promise rejections
     window.addEventListener('unhandledrejection', function(event) {
-      if (event.reason && event.reason.message &&
-          event.reason.message.includes('removeChild')) {
-        console.log("[DEBUG] Suppressed unhandled rejection:", event.reason.message);
+      // NOTE: `msg` is lowercased, so every pattern below must be lowercase too.
+      // Comparing against 'removeChild' / 'M_ID' here silently never matched,
+      // which is why the model-viewer M_ID rejection kept reaching the console.
+      var msg = (event.reason?.message || '').toLowerCase();
+      if (msg.includes('removechild') || msg.includes('m_id')) {
+        event.preventDefault();
+      }
+      // Suppress GoTrue auth polling promise rejections
+      if (event.reason?.stack && event.reason.stack.includes('main.dart.js')) {
         event.preventDefault();
       }
     });
 
-    console.log("[DEBUG] Desby OS: Handshaking with Browser...");
     window.addEventListener('load', function() {
       const statusEl = document.getElementById('status');
-      if (statusEl) statusEl.innerText = "Syncing Neural Assets";
-      console.log("[DEBUG] All Scripts Loaded Successfully");
+      if (statusEl) statusEl.innerText = "Almost ready…";
 
       // Safe preloader cleanup: use remove() method with proper null checks
       // This avoids the removeChild error when parent reference is stale
@@ -200,7 +469,6 @@
           }
         } catch (e) {
           // Silently ignore - element was already removed or DOM was modified
-          console.log("[DEBUG] Preloader cleanup skipped:", e.message);
         }
       };
 

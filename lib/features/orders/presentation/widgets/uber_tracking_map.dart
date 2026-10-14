@@ -31,12 +31,13 @@ class _UberTrackingMapState extends State<UberTrackingMap> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       height: 400,
       decoration: BoxDecoration(
-        color: AppColors.darkNavy,
+        color: colors.scaffoldBg,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: colors.borderSubtle),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),

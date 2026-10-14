@@ -9,6 +9,7 @@ import 'package:desby_app/core/widgets/animated_entry.dart';
 import 'package:desby_app/core/widgets/dashboard_shimmer.dart';
 import 'package:desby_app/core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
+import '../widgets/quick_action_tile.dart';
 
 class ApprenticeDashboard extends ConsumerStatefulWidget {
   const ApprenticeDashboard({super.key});
@@ -82,7 +83,14 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
+
+                  // QUICK ACTIONS — the apprentice dashboard previously had a
+                  // GridView, but every child was a non-tappable
+                  // LuxuryStatCard, so there was no tile grid anywhere on the
+                  // page and the curriculum had to be reached via a header chip.
+                  AnimatedEntry(index: 3, child: _buildQuickActions()),
+                  const SizedBox(height: 32),
 
                   // Mentor Access
                   AnimatedEntry(
@@ -247,6 +255,77 @@ class _ApprenticeDashboardState extends ConsumerState<ApprenticeDashboard> {
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Apprentice quick actions. All routes already exist in the shell switch.
+  Widget _buildQuickActions() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossCount = screenWidth < 600 ? 3 : 4;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const QuickActionsHeading(),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: crossCount,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 14,
+          crossAxisSpacing: 14,
+          childAspectRatio: 0.92,
+          children: [
+            QuickActionTile(
+              icon: Icons.menu_book_rounded,
+              label: 'Curriculum',
+              onTap: () => ref.setShell('/curriculum'),
+              index: 0,
+            ),
+            QuickActionTile(
+              icon: Icons.task_alt_rounded,
+              label: 'My Tasks',
+              onTap: () => ref.setShell('/tasks'),
+              index: 1,
+            ),
+            QuickActionTile(
+              icon: Icons.workspace_premium_rounded,
+              label: 'Badges',
+              onTap: () => ref.setShell('/badges'),
+              index: 2,
+            ),
+            QuickActionTile(
+              icon: Icons.trending_up_rounded,
+              label: 'Progress',
+              onTap: () => ref.setShell('/progress'),
+              index: 3,
+            ),
+            QuickActionTile(
+              icon: Icons.school_rounded,
+              label: 'Masterclass',
+              onTap: () => ref.setShell('/masterclass'),
+              index: 4,
+            ),
+            QuickActionTile(
+              icon: Icons.folder_copy_rounded,
+              label: 'Portfolio',
+              onTap: () => ref.setShell('/portfolio'),
+              index: 5,
+            ),
+            QuickActionTile(
+              icon: Icons.chat_bubble_outline_rounded,
+              label: 'Mentor Chat',
+              onTap: () => ref.pushShell('/chats'),
+              index: 6,
+            ),
+            QuickActionTile(
+              icon: Icons.forum_rounded,
+              label: 'Showcase',
+              onTap: () => ref.setShell('/showcase'),
+              index: 7,
+            ),
+          ],
         ),
       ],
     );

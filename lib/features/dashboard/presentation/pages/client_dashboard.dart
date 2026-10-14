@@ -11,6 +11,7 @@ import '../../../../core/widgets/dashboard_shimmer.dart';
 import '../../../../core/widgets/design_card_public.dart';
 import '../../../../theme/colors.dart';
 import '../../../../core/providers/navigation_provider.dart';
+import '../widgets/quick_action_tile.dart';
 
 class ClientDashboard extends ConsumerStatefulWidget {
   const ClientDashboard({super.key});
@@ -132,9 +133,16 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
               AnimatedEntry(index: 1, child: _buildStatsRow()),
               const SizedBox(height: 32),
 
+              // QUICK ACTIONS — previously the client dashboard had no
+              // tappable tile grid at all; every affordance was a header
+              // "VIEW ALL" chip or the full-width FIND A TAILOR button, so
+              // the primary tasks were one scroll and a small target away.
+              AnimatedEntry(index: 2, child: _buildQuickActions()),
+              const SizedBox(height: 32),
+
               // Pending Invites (if any)
               if (_pendingInvites.isNotEmpty) ...[
-                AnimatedEntry(index: 2, child: _buildPendingInvitesSection()),
+                AnimatedEntry(index: 3, child: _buildPendingInvitesSection()),
                 const SizedBox(height: 32),
               ],
 
@@ -220,6 +228,65 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard> {
             ),
             elevation: 0,
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Client quick actions. All routes already exist in the shell switch.
+  Widget _buildQuickActions() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossCount = screenWidth < 600 ? 3 : 4;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const QuickActionsHeading(),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: crossCount,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 14,
+          crossAxisSpacing: 14,
+          childAspectRatio: 0.92,
+          children: [
+            QuickActionTile(
+              icon: Icons.search_rounded,
+              label: 'Find a Tailor',
+              onTap: () => ref.pushShell('/tailor-discovery'),
+              index: 0,
+            ),
+            QuickActionTile(
+              icon: Icons.receipt_long_rounded,
+              label: 'My Orders',
+              onTap: () => ref.setShell('/orders'),
+              index: 1,
+            ),
+            QuickActionTile(
+              icon: Icons.straighten_rounded,
+              label: 'Measurements',
+              onTap: () => ref.setShell('/measurements-profile'),
+              index: 2,
+            ),
+            QuickActionTile(
+              icon: Icons.auto_awesome_motion_rounded,
+              label: 'Virtual Try-On',
+              onTap: () => ref.setShell('/virtual-tryon'),
+              index: 3,
+            ),
+            QuickActionTile(
+              icon: Icons.favorite_border_rounded,
+              label: 'Saved',
+              onTap: () => ref.setShell('/saved-designs'),
+              index: 4,
+            ),
+            QuickActionTile(
+              icon: Icons.diamond_outlined,
+              label: 'Explore',
+              onTap: () => ref.setShell('/designs'),
+              index: 5,
+            ),
+          ],
         ),
       ],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/luxury_stat_card.dart';
+import '../widgets/quick_action_tile.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../orders/domain/entities/order.dart';
 import '../../../orders/presentation/providers/order_provider.dart';
@@ -324,48 +325,74 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
       crossAxisCount: crossCount,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      // Portrait-biased: the artwork is the point of these tiles now, so the
-      // old square-ish 1.0/1.1 left a small image floating in dead space.
-      childAspectRatio: crossCount == 3 ? 0.82 : 0.9,
+      mainAxisSpacing: 14,
+      crossAxisSpacing: 14,
+      // Portrait-biased: the artwork is the point of these tiles, so the old
+      // square-ish 1.0/1.1 left a small image floating in dead space.
+      childAspectRatio: crossCount == 3 ? 0.84 : 0.92,
       children: [
         _buildOpTile(
           'assets/cards/client.webp',
+          Icons.person_add_rounded,
           'Client',
           () => ref.setShell('/unified-add-client'),
+          index: 0,
         ),
         _buildOpTile(
           'assets/cards/orders.webp',
+          Icons.receipt_long_rounded,
           'Orders',
           () => ref.setShell('/orders'),
+          index: 1,
         ),
         _buildOpTile(
           'assets/cards/body_scan.webp',
+          Icons.straighten_rounded,
           'Body Scan',
           () => ref.setShell('/ai-body-scan'),
+          index: 2,
         ),
         _buildOpTile(
           'assets/cards/shop.webp',
+          Icons.storefront_rounded,
           'Shop',
           () => ref.setShell('/virtual-atelier'),
+          index: 3,
         ),
         _buildOpTile(
           'assets/cards/try_on.webp',
+          Icons.checkroom_rounded,
           'Try-On',
           () => ref.setShell('/tailor-tryon'),
+          index: 4,
         ),
         _buildOpTile(
           'assets/cards/insights.webp',
+          Icons.bar_chart_rounded,
           'Insights',
           () => ref.setShell('/insights'),
+          index: 5,
         ),
       ],
     );
   }
 
-  Widget _buildOpTile(String asset, String label, VoidCallback onTap) {
-    return _OpTile(asset: asset, label: label, onTap: onTap);
+  Widget _buildOpTile(
+    String asset,
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    int index = 0,
+  }) {
+    // `icon` is the fallback if artwork is ever missing, so a tile degrades to
+    // a glyph rather than rendering empty.
+    return QuickActionTile(
+      asset: asset,
+      icon: icon,
+      label: label,
+      onTap: onTap,
+      index: index,
+    );
   }
 
   Widget _buildApprenticeshipSection(String tailorId) {
@@ -771,88 +798,6 @@ class _TailorDashboardState extends ConsumerState<TailorDashboard> {
   }
 }
 
-class _OpTile extends StatefulWidget {
-  final String asset;
-  final String label;
-  final VoidCallback onTap;
-
-  const _OpTile({required this.asset, required this.label, required this.onTap});
-
-  @override
-  State<_OpTile> createState() => _OpTileState();
-}
-
-class _OpTileState extends State<_OpTile> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _isPressed ? 0.92 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          decoration: BoxDecoration(
-            color: _isPressed
-                ? AppColors.amber.withValues(alpha: 0.08)
-                : colors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _isPressed
-                  ? AppColors.amber.withValues(alpha: 0.2)
-                  : colors.borderSubtle,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-// Fill the tile rather than sitting a fixed-size glyph in it.
-              // Sized against the tile's smaller dimension and then scaled
-              // down slightly, so the artwork stays the dominant element
-              // without touching the card edges — at full bleed the tiles read
-              // as one continuous sheet of images with no breathing room.
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-                  child: Transform.scale(
-                    scale: 0.86,
-                    child: Image.asset(
-                      widget.asset,
-                      fit: BoxFit.contain,
-                      // These are 512px WebP under 50 KB, sized for 3x density.
-                      filterQuality: FilterQuality.medium,
-                      errorBuilder: (context, error, stack) => const SizedBox.shrink(),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(6, 6, 6, 12),
-                child: Text(
-                  widget.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;

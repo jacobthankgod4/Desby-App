@@ -8,6 +8,7 @@ import '../../../../core/widgets/animated_entry.dart';
 import '../../../../core/widgets/dashboard_shimmer.dart';
 import '../../../../core/providers/navigation_provider.dart';
 import '../../../../theme/colors.dart';
+import '../widgets/quick_action_tile.dart';
 
 class FabricSellerDashboard extends ConsumerStatefulWidget {
   const FabricSellerDashboard({super.key});
@@ -94,6 +95,13 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
                 loading: () => DashboardShimmer(statCount: 4, listCount: 2),
                 error: (e, _) => _buildErrorState(),
               ),
+              const SizedBox(height: 32),
+
+              // QUICK ACTIONS — as with the apprentice dashboard, the existing
+              // GridView here held only non-tappable LuxuryStatCards. The seller's
+              // main verbs (upload, wallet, inventory) were reachable only from a
+              // header button or an icon button in the corner.
+              AnimatedEntry(index: 5, child: _buildQuickActions()),
               const SizedBox(height: 32),
 
               // Dispatch Command
@@ -314,6 +322,65 @@ class _FabricSellerDashboardState extends ConsumerState<FabricSellerDashboard> {
         child: Center(child: CircularProgressIndicator(color: AppColors.amber)),
       ),
       error: (_, __) => const SizedBox(),
+    );
+  }
+
+  /// Fabric-seller quick actions. All routes already exist in the shell switch.
+  Widget _buildQuickActions() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossCount = screenWidth < 600 ? 3 : 4;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const QuickActionsHeading(),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: crossCount,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 14,
+          crossAxisSpacing: 14,
+          childAspectRatio: 0.92,
+          children: [
+            QuickActionTile(
+              icon: Icons.add_photo_alternate_rounded,
+              label: 'Upload Fabric',
+              onTap: () => ref.pushShell('/fabric-upload'),
+              index: 0,
+            ),
+            QuickActionTile(
+              icon: Icons.inventory_2_rounded,
+              label: 'My Fabrics',
+              onTap: () => ref.setShell('/inventory'),
+              index: 1,
+            ),
+            QuickActionTile(
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Wallet',
+              onTap: () => ref.pushShell('/merchant-wallet'),
+              index: 2,
+            ),
+            QuickActionTile(
+              icon: Icons.local_shipping_rounded,
+              label: 'Shipments',
+              onTap: () => ref.setShell('/orders'),
+              index: 3,
+            ),
+            QuickActionTile(
+              icon: Icons.storefront_rounded,
+              label: 'Storefront',
+              onTap: () => ref.setShell('/storefront'),
+              index: 4,
+            ),
+            QuickActionTile(
+              icon: Icons.auto_graph_rounded,
+              label: 'AI Pricing',
+              onTap: () => ref.setShell('/ai-pricing'),
+              index: 5,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
